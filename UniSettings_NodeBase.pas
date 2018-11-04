@@ -17,24 +17,23 @@ type
     fFlags:       TUNSNodeFlags;
     fChanged:     Boolean;
     fOnChange:    TNotifyEvent;
-    class Function GetNodeClass: TUNSNodeClass; virtual;
-    class Function GetNodeDataType: TUNSNodeDataType; virtual;
+{*} class Function GetNodeClass: TUNSNodeClass; virtual;
+{*} class Function GetNodeDataType: TUNSNodeDataType; virtual;
     procedure SetNodeNameStr(const Value: String); virtual;
     Function GetNodeLevel: Integer; virtual;
-    Function GetMaxNodeLevel: Integer; virtual;
+{*} Function GetMaxNodeLevel: Integer; virtual;
     procedure SetChanged(Value: Boolean); virtual;
     Function ReconstructFullPathInternal(TopLevelCall: Boolean; IncludeRoot: Boolean): String; virtual;
     procedure DoChange; virtual;
   public
     constructor Create(const Name: String; ParentNode: TUNSNodeBase; Master: TObject);
-    destructor Destroy; override;
     procedure SetFlag(Flag: TUNSNodeFlag); virtual;
     procedure ResetFlag(Flag: TUNSNodeFlag); virtual;
     Function ReconstructFullPath(IncludeRoot: Boolean = False): String; virtual;
-    procedure ActualFromDefault; virtual; abstract;
-    procedure DefaultFromActual; virtual; abstract;
-    procedure ExchangeActualAndDefault; virtual; abstract;
-    Function ActualEqualsDefault: Boolean; virtual; abstract;
+{!} procedure ActualFromDefault; overload; virtual; abstract;
+{!} procedure DefaultFromActual; overload; virtual; abstract;
+{!} procedure ExchangeActualAndDefault; overload; virtual; abstract;
+{!} Function ActualEqualsDefault: Boolean; overload; virtual; abstract;
     property NodeClass: TUNSNodeClass read GetNodeClass;
     property NodeDataType: TUNSNodeDataType read GetNodeDataType;
     property Name: TUNSHashedString read fName write fName;       
@@ -54,8 +53,8 @@ implementation
 
 uses
   SysUtils,
-  UniSettings_Utils, UniSettings_NodeBranch, UniSettings_NodeArray,
-  UniSettings_NodeArrayItem;
+  UniSettings_Utils, UniSettings_Exceptions, UniSettings_NodeBranch,
+  UniSettings_NodeArray, UniSettings_NodeArrayItem;
 
 class Function TUNSNodeBase.GetNodeClass: TUNSNodeClass;
 begin
@@ -127,7 +126,7 @@ case GetNodeClass of
                     else
                       TempStr := Format('[%d]',[TUNSNodeArrayItem(Self).ArrayIndex]) + UNS_PATH_DELIMITER;
                   end
-                else raise Exception.Create('TUNSNodeBase.ReconstructFullPathInternal: Parent node not assigned.');
+                else raise EUNSException.Create('Parent node not assigned.',Self,'ReconstructFullPathInternal');
   ncLeaf:       TempStr := fName.Str;
 else
   {ncUndefined}
@@ -163,13 +162,6 @@ fMaster := Master;
 fFlags := [];
 fChanged := False;
 fOnChange := nil;
-end;
-
-//------------------------------------------------------------------------------
-
-destructor TUNSNodeBase.Destroy;
-begin
-inherited;
 end;
 
 //------------------------------------------------------------------------------

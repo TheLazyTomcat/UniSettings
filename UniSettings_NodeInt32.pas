@@ -6,7 +6,7 @@ interface
 
 uses
   Classes,
-  AuxTypes,
+  AuxTypes, MemoryBuffer,
   UniSettings_Common, UniSettings_NodeLeaf;
 
 type
@@ -18,20 +18,19 @@ type
     procedure SetDefaultValue(NewValue: Int32);
   protected
     class Function GetNodeDataType: TUNSNodeDataType; override;
+    Function GetValueSize(AccessDefVal: Integer): TMemSize; override;
   public
     procedure ActualFromDefault; override;
     procedure DefaultFromActual; override;
     procedure ExchangeActualAndDefault; override;
     Function ActualEqualsDefault: Boolean; override;
-    Function GetValueAddress(DefaultValue: Boolean = False): Pointer; override;
-    Function GetValueAsString(DefaultValue: Boolean = False): String; override;
-    procedure SetValueFromString(const Str: String; DefaultValue: Boolean = False); override;
-    procedure GetValueToStream(Stream: TStream; DefaultValue: Boolean = False); override;
-    procedure SetValueFromStream(Stream: TStream; DefaultValue: Boolean = False); override;
-    Function GetValueAsStream(DefaultValue: Boolean = False): TMemoryStream; override;
-    Function GetValueToBuffer(const Buffer; Size: TMemSize; DefaultValue: Boolean = False): TMemSize; override;
-    procedure SetValueFromBuffer(const Buffer: Pointer; const Size: TMemSize; DefaultValue: Boolean = False); override;
-    Function GetValueAsBuffer(out Buffer: Pointer; DefaultValue: Boolean = False): TMemSize; override;
+    Function GetValueAddress(AccessDefVal: Boolean = False): Pointer; override;
+    Function GetValueAsString(AccessDefVal: Boolean = False): String; override;
+    procedure SetValueFromString(const Str: String; AccessDefVal: Boolean = False); override;
+    procedure GetValueToStream(Stream: TStream; AccessDefVal: Boolean = False); override;
+    procedure SetValueFromStream(Stream: TStream; AccessDefVal: Boolean = False); override;
+    procedure GetValueToBuffer(Buffer: TMemoryBuffer; AccessDefVal: Boolean = False); override;
+    procedure SetValueFromBuffer(Buffer: TMemoryBuffer; AccessDefVal: Boolean = False); override;
     property Value: Int32 read fValue write SetValue;
     property DefaultValue: Int32 read fDefaultValue write SetDefaultValue;
   end;
@@ -40,7 +39,8 @@ implementation
 
 uses
   SysUtils,
-  BinaryStreaming;
+  BinaryStreaming,
+  UniSettings_Exceptions;
 
 procedure TUNSNodeInt32.SetValue(NewValue: Int32);
 begin
@@ -67,6 +67,13 @@ end;
 class Function TUNSNodeInt32.GetNodeDataType: TUNSNodeDataType;
 begin
 Result := ndtInt32;
+end;
+
+//------------------------------------------------------------------------------
+
+Function TUNSNodeInt32.GetValueSize(AccessDefVal: Integer): TMemSize;
+begin
+Result := SizeOf(Int32);
 end;
 
 //==============================================================================
@@ -115,9 +122,9 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function TUNSNodeInt32.GetValueAddress(DefaultValue: Boolean = False): Pointer;
+Function TUNSNodeInt32.GetValueAddress(AccessDefVal: Boolean = False): Pointer;
 begin
-If DefaultValue then
+If AccessDefVal then
   Result := Addr(fDefaultValue)
 else
   Result := Addr(fValue);
@@ -125,9 +132,9 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function TUNSNodeInt32.GetValueAsString(DefaultValue: Boolean = False): String;
+Function TUNSNodeInt32.GetValueAsString(AccessDefVal: Boolean = False): String;
 begin
-If DefaultValue then
+If AccessDefVal then
   Result := IntToStr(fDefaultValue)
 else
   Result := IntToStr(fValue);
@@ -135,9 +142,9 @@ end;
 
 //------------------------------------------------------------------------------
 
-procedure TUNSNodeInt32.SetValueFromString(const Str: String; DefaultValue: Boolean = False);
+procedure TUNSNodeInt32.SetValueFromString(const Str: String; AccessDefVal: Boolean = False);
 begin
-If DefaultValue then
+If AccessDefVal then
   SetDefaultValue(StrToInt(Str))
 else
   SetValue(StrToInt(Str));
@@ -145,9 +152,9 @@ end;
 
 //------------------------------------------------------------------------------
 
-procedure TUNSNodeInt32.GetValueToStream(Stream: TStream; DefaultValue: Boolean = False);
+procedure TUNSNodeInt32.GetValueToStream(Stream: TStream; AccessDefVal: Boolean = False);
 begin
-If DefaultValue then
+If AccessDefVal then
   Stream_WriteInt32(Stream,fDefaultValue)
 else
   Stream_WriteInt32(Stream,fValue);
@@ -155,9 +162,9 @@ end;
 
 //------------------------------------------------------------------------------
 
-procedure TUNSNodeInt32.SetValueFromStream(Stream: TStream; DefaultValue: Boolean = False);
+procedure TUNSNodeInt32.SetValueFromStream(Stream: TStream; AccessDefVal: Boolean = False);
 begin
-If DefaultValue then
+If AccessDefVal then
   SetDefaultValue(Stream_ReadInt32(Stream))
 else
   SetValue(Stream_ReadInt32(Stream));
@@ -165,47 +172,31 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function TUNSNodeInt32.GetValueAsStream(DefaultValue: Boolean = False): TMemoryStream;
+procedure TUNSNodeInt32.GetValueToBuffer(Buffer: TMemoryBuffer; AccessDefVal: Boolean = False);
 begin
-Result := TMemoryStream.Create;
-GetValueToStream(Result,DefaultValue);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TUNSNodeInt32.GetValueToBuffer(const Buffer; Size: TMemSize; DefaultValue: Boolean = False): TMemSize;
-begin
-If Size >= SizeOf(ByteBool) then
+If Buffer.Size >= GetValueSize(Ord(AccessDefVal)) then
   begin
-    If DefaultValue then
-      Result := Ptr_WriteInt32(@Buffer,fDefaultValue)
+    If AccessDefVal then
+      Ptr_WriteInt32(Buffer.Memory,fDefaultValue)
     else
-      Result := Ptr_WriteInt32(@Buffer,fValue);
+      Ptr_WriteInt32(Buffer.Memory,fValue);
   end
-else raise Exception.CreateFmt('TUNSNodeInt32.GetValueToBuffer: Provided buffer is too small (%d).',[Size]);
+else raise EUNSBufferTooSmallException.Create(Buffer,Self,'GetValueToBuffer');
 end;
 
 //------------------------------------------------------------------------------
 
-procedure TUNSNodeInt32.SetValueFromBuffer(const Buffer: Pointer; const Size: TMemSize; DefaultValue: Boolean = False);
+procedure TUNSNodeInt32.SetValueFromBuffer(Buffer: TMemoryBuffer; AccessDefVal: Boolean = False);
 begin
-If Size >= SizeOf(ByteBool) then
+If Buffer.Size >= GetValueSize(Ord(AccessDefVal)) then
   begin
-    If DefaultValue then
-      SetDefaultValue(Ptr_ReadInt32(@Buffer))
+    If AccessDefVal then
+      SetDefaultValue(Ptr_ReadInt32(Buffer.Memory))
     else
-      SetValue(Ptr_ReadInt32(@Buffer));
+      SetValue(Ptr_ReadInt32(Buffer.Memory));
   end
-else raise Exception.CreateFmt('TUNSNodeInt32.SetValueFromBuffer: Provided buffer is too small (%d).',[Size]);
+else raise EUNSBufferTooSmallException.Create(Buffer,Self,'SetValueFromBuffer');
 end;
 
-//------------------------------------------------------------------------------
-
-Function TUNSNodeInt32.GetValueAsBuffer(out Buffer: Pointer; DefaultValue: Boolean = False): TMemSize;
-begin
-Result := SizeOf(Int32);
-GetMem(Buffer,Result);
-GetValueToBuffer(Buffer,Result,DefaultValue);
-end;
 
 end.

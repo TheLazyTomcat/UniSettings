@@ -6,24 +6,27 @@ interface
 
 uses
   Classes,
-  AuxTypes,
+  AuxTypes, MemoryBuffer,
   UniSettings_Common, UniSettings_NodeBase;
 
 type
   TUNSNodeLeaf = class(TUNSNodeBase)
   protected
     class Function GetNodeClass: TUNSNodeClass; override;
+{!} Function GetValueSize(AccessDefVal: Integer): TMemSize; virtual; abstract;
   public
-    class Function IsPrimitiveArray: Boolean; virtual;
-    Function GetValueAddress(DefaultValue: Boolean = False): Pointer; virtual; abstract;
-    Function GetValueAsString(DefaultValue: Boolean = False): String; virtual; abstract;
-    procedure SetValueFromString(const Str: String; DefaultValue: Boolean = False); virtual; abstract;
-    procedure GetValueToStream(Stream: TStream; DefaultValue: Boolean = False); virtual; abstract;
-    procedure SetValueFromStream(Stream: TStream; DefaultValue: Boolean = False); virtual; abstract;
-    Function GetValueAsStream(DefaultValue: Boolean = False): TMemoryStream; virtual; abstract;
-    Function GetValueToBuffer(const Buffer; Size: TMemSize; DefaultValue: Boolean = False): TMemSize; virtual; abstract;
-    procedure SetValueFromBuffer(const Buffer: Pointer; const Size: TMemSize; DefaultValue: Boolean = False); virtual; abstract;
-    Function GetValueAsBuffer(out Buffer: Pointer; DefaultValue: Boolean = False): TMemSize; virtual; abstract;
+{*} class Function IsPrimitiveArray: Boolean; virtual;
+{!} Function GetValueAddress(AccessDefVal: Boolean = False): Pointer; virtual; abstract;
+{!} Function GetValueAsString(AccessDefVal: Boolean = False): String; virtual; abstract;
+{!} procedure SetValueFromString(const Str: String; AccessDefVal: Boolean = False); virtual; abstract;
+{!} procedure GetValueToStream(Stream: TStream; AccessDefVal: Boolean = False); virtual; abstract;
+{!} procedure SetValueFromStream(Stream: TStream; AccessDefVal: Boolean = False); virtual; abstract;
+    Function GetValueAsStream(AccessDefVal: Boolean = False): TMemoryStream; virtual;
+{!} procedure GetValueToBuffer(Buffer: TMemoryBuffer; AccessDefVal: Boolean = False); virtual; abstract;
+{!} procedure SetValueFromBuffer(Buffer: TMemoryBuffer; AccessDefVal: Boolean = False); virtual; abstract;
+    Function GetValueAsBuffer(AccessDefVal: Boolean = False): TMemoryBuffer; virtual; 
+    property ValueSize: TMemSize index 1 read GetValueSize;
+    property DefaultValueSize: TMemSize index 0 read GetValueSize;
   end;
 
 implementation
@@ -38,6 +41,22 @@ end;
 class Function TUNSNodeLeaf.IsPrimitiveArray: Boolean;
 begin
 Result := False;
+end;
+
+//------------------------------------------------------------------------------
+
+Function TUNSNodeLeaf.GetValueAsStream(AccessDefVal: Boolean = False): TMemoryStream;
+begin
+Result := TMemoryStream.Create;
+GetValueToStream(Result,AccessDefVal);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TUNSNodeLeaf.GetValueAsBuffer(AccessDefVal: Boolean = False): TMemoryBuffer;
+begin
+GetBuffer(Result,GetValueSize(Ord(AccessDefVal)));
+GetValuetoBuffer(Result,AccessDefVal);
 end;
 
 end.

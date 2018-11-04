@@ -16,22 +16,85 @@ type
   TDate = type TDateTime;
   TTime = type TDateTime;
 
-  TAoBool     = array of Boolean;
-  TAoInt8     = array of Int8;
-  TAoUInt8    = array of UInt8;
-  TAoInt16    = array of Int16;
-  TAoUInt16   = array of UInt16;
-  TAoInt32    = array of Int32;
-  TAoUInt32   = array of UInt32;
-  TAoInt64    = array of Int64;
-  TAoUInt64   = array of UInt64;
-  TAoFloat32  = array of Float32;
-  TAoFloat64  = array of Float64;
-  TAoData     = array of TDate;
-  TAoTime     = array of TTime;
-  TAoDateTime = array of TDateTime;
-  TAoText     = array of String;
-  TAoBuffer   = array of TMemoryBuffer;
+  TUNSAoBool = record
+    Arr:    array of Boolean;
+    Count:  Integer;
+  end;
+
+  TUNSAoInt8 = record
+    Arr:    array of Int8;
+    Count:  Integer;
+  end;
+
+  TUNSAoUInt8 = record
+    Arr:    array of UInt8;
+    Count:  Integer;
+  end;
+
+  TUNSAoInt16 = record
+    Arr:    array of Int16; 
+    Count:  Integer;
+  end;
+
+  TUNSAoUInt16 = record
+    Arr:    array of UInt16;
+    Count:  Integer;
+  end;
+
+  TUNSAoInt32 = record
+    Arr:    array of Int32;
+    Count:  Integer;
+  end;
+
+  TUNSAoUInt32 = record
+    Arr:    array of UInt32;
+    Count:  Integer;
+  end;
+
+  TUNSAoInt64 = record
+    Arr:    array of Int64; 
+    Count:  Integer;
+  end;
+
+  TUNSAoUInt64 = record
+    Arr:    array of UInt64; 
+    Count:  Integer;
+  end;
+
+  TUNSAoFloat32 = record
+    Arr:    array of Float32; 
+    Count:  Integer;
+  end;
+
+  TUNSAoFloat64 = record
+    Arr:    array of Float64; 
+    Count:  Integer;
+  end;
+
+  TUNSAoData = record
+    Arr:    array of TDate; 
+    Count:  Integer;
+  end;
+
+  TUNSAoTime = record
+    Arr:    array of TTime;
+    Count:  Integer;
+  end;
+
+  TUNSAoDateTime = record
+    Arr:    array of TDateTime; 
+    Count:  Integer;
+  end;
+
+  TUNSAoText = record
+    Arr:    array of String;
+    Count:  Integer;
+  end;
+
+  TUNSAoBuffer = record
+    Arr:    array of TMemoryBuffer;
+    Count:  Integer;
+  end;
 
   TUNSNodeClass = (ncUndefined,ncBranch,ncArrayItem,ncArray,ncLeaf);
 

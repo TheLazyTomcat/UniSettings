@@ -18,7 +18,7 @@ type
   public
     Function Add(Node: TUNSNodeBase): Integer; override;
     procedure Delete(Index: Integer); override;
-    property Items[Index: Integer]: TUNSNodeArrayItem read GetItem;
+    property Items[Index: Integer]: TUNSNodeArrayItem read GetItem; default;
   end;
 
 implementation
