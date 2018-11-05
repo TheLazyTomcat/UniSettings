@@ -1,4 +1,4 @@
-unit UniSettings_NodeInt32;
+unit UniSettings_NodeDate;
 
 {$INCLUDE '.\UniSettings_defs.inc'}
 
@@ -10,12 +10,12 @@ uses
   UniSettings_Common, UniSettings_NodeLeaf;
 
 type
-  TUNSNodeInt32 = class(TUNSNodeLeaf)
+  TUNSNodeDate = class(TUNSNodeLeaf)
   private
-    fValue:         Int32;
-    fDefaultValue:  Int32;
-    procedure SetValue(NewValue: Int32);
-    procedure SetDefaultValue(NewValue: Int32);
+    fValue:         TDate;
+    fDefaultValue:  TDate;
+    procedure SetValue(NewValue: TDate);
+    procedure SetDefaultValue(NewValue: TDate);
   protected
     class Function GetNodeDataType: TUNSNodeDataType; override;
     Function GetValueSize(AccessDefVal: Integer): TMemSize; override;
@@ -31,8 +31,8 @@ type
     procedure SetValueFromStream(Stream: TStream; AccessDefVal: Boolean = False); override;
     procedure GetValueToBuffer(Buffer: TMemoryBuffer; AccessDefVal: Boolean = False); override;
     procedure SetValueFromBuffer(Buffer: TMemoryBuffer; AccessDefVal: Boolean = False); override;
-    property Value: Int32 read fValue write SetValue;
-    property DefaultValue: Int32 read fDefaultValue write SetDefaultValue;
+    property Value: TDate read fValue write SetValue;
+    property DefaultValue: TDate read fDefaultValue write SetDefaultValue;
   end;
 
 implementation
@@ -42,43 +42,43 @@ uses
   BinaryStreaming,
   UniSettings_Exceptions;
 
-procedure TUNSNodeInt32.SetValue(NewValue: Int32);
+procedure TUNSNodeDate.SetValue(NewValue: TDate);
 begin
-If NewValue <> fValue then
+If Int(NewValue) <> Int(fValue) then
   begin
-    fValue := NewValue;
+    fValue := Int(NewValue);
     DoChange;
   end;
 end;
 
 //------------------------------------------------------------------------------
 
-procedure TUNSNodeInt32.SetDefaultValue(NewValue: Int32);
+procedure TUNSNodeDate.SetDefaultValue(NewValue: TDate);
 begin
-If NewValue <> fDefaultValue then
+If Int(NewValue) <> Int(fDefaultValue) then
   begin
-    fDefaultValue := NewValue;
+    fDefaultValue := Int(NewValue);
     DoChange;
   end;
 end;
 
 //==============================================================================
 
-class Function TUNSNodeInt32.GetNodeDataType: TUNSNodeDataType;
+class Function TUNSNodeDate.GetNodeDataType: TUNSNodeDataType;
 begin
-Result := ndtInt32;
+Result := ndtDate;
 end;
 
 //------------------------------------------------------------------------------
 
-Function TUNSNodeInt32.GetValueSize(AccessDefVal: Integer): TMemSize;
+Function TUNSNodeDate.GetValueSize(AccessDefVal: Integer): TMemSize;
 begin
-Result := SizeOf(Int32);
+Result := SizeOf(TDate);
 end;
 
 //==============================================================================
 
-procedure TUNSNodeInt32.ActualFromDefault;
+procedure TUNSNodeDate.ActualFromDefault;
 begin
 If not ActualEqualsDefault then
   begin
@@ -89,7 +89,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-procedure TUNSNodeInt32.DefaultFromActual;
+procedure TUNSNodeDate.DefaultFromActual;
 begin
 If not ActualEqualsDefault then
   begin
@@ -100,9 +100,9 @@ end;
 
 //------------------------------------------------------------------------------
 
-procedure TUNSNodeInt32.ExchangeActualAndDefault;
+procedure TUNSNodeDate.ExchangeActualAndDefault;
 var
-  Temp: Int32;
+  Temp: TDate;
 begin
 If not ActualEqualsDefault then
   begin
@@ -115,14 +115,14 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function TUNSNodeInt32.ActualEqualsDefault: Boolean;
+Function TUNSNodeDate.ActualEqualsDefault: Boolean;
 begin
-Result := fValue = fDefaultValue;
+Result := Int(fValue) = Int(fDefaultValue);
 end;
 
 //------------------------------------------------------------------------------
 
-Function TUNSNodeInt32.GetValueAddress(AccessDefVal: Boolean = False): Pointer;
+Function TUNSNodeDate.GetValueAddress(AccessDefVal: Boolean = False): Pointer;
 begin
 If AccessDefVal then
   Result := Addr(fDefaultValue)
@@ -132,70 +132,71 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function TUNSNodeInt32.GetValueAsString(AccessDefVal: Boolean = False): String;
+Function TUNSNodeDate.GetValueAsString(AccessDefVal: Boolean = False): String;
 begin
 If AccessDefVal then
-  Result := IntToStr(fDefaultValue)
+  Result := DateToStr(fDefaultValue)
 else
-  Result := IntToStr(fValue);
+  Result := DateToStr(fValue);
 end;
 
 //------------------------------------------------------------------------------
 
-procedure TUNSNodeInt32.SetValueFromString(const Str: String; AccessDefVal: Boolean = False);
+procedure TUNSNodeDate.SetValueFromString(const Str: String; AccessDefVal: Boolean = False);
 begin
 If AccessDefVal then
-  SetDefaultValue(Int32(StrToInt(Str)))
+  SetDefaultValue(StrToDate(Str))
 else
-  SetValue(Int32(StrToInt(Str)));
+  SetValue(StrToDate(Str));
 end;
 
 //------------------------------------------------------------------------------
 
-procedure TUNSNodeInt32.GetValueToStream(Stream: TStream; AccessDefVal: Boolean = False);
+procedure TUNSNodeDate.GetValueToStream(Stream: TStream; AccessDefVal: Boolean = False);
 begin
 If AccessDefVal then
-  Stream_WriteInt32(Stream,fDefaultValue)
+  Stream_WriteFloat64(Stream,Int(fDefaultValue))
 else
-  Stream_WriteInt32(Stream,fValue);
+  Stream_WriteFloat64(Stream,Int(fValue));
 end;
 
 //------------------------------------------------------------------------------
 
-procedure TUNSNodeInt32.SetValueFromStream(Stream: TStream; AccessDefVal: Boolean = False);
+procedure TUNSNodeDate.SetValueFromStream(Stream: TStream; AccessDefVal: Boolean = False);
 begin
 If AccessDefVal then
-  SetDefaultValue(Stream_ReadInt32(Stream))
+  SetDefaultValue(Int(Stream_ReadFloat64(Stream)))
 else
-  SetValue(Stream_ReadInt32(Stream));
+  SetValue(Int(Stream_ReadFloat64(Stream)));
 end;
 
 //------------------------------------------------------------------------------
 
-procedure TUNSNodeInt32.GetValueToBuffer(Buffer: TMemoryBuffer; AccessDefVal: Boolean = False);
+procedure TUNSNodeDate.GetValueToBuffer(Buffer: TMemoryBuffer; AccessDefVal: Boolean = False);
 begin
 If Buffer.Size >= GetValueSize(Ord(AccessDefVal)) then
   begin
     If AccessDefVal then
-      Ptr_WriteInt32(Buffer.Memory,fDefaultValue)
+      Ptr_WriteFloat64(Buffer.Memory,Int(fDefaultValue))
     else
-      Ptr_WriteInt32(Buffer.Memory,fValue);
+      Ptr_WriteFloat64(Buffer.Memory,Int(fValue));
   end
 else raise EUNSBufferTooSmallException.Create(Buffer,Self,'GetValueToBuffer');
 end;
 
 //------------------------------------------------------------------------------
 
-procedure TUNSNodeInt32.SetValueFromBuffer(Buffer: TMemoryBuffer; AccessDefVal: Boolean = False);
+procedure TUNSNodeDate.SetValueFromBuffer(Buffer: TMemoryBuffer; AccessDefVal: Boolean = False);
 begin
 If Buffer.Size >= GetValueSize(Ord(AccessDefVal)) then
   begin
     If AccessDefVal then
-      SetDefaultValue(Ptr_ReadInt32(Buffer.Memory))
+      SetDefaultValue(Int(Ptr_ReadFloat64(Buffer.Memory)))
     else
-      SetValue(Ptr_ReadInt32(Buffer.Memory));
+      SetValue(Int(Ptr_ReadFloat64(Buffer.Memory)));
   end
 else raise EUNSBufferTooSmallException.Create(Buffer,Self,'SetValueFromBuffer');
-end; 
+end;
 
 end.
+

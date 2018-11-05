@@ -15,7 +15,7 @@ type
     fValue:         Boolean;
     fDefaultValue:  Boolean;
     procedure SetValue(NewValue: Boolean);
-    procedure SetDefaultValue(NewValue: Boolean); 
+    procedure SetDefaultValue(NewValue: Boolean);
   protected
     class Function GetNodeDataType: TUNSNodeDataType; override;
     Function GetValueSize(AccessDefVal: Integer): TMemSize; override;
@@ -32,7 +32,7 @@ type
     procedure GetValueToBuffer(Buffer: TMemoryBuffer; AccessDefVal: Boolean = False); override;
     procedure SetValueFromBuffer(Buffer: TMemoryBuffer; AccessDefVal: Boolean = False); override;
     property Value: Boolean read fValue write SetValue;
-    property DefaultValue: Boolean read fDefaultValue write SetDefaultValue; 
+    property DefaultValue: Boolean read fDefaultValue write SetDefaultValue;
   end;
 
 implementation
@@ -40,7 +40,7 @@ implementation
 uses
   SysUtils,
   BinaryStreaming,
-  UniSettings_Exceptions;
+  UniSettings_Exceptions;   
 
 procedure TUNSNodeBool.SetValue(NewValue: Boolean);
 begin
@@ -117,7 +117,7 @@ end;
 
 Function TUNSNodeBool.ActualEqualsDefault: Boolean;
 begin
-Result := fValue = fDefaultValue
+Result := fValue = fDefaultValue;
 end;
 
 //------------------------------------------------------------------------------
@@ -197,6 +197,5 @@ If Buffer.Size >= GetValueSize(Ord(AccessDefVal)) then
   end
 else raise EUNSBufferTooSmallException.Create(Buffer,Self,'SetValueFromBuffer');
 end;
-
 
 end.
