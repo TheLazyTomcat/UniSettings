@@ -19,6 +19,8 @@ type
   protected
     class Function GetNodeDataType: TUNSNodeDataType; override;
     Function GetValueSize(AccessDefVal: Integer): TMemSize; override;
+    Function ConvToStr(Value: TTime): String; reintroduce;
+    Function ConvFromStr(const Str: String): TTime; reintroduce;
   public
     procedure ActualFromDefault; override;
     procedure DefaultFromActual; override;
@@ -39,7 +41,7 @@ implementation
 
 uses
   SysUtils,
-  BinaryStreaming,
+  BinaryStreaming, FloatHex,
   UniSettings_Exceptions;
 
 procedure TUNSNodeTime.SetValue(NewValue: TTime);
@@ -74,6 +76,30 @@ end;
 Function TUNSNodeTime.GetValueSize(AccessDefVal: Integer): TMemSize;
 begin
 Result := SizeOf(TTime);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TUNSNodeTime.ConvToStr(Value: TTime): String;
+begin
+If not FormatSettings.HexDateTime then
+  Result := TimeToStr(Value,fSysFormatSettings)
+else
+  Result := '$' + DoubleToHex(Value);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TUNSNodeTime.ConvFromStr(const Str: String): TTime;
+begin
+If Length(Str) > 1 then
+  begin
+    If Str[1] = '$' then
+      Result := HexToDouble(Str)
+    else
+      Result := StrToTime(Str,fSysFormatSettings);
+  end
+else Result := StrToTime(Str,fSysFormatSettings);
 end;
 
 //==============================================================================
@@ -135,9 +161,9 @@ end;
 Function TUNSNodeTime.GetValueAsString(AccessDefVal: Boolean = False): String;
 begin
 If AccessDefVal then
-  Result := TimeToStr(fDefaultValue)
+  Result := ConvToStr(fDefaultValue)
 else
-  Result := TimeToStr(fValue);
+  Result := ConvToStr(fValue);
 end;
 
 //------------------------------------------------------------------------------
@@ -145,9 +171,9 @@ end;
 procedure TUNSNodeTime.SetValueFromString(const Str: String; AccessDefVal: Boolean = False);
 begin
 If AccessDefVal then
-  SetDefaultValue(StrToTime(Str))
+  SetDefaultValue(ConvFromStr(Str))
 else
-  SetValue(StrToTime(Str));
+  SetValue(ConvFromStr(Str));
 end;
 
 //------------------------------------------------------------------------------

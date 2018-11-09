@@ -19,6 +19,8 @@ type
   protected
     class Function GetNodeDataType: TUNSNodeDataType; override;
     Function GetValueSize(AccessDefVal: Integer): TMemSize; override;
+    Function ConvToStr(Value: Boolean): String; reintroduce;
+    Function ConvFromStr(const Str: String): Boolean; reintroduce;
   public
     procedure ActualFromDefault; override;
     procedure DefaultFromActual; override;
@@ -74,6 +76,23 @@ end;
 Function TUNSNodeBool.GetValueSize(AccessDefVal: Integer): TMemSize;
 begin
 Result := SizeOf(ByteBool);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TUNSNodeBool.ConvToStr(Value: Boolean): String;
+begin
+If FormatSettings.NumericBools then
+  Result := IntToStr(Ord(Value))
+else
+  Result := BoolToStr(Value,True);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TUNSNodeBool.ConvFromStr(const Str: String): Boolean;
+begin
+Result := StrToBool(Str);
 end;
 
 //==============================================================================
@@ -135,9 +154,9 @@ end;
 Function TUNSNodeBool.GetValueAsString(AccessDefVal: Boolean = False): String;
 begin
 If AccessDefVal then
-  Result := BoolToStr(fDefaultValue,True)
+  Result := ConvToStr(fDefaultValue)
 else
-  Result := BoolToStr(fValue,True);
+  Result := ConvToStr(fValue);
 end;
 
 //------------------------------------------------------------------------------
@@ -145,9 +164,9 @@ end;
 procedure TUNSNodeBool.SetValueFromString(const Str: String; AccessDefVal: Boolean = False);
 begin
 If AccessDefVal then
-  SetDefaultValue(StrToBool(Str))
+  SetDefaultValue(ConvFromStr(Str))
 else
-  SetValue(StrToBool(Str));
+  SetValue(ConvFromStr(Str));
 end;
 
 //------------------------------------------------------------------------------

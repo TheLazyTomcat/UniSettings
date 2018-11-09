@@ -19,6 +19,8 @@ type
   protected
     class Function GetNodeDataType: TUNSNodeDataType; override;
     Function GetValueSize(AccessDefVal: Integer): TMemSize; override;
+    Function ConvToStr(const Value): String; override;
+    Function ConvFromStr(const Str: String): Pointer; override;
   public
     procedure ActualFromDefault; override;
     procedure DefaultFromActual; override;
@@ -77,6 +79,20 @@ If AccessDefVal <> 0 then
   Result := SizeOf(Int32) + Length(StrToUTF8(fDefaultValue)) * SizeOf(UTF8Char)
 else
   Result := SizeOf(Int32) + Length(StrToUTF8(fValue)) * SizeOf(UTF8Char)
+end;
+
+//------------------------------------------------------------------------------
+
+Function TUNSNodeText.ConvToStr(const Value): String;
+begin
+Result := '';
+end;
+
+//------------------------------------------------------------------------------
+
+Function TUNSNodeText.ConvFromStr(const Str: String): Pointer;
+begin
+Result := nil;
 end;
 
 //==============================================================================

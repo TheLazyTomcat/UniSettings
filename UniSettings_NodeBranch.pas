@@ -15,22 +15,27 @@ type
     Function GetSubNode(Index: Integer): TUNSNodeBase;
   protected
     class Function GetNodeClass: TUNSNodeClass; override;
+    procedure SetMaster(Value: TObject); override;
     Function GetMaxNodeLevel: Integer; override;
-    Function CheckIndex(Index: Integer): Boolean; virtual;
   public
-    constructor Create(const Name: String; ParentNode: TUNSNodeBase; Master: TObject);
+    constructor Create(const Name: String; ParentNode: TUNSNodeBase);
     destructor Destroy; override;
     Function LowIndex: Integer; virtual;
     Function HighIndex: Integer; virtual;
+    Function CheckIndex(Index: Integer): Boolean; virtual;
     Function IndexOf(Node: TUNSNodeBase): Integer; overload; virtual;
+    Function IndexOf(Name: TUNSHashedString): Integer; overload; virtual;
     Function IndexOf(const Name: String): Integer; overload; virtual;
     Function Add(Node: TUNSNodeBase): Integer; virtual;
     Function Remove(Node: TUNSNodeBase): Integer; virtual;
     procedure Delete(Index: Integer); virtual;
-    procedure Clear; virtual; 
-    Function FindNode(const Name: String; out Node: TUNSNodeBase; Recursive: Boolean = False): Boolean; virtual;
-    Function FindBranchNode(const Name: String; out Node: TUNSNodeBase; Recursive: Boolean = False): Boolean; virtual;
-    Function FindLeafNode(const Name: String; NodeDataType: TUNSNodeDataType; out Node: TUNSNodeBase; Recursive: Boolean = False): Boolean; virtual;
+    procedure Clear; virtual;
+    Function FindNode(Name: TUNSHashedString; out Node: TUNSNodeBase; Recursive: Boolean = False): Boolean; overload; virtual;
+    Function FindNode(const Name: String; out Node: TUNSNodeBase; Recursive: Boolean = False): Boolean; overload; virtual;
+    Function FindBranchNode(Name: TUNSHashedString; out Node: TUNSNodeBase; Recursive: Boolean = False): Boolean; overload; virtual;
+    Function FindBranchNode(const Name: String; out Node: TUNSNodeBase; Recursive: Boolean = False): Boolean; overload; virtual;
+    Function FindLeafNode(Name: TUNSHashedString; NodeDataType: TUNSNodeDataType; out Node: TUNSNodeBase; Recursive: Boolean = False): Boolean; overload; virtual;
+    Function FindLeafNode(const Name: String; NodeDataType: TUNSNodeDataType; out Node: TUNSNodeBase; Recursive: Boolean = False): Boolean; overload; virtual;
     procedure ActualFromDefault; override;
     procedure DefaultFromActual; override;
     procedure ExchangeActualAndDefault; override;
@@ -65,6 +70,17 @@ end;
 
 //------------------------------------------------------------------------------
 
+procedure TUNSNodeBranch.SetMaster(Value: TObject);
+var
+  i:  Integer;
+begin
+inherited;
+For i := LowIndex to HighIndex do
+  fSubNodes[i].Master := Value;
+end;
+
+//------------------------------------------------------------------------------
+
 Function TUNSNodeBranch.GetMaxNodeLevel: Integer;
 var
   i,Temp: Integer;
@@ -78,18 +94,11 @@ For i := LowIndex to HighIndex do
   end;
 end;
 
-//------------------------------------------------------------------------------
-
-Function TUNSNodeBranch.CheckIndex(Index: Integer): Boolean;
-begin
-Result := (Index >= LowIndex) and (Index <= HighIndex);
-end;
-
 //==============================================================================
 
-constructor TUNSNodeBranch.Create(const Name: String; ParentNode: TUNSNodeBase; Master: TObject);
+constructor TUNSNodeBranch.Create(const Name: String; ParentNode: TUNSNodeBase);
 begin
-inherited Create(Name,ParentNode,Master);
+inherited Create(Name,ParentNode);
 SetLength(fSubNodes,0);
 fCount := 0;
 end;
@@ -118,6 +127,13 @@ end;
 
 //------------------------------------------------------------------------------
 
+Function TUNSNodeBranch.CheckIndex(Index: Integer): Boolean;
+begin
+Result := (Index >= LowIndex) and (Index <= HighIndex);
+end;
+
+//------------------------------------------------------------------------------
+
 Function TUNSNodeBranch.IndexOf(Node: TUNSNodeBase): Integer;
 var
   i:  Integer;
@@ -133,19 +149,24 @@ end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function TUNSNodeBranch.IndexOf(const Name: String): Integer;
+Function TUNSNodeBranch.IndexOf(Name: TUNSHashedString): Integer;
 var
-  HashedName: TUNSHashedString;
-  i:          Integer;
+  i:  Integer;
 begin
-HashedName := UNSHashedString(Name);
 Result := -1;
 For i := LowIndex to HighIndex do
-  If UNSSameHashString(HashedName,fSubNodes[i].Name) then
+  If UNSSameHashString(Name,fSubNodes[i].Name) then
     begin
       Result := i;
       Break{For i};
     end;
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function TUNSNodeBranch.IndexOf(const Name: String): Integer;
+begin
+Result := IndexOf(UNSHashedString(Name));
 end;
 
 //------------------------------------------------------------------------------
@@ -200,7 +221,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function TUNSNodeBranch.FindNode(const Name: String; out Node: TUNSNodeBase; Recursive: Boolean = False): Boolean;
+Function TUNSNodeBranch.FindNode(Name: TUNSHashedString; out Node: TUNSNodeBase; Recursive: Boolean = False): Boolean;
 var
   Index,i:  Integer;
 begin
@@ -223,9 +244,16 @@ else
           end;
 end;
 
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function TUNSNodeBranch.FindNode(const Name: String; out Node: TUNSNodeBase; Recursive: Boolean = False): Boolean;
+begin
+Result := FindNode(UNSHashedString(Name),Node,Recursive);
+end;
+
 //------------------------------------------------------------------------------
 
-Function TUNSNodeBranch.FindBranchNode(const Name: String; out Node: TUNSNodeBase; Recursive: Boolean = False): Boolean;
+Function TUNSNodeBranch.FindBranchNode(Name: TUNSHashedString; out Node: TUNSNodeBase; Recursive: Boolean = False): Boolean;
 begin
 If FindNode(Name,Node,Recursive) then
   begin
@@ -239,9 +267,16 @@ If FindNode(Name,Node,Recursive) then
 else Result := False;
 end;
 
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function TUNSNodeBranch.FindBranchNode(const Name: String; out Node: TUNSNodeBase; Recursive: Boolean = False): Boolean;
+begin
+Result := FindBranchNode(UNSHashedString(Name),Node,Recursive);
+end;
+
 //------------------------------------------------------------------------------
 
-Function TUNSNodeBranch.FindLeafNode(const Name: String; NodeDataType: TUNSNodeDataType; out Node: TUNSNodeBase; Recursive: Boolean = False): Boolean;
+Function TUNSNodeBranch.FindLeafNode(Name: TUNSHashedString; NodeDataType: TUNSNodeDataType; out Node: TUNSNodeBase; Recursive: Boolean = False): Boolean;
 begin
 If FindNode(Name,Node,Recursive) then
   begin
@@ -253,6 +288,13 @@ If FindNode(Name,Node,Recursive) then
     else Result := True;
   end
 else Result := False;
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function TUNSNodeBranch.FindLeafNode(const Name: String; NodeDataType: TUNSNodeDataType; out Node: TUNSNodeBase; Recursive: Boolean = False): Boolean;
+begin
+Result := FindLeafNode(UNSHashedString(Name),NodeDataType,Node,Recursive);
 end;
 
 //------------------------------------------------------------------------------

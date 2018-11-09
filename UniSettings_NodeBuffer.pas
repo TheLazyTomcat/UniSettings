@@ -17,9 +17,11 @@ type
     procedure SetValue(NewValue: TMemoryBuffer);
     procedure SetDefaultValue(NewValue: TMemoryBuffer);
   protected
-    class Function SameMemoryBuffers(A,B: TMemoryBuffer): Boolean; virtual; abstract;
+    class Function SameMemoryBuffers(A,B: TMemoryBuffer): Boolean; virtual;
     class Function GetNodeDataType: TUNSNodeDataType; override;
     Function GetValueSize(AccessDefVal: Integer): TMemSize; override;
+    Function ConvToStr(const Value): String; override;
+    Function ConvFromStr(const Str: String): Pointer; override;
   public
     procedure ActualFromDefault; override;
     procedure DefaultFromActual; override;
@@ -67,6 +69,37 @@ end;
 
 //==============================================================================
 
+class Function TUNSNodeBuffer.SameMemoryBuffers(A,B: TMemoryBuffer): Boolean;
+var
+  i:      TMemSize;
+  ABuff:  PByte;
+  BBuff:  PByte;
+begin
+If A.Size = B.Size then
+  begin
+    ABuff := A.Memory;
+    BBuff := B.Memory;
+    Result := True;
+    If A.Size > 0 then
+      begin
+        For i := 0 to Pred(A.Size) do
+          If ABuff^ = BBuff^ then
+            begin
+              Inc(ABuff);
+              Inc(BBuff);
+            end
+          else
+            begin
+              Result := False;
+              Break{For i};
+            end;
+      end;
+  end
+else Result := False;
+end;
+
+//------------------------------------------------------------------------------
+
 class Function TUNSNodeBuffer.GetNodeDataType: TUNSNodeDataType;
 begin
 Result := ndtBuffer;
@@ -80,6 +113,20 @@ If AccessDefVal <> 0 then
   Result := fDefaultValue.Size
 else
   Result := fValue.Size;
+end;
+
+//------------------------------------------------------------------------------
+
+Function TUNSNodeBuffer.ConvToStr(const Value): String;
+begin
+Result := '';
+end;
+
+//------------------------------------------------------------------------------
+
+Function TUNSNodeBuffer.ConvFromStr(const Str: String): Pointer;
+begin
+Result := nil;
 end;
 
 //==============================================================================

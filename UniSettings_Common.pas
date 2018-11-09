@@ -137,6 +137,26 @@ type
 
   TUNSNodeFlags = set of TUNSNodeFlag;
 
+  TUNSFormatSettings = record
+    NumericBools: Boolean;
+    HexIntegers:  Boolean;
+    HexFloats:    Boolean;
+    HexDateTime:  Boolean;
+  end;
+
+  TUNSValueNamePartType = (vptName,vptIndex,vptBoth);
+
+  TUNSValueNamePart = record
+    PartType:   TUNSValueNamePartType;
+    PartName:   TUNSHashedString;
+    PartIndex:  Integer;
+  end;
+
+  TUNSValueNameParts = record
+    Arr:    array of TUNSValueNamePart;
+    Count:  Integer;
+  end;
+
 const
   UNS_STRS_NODEDATATYPE: array[TUNSNodeDataType] of String = (
     'undefined','blank',
@@ -149,6 +169,12 @@ const
   UNS_NAME_ROOTNODE = 'root';
 
   UNS_PATH_DELIMITER = '.';
+
+  UNS_FORMATSETTINGS_DEFAULT: TUNSFormatSettings = (
+    NumericBools: False;
+    HexIntegers:  False;
+    HexFloats:    False;
+    HexDateTime:  False);
 
 implementation
 

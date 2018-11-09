@@ -14,6 +14,8 @@ type
   protected
     class Function GetNodeDataType: TUNSNodeDataType; override;
     Function GetValueSize(AccessDefVal: Integer): TMemSize; override;
+    Function ConvToStr(const Value): String; override;
+    Function ConvFromStr(const Str: String): Pointer; override;
   public
     procedure ActualFromDefault; override;
     procedure DefaultFromActual; override;
@@ -40,6 +42,20 @@ end;
 Function TUNSNodeBlank.GetValueSize(AccessDefVal: Integer): TMemSize;
 begin
 Result := 0;
+end;
+
+//------------------------------------------------------------------------------
+
+Function TUNSNodeBlank.ConvToStr(const Value): String;
+begin
+Result := '';
+end;
+
+//------------------------------------------------------------------------------
+
+Function TUNSNodeBlank.ConvFromStr(const Str: String): Pointer;
+begin
+Result := nil;
 end;
 
 //==============================================================================

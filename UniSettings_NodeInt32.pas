@@ -19,6 +19,8 @@ type
   protected
     class Function GetNodeDataType: TUNSNodeDataType; override;
     Function GetValueSize(AccessDefVal: Integer): TMemSize; override;
+    Function ConvToStr(Value: Int32): String; reintroduce;
+    Function ConvFromStr(const Str: String): Int32; reintroduce;
   public
     procedure ActualFromDefault; override;
     procedure DefaultFromActual; override;
@@ -74,6 +76,23 @@ end;
 Function TUNSNodeInt32.GetValueSize(AccessDefVal: Integer): TMemSize;
 begin
 Result := SizeOf(Int32);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TUNSNodeInt32.ConvToStr(Value: Int32): String;
+begin
+If FormatSettings.HexIntegers then
+  Result := '$' + IntToHex(Value,8)
+else
+  Result := IntToStr(Value);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TUNSNodeInt32.ConvFromStr(const Str: String): Int32;
+begin
+Result := Int32(StrToInt(Str));
 end;
 
 //==============================================================================
@@ -135,9 +154,9 @@ end;
 Function TUNSNodeInt32.GetValueAsString(AccessDefVal: Boolean = False): String;
 begin
 If AccessDefVal then
-  Result := IntToStr(fDefaultValue)
+  Result := ConvToStr(fDefaultValue)
 else
-  Result := IntToStr(fValue);
+  Result := ConvToStr(fValue);
 end;
 
 //------------------------------------------------------------------------------
@@ -145,9 +164,9 @@ end;
 procedure TUNSNodeInt32.SetValueFromString(const Str: String; AccessDefVal: Boolean = False);
 begin
 If AccessDefVal then
-  SetDefaultValue(Int32(StrToInt(Str)))
+  SetDefaultValue(ConvFromStr(Str))
 else
-  SetValue(Int32(StrToInt(Str)));
+  SetValue(ConvFromStr(Str));
 end;
 
 //------------------------------------------------------------------------------

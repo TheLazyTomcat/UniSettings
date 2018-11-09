@@ -19,6 +19,8 @@ type
   protected
     class Function GetNodeDataType: TUNSNodeDataType; override;
     Function GetValueSize(AccessDefVal: Integer): TMemSize; override;
+    Function ConvToStr(Value: TDateTime): String; reintroduce;
+    Function ConvFromStr(const Str: String): TDateTime; reintroduce;
   public
     procedure ActualFromDefault; override;
     procedure DefaultFromActual; override;
@@ -39,7 +41,7 @@ implementation
 
 uses
   SysUtils,
-  BinaryStreaming,
+  BinaryStreaming, FloatHex,
   UniSettings_Exceptions;
 
 procedure TUNSNodeDateTime.SetValue(NewValue: TDateTime);
@@ -74,6 +76,30 @@ end;
 Function TUNSNodeDateTime.GetValueSize(AccessDefVal: Integer): TMemSize;
 begin
 Result := SizeOf(TDateTime);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TUNSNodeDateTime.ConvToStr(Value: TDateTime): String;
+begin
+If not FormatSettings.HexDateTime then
+  Result := DateTimeToStr(Value,fSysFormatSettings)
+else
+  Result := '$' + DoubleToHex(Value);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TUNSNodeDateTime.ConvFromStr(const Str: String): TDateTime;
+begin
+If Length(Str) > 1 then
+  begin
+    If Str[1] = '$' then
+      Result := HexToDouble(Str)
+    else
+      Result := StrToDateTime(Str,fSysFormatSettings);
+  end
+else Result := StrToDateTime(Str,fSysFormatSettings);
 end;
 
 //==============================================================================
@@ -135,9 +161,9 @@ end;
 Function TUNSNodeDateTime.GetValueAsString(AccessDefVal: Boolean = False): String;
 begin
 If AccessDefVal then
-  Result := DateTimeToStr(fDefaultValue)
+  Result := ConvToStr(fDefaultValue)
 else
-  Result := DateTimeToStr(fValue);
+  Result := ConvToStr(fValue);
 end;
 
 //------------------------------------------------------------------------------
@@ -145,9 +171,9 @@ end;
 procedure TUNSNodeDateTime.SetValueFromString(const Str: String; AccessDefVal: Boolean = False);
 begin
 If AccessDefVal then
-  SetDefaultValue(StrToDateTime(Str))
+  SetDefaultValue(ConvFromStr(Str))
 else
-  SetValue(StrToDateTime(Str));
+  SetValue(ConvFromStr(Str));
 end;
 
 //------------------------------------------------------------------------------

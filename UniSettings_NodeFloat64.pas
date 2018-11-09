@@ -19,6 +19,8 @@ type
   protected
     class Function GetNodeDataType: TUNSNodeDataType; override;
     Function GetValueSize(AccessDefVal: Integer): TMemSize; override;
+    Function ConvToStr(Value: Float64): String; reintroduce;
+    Function ConvFromStr(const Str: String): Float64; reintroduce;
   public
     procedure ActualFromDefault; override;
     procedure DefaultFromActual; override;
@@ -39,7 +41,7 @@ implementation
 
 uses
   SysUtils,
-  BinaryStreaming,
+  BinaryStreaming, FloatHex,
   UniSettings_Exceptions;
 
 procedure TUNSNodeFloat64.SetValue(NewValue: Float64);
@@ -74,6 +76,30 @@ end;
 Function TUNSNodeFloat64.GetValueSize(AccessDefVal: Integer): TMemSize;
 begin
 Result := SizeOf(Float64);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TUNSNodeFloat64.ConvToStr(Value: Float64): String;
+begin
+If not FormatSettings.HexFloats then
+  Result := FloatToStr(Value,fSysFormatSettings)
+else
+  Result := '$' + DoubleToHex(Value);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TUNSNodeFloat64.ConvFromStr(const Str: String): Float64;
+begin
+If Length(Str) > 1 then
+  begin
+    If Str[1] = '$' then
+      Result := HexToSingle(Str)
+    else
+      Result := StrToFloat(Str,fSysFormatSettings);
+  end
+else Result := StrToFloat(Str,fSysFormatSettings);
 end;
 
 //==============================================================================
@@ -135,9 +161,9 @@ end;
 Function TUNSNodeFloat64.GetValueAsString(AccessDefVal: Boolean = False): String;
 begin
 If AccessDefVal then
-  Result := FloatToStr(fDefaultValue)
+  Result := ConvToStr(fDefaultValue)
 else
-  Result := FloatToStr(fValue);
+  Result := ConvToStr(fValue);
 end;
 
 //------------------------------------------------------------------------------
@@ -145,9 +171,9 @@ end;
 procedure TUNSNodeFloat64.SetValueFromString(const Str: String; AccessDefVal: Boolean = False);
 begin
 If AccessDefVal then
-  SetDefaultValue(StrToFloat(Str))
+  SetDefaultValue(ConvFromStr(Str))
 else
-  SetValue(StrToFloat(Str));
+  SetValue(ConvFromStr(Str));
 end;
 
 //------------------------------------------------------------------------------

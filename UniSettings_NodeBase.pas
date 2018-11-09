@@ -5,28 +5,32 @@ unit UniSettings_NodeBase;
 interface
 
 uses
+  SysUtils,
   AuxClasses,
   UniSettings_Common;
 
 type
   TUNSNodeBase = class(TCustomObject)
   protected
-    fName:        TUNSHashedString;
-    fParentNode:  TUNSNodeBase;
-    fMaster:      TObject;
-    fFlags:       TUNSNodeFlags;
-    fChanged:     Boolean;
-    fOnChange:    TNotifyEvent;
+    fName:          TUNSHashedString;
+    fParentNode:    TUNSNodeBase;
+    fMaster:        TObject;
+    fFlags:         TUNSNodeFlags;
+    fConvSettings:  TFormatSettings;
+    fChanged:       Boolean;
+    fOnChange:      TNotifyEvent;
 {*} class Function GetNodeClass: TUNSNodeClass; virtual;
 {*} class Function GetNodeDataType: TUNSNodeDataType; virtual;
     procedure SetNodeNameStr(const Value: String); virtual;
+{*} procedure SetMaster(Value: TObject); virtual;
     Function GetNodeLevel: Integer; virtual;
 {*} Function GetMaxNodeLevel: Integer; virtual;
     procedure SetChanged(Value: Boolean); virtual;
     Function ReconstructFullPathInternal(TopLevelCall: Boolean; IncludeRoot: Boolean): String; virtual;
+    Function FormatSettings: TUNSFormatSettings; virtual;
     procedure DoChange; virtual;
   public
-    constructor Create(const Name: String; ParentNode: TUNSNodeBase; Master: TObject);
+    constructor Create(const Name: String; ParentNode: TUNSNodeBase);
     procedure SetFlag(Flag: TUNSNodeFlag); virtual;
     procedure ResetFlag(Flag: TUNSNodeFlag); virtual;
     Function ReconstructFullPath(IncludeRoot: Boolean = False): String; virtual;
@@ -39,7 +43,7 @@ type
     property Name: TUNSHashedString read fName write fName;       
     property NameStr: String read fName.Str write SetNodeNameStr;
     property ParentNode: TUNSNodeBase read fParentNode;
-    property Master: TObject read fMaster;
+    property Master: TObject read fMaster write SetMaster;
     property NodeLevel: Integer read GetNodeLevel;
     property MaxNodeLevel: Integer read GetMaxNodeLevel;    
     property Flags: TUNSNodeFlags read fFlags write fFlags;
@@ -47,14 +51,11 @@ type
     property OnChange: TNotifyEvent read fOnChange write fOnChange;
   end;
 
-  TNode = TUNSNodeBase;
-
 implementation
 
 uses
-  SysUtils,
   UniSettings_Utils, UniSettings_Exceptions, UniSettings_NodeBranch,
-  UniSettings_NodeArray, UniSettings_NodeArrayItem;
+  UniSettings_NodeArray, UniSettings_NodeArrayItem, UniSettings;
 
 class Function TUNSNodeBase.GetNodeClass: TUNSNodeClass;
 begin
@@ -74,6 +75,13 @@ procedure TUNSNodeBase.SetNodeNameStr(const Value: String);
 begin
 fName.Str := Value;
 UNSHashString(fName);
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TUNSNodeBase.SetMaster(Value: TObject);
+begin
+fMaster := Value;
 end;
 
 //------------------------------------------------------------------------------
@@ -144,6 +152,16 @@ end;
 
 //------------------------------------------------------------------------------
 
+Function TUNSNodeBase.FormatSettings: TUNSFormatSettings;
+begin
+If Assigned(fMaster) then
+  Result := TUniSettings(fMaster).FormatSettings
+else
+  Result := UNS_FORMATSETTINGS_DEFAULT;
+end;
+
+//------------------------------------------------------------------------------
+
 procedure TUNSNodeBase.DoChange;
 begin
 SetChanged(True);
@@ -153,13 +171,21 @@ end;
 
 //==============================================================================
 
-constructor TUNSNodeBase.Create(const Name: String; ParentNode: TUNSNodeBase; Master: TObject);
+constructor TUNSNodeBase.Create(const Name: String; ParentNode: TUNSNodeBase);
 begin
 inherited Create;
 fName := UNSHashedString(Name);
 fParentNode := ParentNode;
-fMaster := Master;
+fMaster := nil;
 fFlags := [];
+FillChar(fConvSettings,SizeOf(fConvSettings),0);
+fConvSettings.DecimalSeparator := '.';
+fConvSettings.LongDateFormat := 'yyyy-mm-dd';
+fConvSettings.ShortDateFormat := fConvSettings.LongDateFormat;
+fConvSettings.DateSeparator := '-';
+fConvSettings.LongTimeFormat := 'hh:nn:ss';
+fConvSettings.ShortTimeFormat := fConvSettings.LongTimeFormat;
+fConvSettings.TimeSeparator := ':';
 fChanged := False;
 fOnChange := nil;
 end;
