@@ -34,8 +34,8 @@ type
     Function FindNode(const Name: String; out Node: TUNSNodeBase; Recursive: Boolean = False): Boolean; overload; virtual;
     Function FindBranchNode(Name: TUNSHashedString; out Node: TUNSNodeBase; Recursive: Boolean = False): Boolean; overload; virtual;
     Function FindBranchNode(const Name: String; out Node: TUNSNodeBase; Recursive: Boolean = False): Boolean; overload; virtual;
-    Function FindLeafNode(Name: TUNSHashedString; NodeDataType: TUNSNodeDataType; out Node: TUNSNodeBase; Recursive: Boolean = False): Boolean; overload; virtual;
-    Function FindLeafNode(const Name: String; NodeDataType: TUNSNodeDataType; out Node: TUNSNodeBase; Recursive: Boolean = False): Boolean; overload; virtual;
+    Function FindLeafNode(Name: TUNSHashedString; out Node: TUNSNodeBase; Recursive: Boolean = False): Boolean; overload; virtual;
+    Function FindLeafNode(const Name: String; out Node: TUNSNodeBase; Recursive: Boolean = False): Boolean; overload; virtual;
     procedure ActualFromDefault; override;
     procedure DefaultFromActual; override;
     procedure ExchangeActualAndDefault; override;
@@ -277,7 +277,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function TUNSNodeBranch.FindLeafNode(Name: TUNSHashedString; NodeDataType: TUNSNodeDataType; out Node: TUNSNodeBase; Recursive: Boolean = False): Boolean;
+Function TUNSNodeBranch.FindLeafNode(Name: TUNSHashedString; out Node: TUNSNodeBase; Recursive: Boolean = False): Boolean;
 begin
 If FindNode(Name,Node,Recursive) then
   begin
@@ -293,9 +293,9 @@ end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function TUNSNodeBranch.FindLeafNode(const Name: String; NodeDataType: TUNSNodeDataType; out Node: TUNSNodeBase; Recursive: Boolean = False): Boolean;
+Function TUNSNodeBranch.FindLeafNode(const Name: String; out Node: TUNSNodeBase; Recursive: Boolean = False): Boolean;
 begin
-Result := FindLeafNode(UNSHashedString(Name),NodeDataType,Node,Recursive);
+Result := FindLeafNode(UNSHashedString(Name),Node,Recursive);
 end;
 
 //------------------------------------------------------------------------------

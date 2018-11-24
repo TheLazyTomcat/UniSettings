@@ -17,7 +17,7 @@ type
     procedure SetValue(NewValue: TDateTime);
     procedure SetDefaultValue(NewValue: TDateTime);
   protected
-    class Function GetNodeDataType: TUNSNodeDataType; override;
+    class Function GetValueType: TUNSValueType; override;
     Function GetValueSize(AccessDefVal: Integer): TMemSize; override;
     Function ConvToStr(Value: TDateTime): String; reintroduce;
     Function ConvFromStr(const Str: String): TDateTime; reintroduce;
@@ -66,9 +66,9 @@ end;
 
 //==============================================================================
 
-class Function TUNSNodeDateTime.GetNodeDataType: TUNSNodeDataType;
+class Function TUNSNodeDateTime.GetValueType: TUNSValueType;
 begin
-Result := ndtDateTime;
+Result := vtDateTime;
 end;
 
 //------------------------------------------------------------------------------

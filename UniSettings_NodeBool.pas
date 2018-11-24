@@ -1,3 +1,4 @@
+{$IFNDEF Included}
 unit UniSettings_NodeBool;
 
 {$INCLUDE '.\UniSettings_defs.inc'}
@@ -17,7 +18,7 @@ type
     procedure SetValue(NewValue: Boolean);
     procedure SetDefaultValue(NewValue: Boolean);
   protected
-    class Function GetNodeDataType: TUNSNodeDataType; override;
+    class Function GetValueType: TUNSValueType; override;
     Function GetValueSize(AccessDefVal: Integer): TMemSize; override;
     Function ConvToStr(Value: Boolean): String; reintroduce;
     Function ConvFromStr(const Str: String): Boolean; reintroduce;
@@ -66,9 +67,9 @@ end;
 
 //==============================================================================
 
-class Function TUNSNodeBool.GetNodeDataType: TUNSNodeDataType;
+class Function TUNSNodeBool.GetValueType: TUNSValueType;
 begin
-Result := ndtBool;
+Result := vtBool;
 end;
 
 //------------------------------------------------------------------------------
@@ -217,4 +218,52 @@ If Buffer.Size >= GetValueSize(Ord(AccessDefVal)) then
 else raise EUNSBufferTooSmallException.Create(Buffer,Self,'SetValueFromBuffer');
 end;
 
+{$WARNINGS OFF} // supresses warnings on lines after the final end
 end.
+
+{$ELSE Included}
+
+{$WARNINGS ON}
+
+{$IFDEF Included_Declaration}
+    Function BooleanValueGet(const ValueName: String; AccessDefVal: Boolean = False): Boolean; virtual;
+    procedure BooleanValueSet(const ValueName: String; NewValue: Boolean; AccessDefVal: Boolean = False); virtual;
+{$ENDIF}
+
+//==============================================================================
+
+{$IFDEF Included_Implementation}
+
+Function TUniSettings.BooleanValueGet(const ValueName: String; AccessDefVal: Boolean = False): Boolean;
+begin
+ReadLock;
+try
+  with TUNSNodeBool(CheckedLeafNodeTypeAccess(ValueName,vtBool,'BooleanValueGet')) do
+    If AccessDefVal then
+      Result := Value
+    else
+      Result := DefaultValue;
+finally
+  ReadUnlock;
+end;
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TUniSettings.BooleanValueSet(const ValueName: String; NewValue: Boolean; AccessDefVal: Boolean = False);
+begin
+WriteLock;
+try
+  with TUNSNodeBool(CheckedLeafNodeTypeAccess(ValueName,vtBool,'BooleanValueGet')) do
+    If AccessDefVal then
+      Value := NewValue
+    else
+      DefaultValue := NewValue;
+finally
+  WriteUnlock;
+end;
+end;
+
+{$ENDIF}
+
+{$ENDIF Included}

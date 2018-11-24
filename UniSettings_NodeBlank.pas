@@ -12,7 +12,7 @@ uses
 type
   TUNSNodeBlank = class(TUNSNodeLeaf)
   protected
-    class Function GetNodeDataType: TUNSNodeDataType; override;
+    class Function GetValueType: TUNSValueType; override;
     Function GetValueSize(AccessDefVal: Integer): TMemSize; override;
     Function ConvToStr(const Value): String; override;
     Function ConvFromStr(const Str: String): Pointer; override;
@@ -32,9 +32,9 @@ type
 
 implementation
 
-class Function TUNSNodeBlank.GetNodeDataType: TUNSNodeDataType;
+class Function TUNSNodeBlank.GetValueType: TUNSValueType;
 begin
-Result := ndtBlank;
+Result := vtBlank;
 end;
 
 //------------------------------------------------------------------------------

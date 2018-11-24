@@ -102,51 +102,49 @@ type
 
   TUNSNodeClass = (ncUndefined,ncBranch,ncArrayItem,ncArray,ncLeaf);
 
-  TUNSNodeDataType = (ndtUndefined,   // erroneous value
-                      ndtBlank,       // node containing no data (usually placeholder)
-                      ndtBool,        // boolean value (true/false)
-                      ndtInt8,        // signed 8bit integer
-                      ndtUInt8,       // unsigned 8bit integer
-                      ndtInt16,       // signed 16bit integer
-                      ndtUInt16,      // unsigned 16bit integer
-                      ndtInt32,       // signed 32bit integer
-                      ndtUInt32,      // unsigned 32bit integer
-                      ndtInt64,       // signed 64bit integer
-                      ndtUInt64,      // unsigned 64bit integer
-                      ndtFloat32,     // single-precision (32bit) floating point number
-                      ndtFloat64,     // double-precision (64bit) floating point number
-                      ndtDate,        // date
-                      ndtTime,        // time
-                      ndtDateTime,    // date + time
-                      ndtText,        // textual data (string)
-                      ndtBuffer,      // general memory buffer
-                      ndtAoBool,      // array of boolean values
-                      ndtAoInt8,      // array of signed 8bit integers
-                      ndtAoUInt8,     // array of unsigned 8bit integers
-                      ndtAoInt16,     // array of signed 16bit integers
-                      ndtAoUInt16,    // array of unsigned 16bit integers
-                      ndtAoInt32,     // array of signed 32bit integers
-                      ndtAoUInt32,    // array of unsigned 32bit integers
-                      ndtAoInt64,     // array of signed 64bit integers
-                      ndtAoUInt64,    // array of unsigned 64bit integers
-                      ndtAoFloat32,   // array of single-precision floating point number
-                      ndtAoFloat64,   // array of double-precision floating point number
-                      ndtAoDate,      // array of dates
-                      ndtAoTime,      // array of times
-                      ndtAoDateTime,  // array of date + time values
-                      ndtAoText,      // array of strings
-                      ndtAoBuffer,    // array of memory buffers
-                      // some aliases...
-                      ndtInteger   = ndtInt32,
-                      ndtFloat     = ndtFloat32,
-                      ndtAoInteger = ndtAoInt32,
-                      ndtAoFloat   = ndtAoFloat32);
-
-  TUNSDataType = TUNSNodeDataType;                      
+  TUNSValueType = (vtUndefined,   // erroneous value
+                   vtBlank,       // node containing no data (usually placeholder)
+                   vtBool,        // boolean value (true/false)
+                   vtInt8,        // signed 8bit integer
+                   vtUInt8,       // unsigned 8bit integer
+                   vtInt16,       // signed 16bit integer
+                   vtUInt16,      // unsigned 16bit integer
+                   vtInt32,       // signed 32bit integer
+                   vtUInt32,      // unsigned 32bit integer
+                   vtInt64,       // signed 64bit integer
+                   vtUInt64,      // unsigned 64bit integer
+                   vtFloat32,     // single-precision (32bit) floating point number
+                   vtFloat64,     // double-precision (64bit) floating point number
+                   vtDate,        // date
+                   vtTime,        // time
+                   vtDateTime,    // date + time
+                   vtText,        // textual data (string)
+                   vtBuffer,      // general memory buffer
+                   vtAoBool,      // array of boolean values
+                   vtAoInt8,      // array of signed 8bit integers
+                   vtAoUInt8,     // array of unsigned 8bit integers
+                   vtAoInt16,     // array of signed 16bit integers
+                   vtAoUInt16,    // array of unsigned 16bit integers
+                   vtAoInt32,     // array of signed 32bit integers
+                   vtAoUInt32,    // array of unsigned 32bit integers
+                   vtAoInt64,     // array of signed 64bit integers
+                   vtAoUInt64,    // array of unsigned 64bit integers
+                   vtAoFloat32,   // array of single-precision floating point number
+                   vtAoFloat64,   // array of double-precision floating point number
+                   vtAoDate,      // array of dates
+                   vtAoTime,      // array of times
+                   vtAoDateTime,  // array of date + time values
+                   vtAoText,      // array of strings
+                   vtAoBuffer,    // array of memory buffers
+                   // some aliases...
+                   vtInteger   = vtInt32,
+                   vtFloat     = vtFloat32,
+                   vtAoInteger = vtAoInt32,
+                   vtAoFloat   = vtAoFloat32);
 
 const
-  UNS_NODEDATATYPE_STRS: array[TUNSNodeDataType] of String = (
-    'undefined','blank',
+  UNS_VALUETYPE_STRS: array[TUNSValueType] of String = (
+    'undefined','Blank',
     'Bool','Int8','UInt8','Int16','UInt16','Int32','UInt32','Int64','UInt64',
     'Float32','Float64','Date','Time','DateTime','Text','Buffer',
     'AoBool','AoInt8','AoUInt8','AoInt16','AoUInt16','AoInt32','AoUInt32',

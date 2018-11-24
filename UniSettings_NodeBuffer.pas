@@ -18,7 +18,7 @@ type
     procedure SetDefaultValue(NewValue: TMemoryBuffer);
   protected
     class Function SameMemoryBuffers(A,B: TMemoryBuffer): Boolean; virtual;
-    class Function GetNodeDataType: TUNSNodeDataType; override;
+    class Function GetValueType: TUNSValueType; override;
     Function GetValueSize(AccessDefVal: Integer): TMemSize; override;
     Function ConvToStr(const Value): String; override;
     Function ConvFromStr(const Str: String): Pointer; override;
@@ -100,9 +100,9 @@ end;
 
 //------------------------------------------------------------------------------
 
-class Function TUNSNodeBuffer.GetNodeDataType: TUNSNodeDataType;
+class Function TUNSNodeBuffer.GetValueType: TUNSValueType;
 begin
-Result := ndtBuffer;
+Result := vtBuffer;
 end;
 
 //------------------------------------------------------------------------------

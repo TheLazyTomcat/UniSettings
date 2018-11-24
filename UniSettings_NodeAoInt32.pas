@@ -19,7 +19,7 @@ type
     Function GetDefaultValueItem(Index: Integer): Int32;
     procedure SetDefaultValueItem(Index: Integer; Value: Int32);
   protected
-    class Function GetNodeDataType: TUNSNodeDataType; override;
+    class Function GetValueType: TUNSValueType; override;
     class Function GetValueItemSize: TMemSize; override;
     Function GetValueSize(AccessDefVal: Integer): TMemSize; override;
   public
@@ -128,9 +128,9 @@ end;
 
 //==============================================================================
 
-class Function TUNSNodeAoInt32.GetNodeDataType: TUNSNodeDataType;
+class Function TUNSNodeAoInt32.GetValueType: TUNSValueType;
 begin
-Result := ndtAoInt32;
+Result := vtAoInt32;
 end;
 
 //------------------------------------------------------------------------------

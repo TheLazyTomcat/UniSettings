@@ -17,7 +17,7 @@ type
     procedure SetValue(NewValue: Float32);
     procedure SetDefaultValue(NewValue: Float32);
   protected
-    class Function GetNodeDataType: TUNSNodeDataType; override;
+    class Function GetValueType: TUNSValueType; override;
     Function GetValueSize(AccessDefVal: Integer): TMemSize; override;
     Function ConvToStr(Value: Float32): String; reintroduce;
     Function ConvFromStr(const Str: String): Float32; reintroduce;
@@ -66,9 +66,9 @@ end;
 
 //==============================================================================
 
-class Function TUNSNodeFloat32.GetNodeDataType: TUNSNodeDataType;
+class Function TUNSNodeFloat32.GetValueType: TUNSValueType;
 begin
-Result := ndtFloat32;
+Result := vtFloat32;
 end;
 
 //------------------------------------------------------------------------------

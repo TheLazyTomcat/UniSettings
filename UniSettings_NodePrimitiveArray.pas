@@ -40,11 +40,11 @@ type
     Function ValueAdd(const Item; AccessDefVal: Boolean = False): Integer; virtual; abstract;
     Function ValueAppend(const Items; AccessDefVal: Boolean = False): Integer; virtual; abstract;
     Function ValueInsert(Index: Integer; const Item; AccessDefVal: Boolean = False): Integer; virtual; abstract;
-    procedure ValueExchange(Index1,Index2: Integer; AccessDefVal: Boolean = False); virtual; abstract;  //*
-    procedure ValueMove(SrcIndex,DstIndex: Integer; AccessDefVal: Boolean = False); virtual; abstract;  //*
+    procedure ValueExchange(Index1,Index2: Integer; AccessDefVal: Boolean = False); virtual; abstract;
+    procedure ValueMove(SrcIndex,DstIndex: Integer; AccessDefVal: Boolean = False); virtual; abstract;
     Function ValueRemove(const Item; AccessDefVal: Boolean = False): Integer; virtual; abstract;
-    procedure ValueDelete(Index: Integer; AccessDefVal: Boolean = False); virtual; abstract;            //*
-    procedure ValueClear(AccessDefVal: Boolean = False); virtual; abstract;                             //*
+    procedure ValueDelete(Index: Integer; AccessDefVal: Boolean = False); virtual; abstract;
+    procedure ValueClear(AccessDefVal: Boolean = False); virtual; abstract;                            
     property ValueItemSize: TMemSize read GetValueItemSize;
 
     property ValueCount: Integer read GetCount;

@@ -6,7 +6,8 @@ interface
 
 uses
   SysUtils,
-  MemoryBuffer;
+  MemoryBuffer,
+  UniSettings_Common;
 
 type
   EUNSException = class(Exception)
@@ -36,6 +37,12 @@ type
   public
     constructor Create(const ValueName: String; const FaultingFunction: String); overload;
     constructor Create(const ValueName: String; FaultingObject: TObject; const FaultingMethod: String); overload;
+  end;
+
+  EUNSValueTypeNotFoundException = class(EUNSException)
+  public
+    constructor Create(const ValueName: String; ValueType: TUNSValueType; const FaultingFunction: String); overload;
+    constructor Create(const ValueName: String; ValueType: TUNSValueType; FaultingObject: TObject; const FaultingMethod: String); overload;
   end;
 
   EUNSValueNotAnArrayException = class(EUNSException)
@@ -115,6 +122,22 @@ end;
 constructor EUNSValueNotFoundException.Create(const ValueName: String; FaultingObject: TObject; const FaultingMethod: String);
 begin
 inherited CreateFmt('Value (%s) not found.',[ValueName],FaultingObject,FaultingMethod);
+end;
+
+//******************************************************************************
+
+constructor EUNSValueTypeNotFoundException.Create(const ValueName: String; ValueType: TUNSValueType; const FaultingFunction: String);
+begin
+inherited CreateFmt('Value (%s) of type %s not found.',
+  [ValueName,UNS_VALUETYPE_STRS[ValueType]],FaultingFunction);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+constructor EUNSValueTypeNotFoundException.Create(const ValueName: String; ValueType: TUNSValueType; FaultingObject: TObject; const FaultingMethod: String);
+begin
+inherited CreateFmt('Value (%s) of type %s not found.',
+  [ValueName,UNS_VALUETYPE_STRS[ValueType]],FaultingObject,FaultingMethod);
 end;
 
 //******************************************************************************

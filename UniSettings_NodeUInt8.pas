@@ -17,7 +17,7 @@ type
     procedure SetValue(NewValue: UInt8);
     procedure SetDefaultValue(NewValue: UInt8);
   protected
-    class Function GetNodeDataType: TUNSNodeDataType; override;
+    class Function GetValueType: TUNSValueType; override;
     Function GetValueSize(AccessDefVal: Integer): TMemSize; override;
     Function ConvToStr(Value: UInt8): String; reintroduce;
     Function ConvFromStr(const Str: String): UInt8; reintroduce;
@@ -66,9 +66,9 @@ end;
 
 //==============================================================================
 
-class Function TUNSNodeUInt8.GetNodeDataType: TUNSNodeDataType;
+class Function TUNSNodeUInt8.GetValueType: TUNSValueType;
 begin
-Result := ndtUInt8;
+Result := vtUInt8;
 end;
 
 //------------------------------------------------------------------------------

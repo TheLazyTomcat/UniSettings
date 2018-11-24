@@ -8,7 +8,7 @@ uses
   SysUtils, Classes,
   AuxTypes, AuxClasses, MemoryBuffer,
   UniSettings_Common, UniSettings_NodeBase, UniSettings_NodeLeaf,
-  UniSettings_NodeBranch;
+  UniSettings_NodePrimitiveArray, UniSettings_NodeBranch;
 
 type
   TUNSNode = TUNSNodeBase;
@@ -24,13 +24,16 @@ type
     Function GetWorkingPath: String;
     procedure SetWorkingPath(const Path: String);
   protected
-    Function CreateLeafNode(NodeDataType: TUNSNodeDataType; const NodeName: String; ParentNode: TUNSNodeBranch): TUNSNodeLeaf; virtual;
+    Function CreateLeafNode(ValueType: TUNSValueType; const NodeName: String; ParentNode: TUNSNodeBranch): TUNSNodeLeaf; virtual;
     Function GetSubNode(NodeNamePart: TUNSNamePart; Branch: TUNSNodeBranch; out Node: TUNSNode; CanCreate: Boolean): Boolean; virtual;
     Function ConstructPath(NodeNameParts: TUNSNameParts): TUNSNodeBranch; virtual;
     Function FindNode(NodeNameParts: TUNSNameParts): TUNSNode; virtual;
-    Function AddNode(const NodeName: String; NodeDataType: TUNSNodeDataType; out Node: TUNSNodeLeaf): Boolean; virtual;
+    Function AddNode(const NodeName: String; ValueType: TUNSValueType; out Node: TUNSNodeLeaf): Boolean; virtual;
     Function FindLeafNode(const NodeName: String; out Node: TUNSNodeLeaf): Boolean; overload; virtual;
-    Function FindLeafNode(const NodeName: String; NodeDataType: TUNSNodeDataType; out Node: TUNSNodeLeaf): Boolean; overload; virtual;
+    Function FindLeafNode(const NodeName: String; ValueType: TUNSValueType; out Node: TUNSNodeLeaf): Boolean; overload; virtual;
+    Function CheckedLeafNodeAccess(const NodeName, Caller: String): TUNSNodeLeaf; virtual;
+    Function CheckedLeafArrayNodeAccess(const NodeName, Caller: String): TUNSNodePrimitiveArray; virtual;
+    Function CheckedLeafNodeTypeAccess(const NodeName: String; ValueType: TUNSValueType; Caller: String): TUNSNodeLeaf; virtual;
   public
     constructor Create;
     destructor Destroy; override;
@@ -43,11 +46,19 @@ type
     procedure Unlock; virtual;
     //--- Values management ----------------------------------------------------
     Function Exists(const ValueName: String): Boolean; virtual;
-    Function Add(const ValueName: String; DataType: TUNSDataType): Boolean; virtual;
+    Function Add(const ValueName: String; ValueType: TUNSValueType): Boolean; virtual;
     Function Remove(const ValueName: String): Boolean; virtual;
     procedure Clear; virtual;
+    Function ListValues(Strings: TStrings): Integer; virtual;
     //--- Tree construction ----------------------------------------------------
-    //--- Values access --------------------------------------------------------
+    //--- IO operations --------------------------------------------------------
+    (*
+    SaveToIni
+    LoadFromIni
+    SaveToRegistry
+    LoadFromRegistry
+    *)
+    //--- Common value access --------------------------------------------------
     procedure ActualFromDefault; virtual;
     procedure DefaultFromActual; virtual;
     procedure ExchangeActualAndDefault; virtual;
@@ -57,11 +68,10 @@ type
     procedure ValueExchangeActualAndDefault(const ValueName: String; Index: Integer = 0); virtual;
     Function ValueActualEqualsDefault(const ValueName: String; Index: Integer = 0): Boolean; virtual;
     Function ValueFullPath(const ValueName: String): String; virtual;
-    Function ValueDataType(const ValueName: String): TUNSDataType; virtual;
+    Function ValueType(const ValueName: String): TUNSValueType; virtual;
     Function ValueSize(const ValueName: String; AccessDefVal: Boolean = False): TMemSize; virtual;
     Function ValueCount(const ValueName: String; AccessDefVal: Boolean = False): Integer; virtual;
     Function ValueItemSize(const ValueName: String): TMemSize; virtual;
-
     Function ValueAddress(const ValueName: String; AccessDefVal: Boolean = False): Pointer; virtual;
     Function ValueAsString(const ValueName: String; AccessDefVal: Boolean = False): String; virtual;
     procedure ValueFromString(const ValueName: String; const Str: String; AccessDefVal: Boolean = False); virtual;
@@ -71,7 +81,6 @@ type
     procedure ValueToBuffer(const ValueName: String; Buffer: TMemoryBuffer; AccessDefVal: Boolean = False); virtual;
     procedure ValueFromBuffer(const ValueName: String; Buffer: TMemoryBuffer; AccessDefVal: Boolean = False); virtual;
     Function ValueAsBuffer(const ValueName: String; AccessDefVal: Boolean = False): TMemoryBuffer; virtual;
-
     Function ValueItemAddress(const ValueName: String; Index: Integer; AccessDefVal: Boolean = False): Pointer; virtual;
     Function ValueItemAsString(const ValueName: String; Index: Integer; AccessDefVal: Boolean = False): String; virtual;
     procedure ValueItemFromString(const ValueName: String; Index: Integer; const Str: String; AccessDefVal: Boolean = False); virtual;
@@ -81,10 +90,17 @@ type
     procedure ValueItemToBuffer(const ValueName: String; Index: Integer; Buffer: TMemoryBuffer; AccessDefVal: Boolean = False); virtual;
     procedure ValueItemFromBuffer(const ValueName: String; Index: Integer; Buffer: TMemoryBuffer; AccessDefVal: Boolean = False); virtual;
     Function ValueItemAsBuffer(const ValueName: String; Index: Integer; AccessDefVal: Boolean = False): TMemoryBuffer; virtual;
-
     Function ValueLowIndex(const ValueName: String; AccessDefVal: Boolean = False): Integer; virtual;
     Function ValueHighIndex(const ValueName: String; AccessDefVal: Boolean = False): Integer; virtual;
     Function ValueCheckIndex(const ValueName: String; Index: Integer; AccessDefVal: Boolean = False): Boolean; virtual;
+    procedure ValueExchange(const ValueName: String; Index1,Index2: Integer; AccessDefVal: Boolean = False); virtual;
+    procedure ValueMove(const ValueName: String; SrcIndex,DstIndex: Integer; AccessDefVal: Boolean = False); virtual;
+    procedure ValueDelete(const ValueName: String; Index: Integer; AccessDefVal: Boolean = False); virtual;
+    procedure ValueClear(const ValueName: String; AccessDefVal: Boolean = False); virtual;    
+    //--- Inidividual value types access ---------------------------------------
+  {$DEFINE Included}{$DEFINE Included_Declaration}
+    {$INCLUDE '.\UniSettings_NodeBool.pas'}
+  {$UNDEF Included_Declaration}{$UNDEF Included}
 
     //--- Properties -----------------------------------------------------------
     property WorkingPath: String read GetWorkingPath write SetWorkingPath;
@@ -123,7 +139,7 @@ uses
   UniSettings_NodeText,
   UniSettings_NodeBuffer,
   // leaf array nodes
-  UniSettings_NodePrimitiveArray,
+
   // branch nodes
   UniSettings_NodeArray,
   UniSettings_NodeArrayItem;
@@ -166,47 +182,47 @@ end;
 
 //==============================================================================
 
-Function TUniSettings.CreateLeafNode(NodeDataType: TUNSNodeDataType; const NodeName: String; ParentNode: TUNSNodeBranch): TUNSNodeLeaf;
+Function TUniSettings.CreateLeafNode(ValueType: TUNSValueType; const NodeName: String; ParentNode: TUNSNodeBranch): TUNSNodeLeaf;
 begin
-case NodeDataType of
-  ndtBlank:       Result := TUNSNodeBlank.Create(NodeName,ParentNode);
-  ndtBool:        Result := TUNSNodeBool.Create(NodeName,ParentNode);
-  ndtInt8:        Result := TUNSNodeInt8.Create(NodeName,ParentNode);
-  ndtUInt8:       Result := TUNSNodeUInt8.Create(NodeName,ParentNode);
-  ndtInt16:       Result := TUNSNodeInt16.Create(NodeName,ParentNode);
-  ndtUInt16:      Result := TUNSNodeUInt16.Create(NodeName,ParentNode);
-  ndtInt32:       Result := TUNSNodeInt32.Create(NodeName,ParentNode);
-  ndtUInt32:      Result := TUNSNodeUInt32.Create(NodeName,ParentNode);
-  ndtInt64:       Result := TUNSNodeInt64.Create(NodeName,ParentNode);
-  ndtUInt64:      Result := TUNSNodeUInt64.Create(NodeName,ParentNode);
-  ndtFloat32:     Result := TUNSNodeFloat32.Create(NodeName,ParentNode);
-  ndtFloat64:     Result := TUNSNodeFloat64.Create(NodeName,ParentNode);
-  ndtDate:        Result := TUNSNodeDate.Create(NodeName,ParentNode);
-  ndtTime:        Result := TUNSNodeTime.Create(NodeName,ParentNode);
-  ndtDateTime:    Result := TUNSNodeDateTime.Create(NodeName,ParentNode);
-  ndtText:        Result := TUNSNodeText.Create(NodeName,ParentNode);
-  ndtBuffer:      Result := TUNSNodeBuffer.Create(NodeName,ParentNode);
+case ValueType of
+  vtBlank:       Result := TUNSNodeBlank.Create(NodeName,ParentNode);
+  vtBool:        Result := TUNSNodeBool.Create(NodeName,ParentNode);
+  vtInt8:        Result := TUNSNodeInt8.Create(NodeName,ParentNode);
+  vtUInt8:       Result := TUNSNodeUInt8.Create(NodeName,ParentNode);
+  vtInt16:       Result := TUNSNodeInt16.Create(NodeName,ParentNode);
+  vtUInt16:      Result := TUNSNodeUInt16.Create(NodeName,ParentNode);
+  vtInt32:       Result := TUNSNodeInt32.Create(NodeName,ParentNode);
+  vtUInt32:      Result := TUNSNodeUInt32.Create(NodeName,ParentNode);
+  vtInt64:       Result := TUNSNodeInt64.Create(NodeName,ParentNode);
+  vtUInt64:      Result := TUNSNodeUInt64.Create(NodeName,ParentNode);
+  vtFloat32:     Result := TUNSNodeFloat32.Create(NodeName,ParentNode);
+  vtFloat64:     Result := TUNSNodeFloat64.Create(NodeName,ParentNode);
+  vtDate:        Result := TUNSNodeDate.Create(NodeName,ParentNode);
+  vtTime:        Result := TUNSNodeTime.Create(NodeName,ParentNode);
+  vtDateTime:    Result := TUNSNodeDateTime.Create(NodeName,ParentNode);
+  vtText:        Result := TUNSNodeText.Create(NodeName,ParentNode);
+  vtBuffer:      Result := TUNSNodeBuffer.Create(NodeName,ParentNode);
 (*
-  ndtAoBool,
-  ndtAoInt8,
-  ndtAoUInt8,
-  ndtAoInt16,
-  ndtAoUInt16,
-  ndtAoInt32,
-  ndtAoUInt32,
-  ndtAoInt64,
-  ndtAoUInt64,
-  ndtAoFloat32,
-  ndtAoFloat64,
-  ndtAoDate,
-  ndtAoTime,
-  ndtAoDateTime,
-  ndtAoText,
-  ndtAoBuffer:;
+  vtAoBool,
+  vtAoInt8,
+  vtAoUInt8,
+  vtAoInt16,
+  vtAoUInt16,
+  vtAoInt32,
+  vtAoUInt32,
+  vtAoInt64,
+  vtAoUInt64,
+  vtAoFloat32,
+  vtAoFloat64,
+  vtAoDate,
+  vtAoTime,
+  vtAoDateTime,
+  vtAoText,
+  vtAoBuffer:;
 *)
 else
- {ndtUndefined}
-  raise EUNSException.CreateFmt('Invalid node data type (%d).',[Ord(NodeDataType)],Self,'CreateLeafNode');
+ {vtUndefined}
+  raise EUNSException.CreateFmt('Invalid node value type (%d).',[Ord(ValueType)],Self,'CreateLeafNode');
 end;
 end;
 
@@ -270,43 +286,47 @@ var
   i:              Integer;
 begin
 Result := nil;
-If NodeNameParts.Valid and (NodeNameParts.Count > 0) then
+If NodeNameParts.Count > 0 then
   begin
-    CurrentBranch := fWorkingNode;
-    For i := Low(NodeNameParts.Arr) to Pred(NodeNameParts.Count) do
+    If NodeNameParts.Valid then
       begin
-        If GetSubNode(NodeNameParts.Arr[i],CurrentBranch,NextNode,True) then
+        CurrentBranch := fWorkingNode;
+        For i := Low(NodeNameParts.Arr) to Pred(NodeNameParts.Count) do
           begin
-            // node was found
-            If NextNode is TUNSNodeBranch then
-              CurrentBranch := TUNSNodeBranch(NextNode)
+            If GetSubNode(NodeNameParts.Arr[i],CurrentBranch,NextNode,True) then
+              begin
+                // node was found
+                If NextNode is TUNSNodeBranch then
+                  CurrentBranch := TUNSNodeBranch(NextNode)
+                else
+                  Break{For i};
+              end
             else
-              Break{For i};
-          end
-        else
-          begin
-            // node was NOT found, create it
-            case NodeNameParts.Arr[i].PartType of
-              vptIdentifier:
-                NextNode := TUNSNodeBranch.Create(NodeNameParts.Arr[i].PartName.Str,CurrentBranch);
-              vptArrayIdentifier:
-                NextNode := TUNSNodeArray.Create(NodeNameParts.Arr[i].PartName.Str,CurrentBranch);
-              vptArrayIndex,
-              vptArrayIndexDef,
-              vptArrayItem,
-              vptArrayItemDef:
-                Exit; // array items can only be created in GetSubNode trough the use of [#N] (new array item), return nil
-            else
-              raise EUNSException.CreateFmt('Invalid name part type (%d).',
-                [Ord(NodeNameParts.Arr[i].PartType)],Self,'ConstructPath');
-            end;
-            CurrentBranch.Add(NextNode);
-            CurrentBranch := TUNSNodeBranch(NextNode);
+              begin
+                // node was NOT found, create it
+                case NodeNameParts.Arr[i].PartType of
+                  vptIdentifier:
+                    NextNode := TUNSNodeBranch.Create(NodeNameParts.Arr[i].PartName.Str,CurrentBranch);
+                  vptArrayIdentifier:
+                    NextNode := TUNSNodeArray.Create(NodeNameParts.Arr[i].PartName.Str,CurrentBranch);
+                  vptArrayIndex,
+                  vptArrayIndexDef,
+                  vptArrayItem,
+                  vptArrayItemDef:
+                    Exit; // array items can only be created in GetSubNode trough the use of [#N] (new array item), return nil
+                else
+                  raise EUNSException.CreateFmt('Invalid name part type (%d).',
+                    [Ord(NodeNameParts.Arr[i].PartType)],Self,'ConstructPath');
+                end;
+                CurrentBranch.Add(NextNode);
+                CurrentBranch := TUNSNodeBranch(NextNode);
+              end;
           end;
-      end;
-    Result := CurrentBranch;
+        Result := CurrentBranch;
+      end
+    else raise EUNSException.Create('Invalid path.',Self,'ConstructPath');
   end
-else raise EUNSException.Create('Invalid path.',Self,'ConstructPath');
+else Result := fRootNode;
 end;
 
 //------------------------------------------------------------------------------
@@ -335,7 +355,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function TUniSettings.AddNode(const NodeName: String; NodeDataType: TUNSNodeDataType; out Node: TUNSNodeLeaf): Boolean;
+Function TUniSettings.AddNode(const NodeName: String; ValueType: TUNSValueType; out Node: TUNSNodeLeaf): Boolean;
 var
   NameParts:  TUNSNameParts;
   BranchNode: TUNSNodeBranch;
@@ -355,7 +375,7 @@ begin
         end;
         If Assigned(BranchNode) then
           begin
-            Node := CreateLeafNode(NodeDataType,NameParts.Arr[Pred(NameParts.Count)].PartName.Str,BranchNode);
+            Node := CreateLeafNode(ValueType,NameParts.Arr[Pred(NameParts.Count)].PartName.Str,BranchNode);
             If BranchNode.CheckIndex(BranchNode.Add(Node)) then
               Result := True
             else
@@ -387,12 +407,48 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function TUniSettings.FindLeafNode(const NodeName: String; NodeDataType: TUNSNodeDataType; out Node: TUNSNodeLeaf): Boolean;
+Function TUniSettings.FindLeafNode(const NodeName: String; ValueType: TUNSValueType; out Node: TUNSNodeLeaf): Boolean;
 begin
 If FindLeafNode(NodeName,Node) then
-  Result := Node.NodeDataType = NodeDataType
+  Result := Node.ValueType = ValueType
 else
   Result := False;
+end;
+
+//------------------------------------------------------------------------------
+
+Function TUniSettings.CheckedLeafNodeAccess(const NodeName, Caller: String): TUNSNodeLeaf;
+begin
+If not FindLeafNode(NodeName,Result) then
+  raise EUNSValueNotFoundException.Create(NodeName,Self,Caller);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TUniSettings.CheckedLeafArrayNodeAccess(const NodeName, Caller: String): TUNSNodePrimitiveArray;
+var
+  Node: TUNSNodeLeaf;
+begin
+If FindLeafNode(NodeName,Node) then
+  begin
+    If Node.IsPrimitiveArray then
+      Result := TUNSNodePrimitiveArray(Node)
+    else
+      raise EUNSValueNotAnArrayException.Create(NodeName,Self,Caller);
+  end
+else raise EUNSValueNotFoundException.Create(NodeName,Self,Caller);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TUniSettings.CheckedLeafNodeTypeAccess(const NodeName: String; ValueType: TUNSValueType; Caller: String): TUNSNodeLeaf;
+begin
+If FindLeafNode(NodeName,Result) then
+  begin
+    If Result.ValueType <> ValueType then
+      raise EUNSValueTypeNotFoundException.Create(NodeName,ValueType,Self,Caller);
+  end
+else raise EUNSValueNotFoundException.Create(NodeName,Self,Caller);
 end;
 
 //==============================================================================
@@ -514,13 +570,13 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function TUniSettings.Add(const ValueName: String; DataType: TUNSDataType): Boolean;
+Function TUniSettings.Add(const ValueName: String; ValueType: TUNSValueType): Boolean;
 var
   NewNode:  TUNSNodeLeaf;
 begin
 WriteLock;
 try
-  Result := AddNode(ValueName,DataType,NewNode);
+  Result := AddNode(ValueName,ValueType,NewNode);
 finally
   WriteUnlock;
 end;
@@ -558,9 +614,33 @@ begin
 WriteLock;
 try
   fRootNode.Clear;
+  fWorkingPath := '';
+  fWorkingNode := fRootNode;
 finally
   WriteUnlock;
 end;
+end;
+
+//------------------------------------------------------------------------------
+
+Function TUniSettings.ListValues(Strings: TStrings): Integer;
+
+  procedure AddNodeToListing(Node: TUNSNode);
+  var
+    i:  Integer;
+  begin
+    If Node is TUNSNodeBranch then
+      begin
+        For i := TUNSNodeBranch(Node).LowIndex to TUNSNodeBranch(Node).HighIndex do
+          AddNodeToListing(TUNSNodeBranch(Node)[i]);
+      end
+    else Strings.Add(Node.ReconstructFullPath(False));
+  end;
+
+begin
+Strings.Clear;
+AddNodeToListing(fWorkingNode);
+Result := Strings.Count;
 end;
 
 //------------------------------------------------------------------------------
@@ -682,6 +762,7 @@ var
 begin
 ReadLock;
 try
+  Result := False;
   If FindLeafNode(ValueName,Node) then
     begin
       If Node.IsPrimitiveArray then
@@ -698,15 +779,10 @@ end;
 //------------------------------------------------------------------------------
 
 Function TUniSettings.ValueFullPath(const ValueName: String): String;
-var
-  Node: TUNSNodeLeaf;
 begin
 ReadLock;
 try
-  If FindLeafNode(ValueName,Node) then
-    Result := Node.ReconstructFullPath(False)
-  else
-    raise EUNSValueNotFoundException.Create(ValueName,Self,'ValueFullPath');
+  CheckedLeafNodeAccess(ValueName,'ValueFullPath').ReconstructFullPath(False);
 finally
   ReadUnlock;
 end;
@@ -714,16 +790,11 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function TUniSettings.ValueDataType(const ValueName: String): TUNSDataType;
-var
-  Node: TUNSNodeLeaf;
+Function TUniSettings.ValueType(const ValueName: String): TUNSValueType;
 begin
 ReadLock;
 try
-  If FindLeafNode(ValueName,Node) then
-    Result := Node.NodeDataType
-  else
-    raise EUNSValueNotFoundException.Create(ValueName,Self,'ValueDataType');
+  Result := CheckedLeafNodeAccess(ValueName,'ValueDataType').ValueType;
 finally
   ReadUnlock;
 end;
@@ -732,19 +803,14 @@ end;
 //------------------------------------------------------------------------------
 
 Function TUniSettings.ValueSize(const ValueName: String; AccessDefVal: Boolean = False): TMemSize;
-var
-  Node: TUNSNodeLeaf;
 begin
 ReadLock;
 try
-  If FindLeafNode(ValueName,Node) then
-    begin
-      If AccessDefVal then
-        Result := Node.DefaultValueSize
-      else
-        Result := Node.ValueSize;
-    end
-  else raise EUNSValueNotFoundException.Create(ValueName,Self,'ValueSize');
+  with CheckedLeafNodeAccess(ValueName,'ValueSize') do
+    If AccessDefVal then
+      Result := DefaultValueSize
+    else
+      Result := ValueSize;
 finally
   ReadUnlock;
 end;
@@ -753,23 +819,14 @@ end;
 //------------------------------------------------------------------------------
 
 Function TUniSettings.ValueCount(const ValueName: String; AccessDefVal: Boolean = False): Integer;
-var
-  Node: TUNSNodeLeaf;
 begin
 ReadLock;
 try
-  If FindLeafNode(ValueName,Node) then
-    begin
-      If Node.IsPrimitiveArray then
-        begin
-          If AccessDefVal then
-            Result := TUNSNodePrimitiveArray(Node).DefaultValueCount
-          else
-            Result := TUNSNodePrimitiveArray(Node).ValueCount;
-        end
-      else EUNSValueNotAnArrayException.Create(ValueName,Self,'ValueCount');
-    end
-  else raise EUNSValueNotFoundException.Create(ValueName,Self,'ValueCount');
+  with CheckedLeafArrayNodeAccess(ValueName,'ValueCount') do
+    If AccessDefVal then
+      Result := DefaultValueSize
+    else
+      Result := ValueSize;
 finally
   ReadUnlock;
 end;
@@ -778,19 +835,10 @@ end;
 //------------------------------------------------------------------------------
 
 Function TUniSettings.ValueItemSize(const ValueName: String): TMemSize;
-var
-  Node: TUNSNodeLeaf;
 begin
 ReadLock;
 try
-  If FindLeafNode(ValueName,Node) then
-    begin
-      If Node.IsPrimitiveArray then
-        Result := TUNSNodePrimitiveArray(Node).ValueItemSize
-      else
-        raise EUNSValueNotAnArrayException.Create(ValueName,Self,'ValueItemSize');
-    end
-  else raise EUNSValueNotFoundException.Create(ValueName,Self,'ValueItemSize');
+  Result := CheckedLeafArrayNodeAccess(ValueName,'ValueItemSize').ValueItemSize;
 finally
   ReadUnlock;
 end;
@@ -799,15 +847,10 @@ end;
 //------------------------------------------------------------------------------
 
 Function TUniSettings.ValueAddress(const ValueName: String; AccessDefVal: Boolean = False): Pointer;
-var
-  Node: TUNSNodeLeaf;
 begin
 ReadLock;
 try
-  If FindLeafNode(ValueName,Node) then
-    Result := Node.GetValueAddress(AccessDefVal)
-  else
-    raise EUNSValueNotFoundException.Create(ValueName,Self,'ValueAddress');
+  Result := CheckedLeafNodeAccess(ValueName,'ValueAddress').GetValueAddress(AccessDefVal);
 finally
   ReadUnlock;
 end;
@@ -816,15 +859,10 @@ end;
 //------------------------------------------------------------------------------
 
 Function TUniSettings.ValueAsString(const ValueName: String; AccessDefVal: Boolean = False): String;
-var
-  Node: TUNSNodeLeaf;
 begin
 ReadLock;
 try
-  If FindLeafNode(ValueName,Node) then
-    Result := Node.GetValueAsString(AccessDefVal)
-  else
-    raise EUNSValueNotFoundException.Create(ValueName,Self,'ValueAsString');
+  Result := CheckedLeafNodeAccess(ValueName,'ValueAsString').GetValueAsString(AccessDefVal)
 finally
   ReadUnlock;
 end;
@@ -833,15 +871,10 @@ end;
 //------------------------------------------------------------------------------
 
 procedure TUniSettings.ValueFromString(const ValueName: String; const Str: String; AccessDefVal: Boolean = False);
-var
-  Node: TUNSNodeLeaf;
 begin
 WriteLock;
 try
-  If FindLeafNode(ValueName,Node) then
-    Node.SetValueFromString(Str,AccessDefVal)
-  else
-    raise EUNSValueNotFoundException.Create(ValueName,Self,'ValueFromString');
+  CheckedLeafNodeAccess(ValueName,'ValueFromString').SetValueFromString(Str,AccessDefVal);
 finally
   WriteUnlock;
 end;
@@ -850,15 +883,10 @@ end;
 //------------------------------------------------------------------------------
 
 procedure TUniSettings.ValueToStream(const ValueName: String; Stream: TStream; AccessDefVal: Boolean = False);
-var
-  Node: TUNSNodeLeaf;
 begin
 ReadLock;
 try
-  If FindLeafNode(ValueName,Node) then
-    Node.GetValueToStream(Stream,AccessDefVal)
-  else
-    raise EUNSValueNotFoundException.Create(ValueName,Self,'ValueToStream');
+  CheckedLeafNodeAccess(ValueName,'ValueToStream').GetValueToStream(Stream,AccessDefVal);
 finally
   ReadUnlock;
 end;
@@ -867,15 +895,10 @@ end;
 //------------------------------------------------------------------------------
 
 procedure TUniSettings.ValueFromStream(const ValueName: String; Stream: TStream; AccessDefVal: Boolean = False);
-var
-  Node: TUNSNodeLeaf;
 begin
 WriteLock;
 try
-  If FindLeafNode(ValueName,Node) then
-    Node.SetValueFromStream(Stream,AccessDefVal)
-  else
-    raise EUNSValueNotFoundException.Create(ValueName,Self,'ValueFromStream');
+  CheckedLeafNodeAccess(ValueName,'ValueFromStream').SetValueFromStream(Stream,AccessDefVal);
 finally
   WriteUnlock;
 end;
@@ -884,15 +907,10 @@ end;
 //------------------------------------------------------------------------------
 
 Function TUniSettings.ValueAsStream(const ValueName: String; AccessDefVal: Boolean = False): TMemoryStream;
-var
-  Node: TUNSNodeLeaf;
 begin
 ReadLock;
 try
-  If FindLeafNode(ValueName,Node) then
-    Result := Node.GetValueAsStream(AccessDefVal)
-  else
-    raise EUNSValueNotFoundException.Create(ValueName,Self,'ValueAsStream');
+  Result := CheckedLeafNodeAccess(ValueName,'ValueAsStream').GetValueAsStream(AccessDefVal);
 finally
   ReadUnlock;
 end;
@@ -901,15 +919,10 @@ end;
 //------------------------------------------------------------------------------
 
 procedure TUniSettings.ValueToBuffer(const ValueName: String; Buffer: TMemoryBuffer; AccessDefVal: Boolean = False);
-var
-  Node: TUNSNodeLeaf;
 begin
 ReadLock;
 try
-  If FindLeafNode(ValueName,Node) then
-    Node.GetValueToBuffer(Buffer,AccessDefVal)
-  else
-    raise EUNSValueNotFoundException.Create(ValueName,Self,'ValueToBuffer');
+  CheckedLeafNodeAccess(ValueName,'ValueToBuffer').GetValueToBuffer(Buffer,AccessDefVal);
 finally
   ReadUnlock;
 end;
@@ -918,15 +931,10 @@ end;
 //------------------------------------------------------------------------------
 
 procedure TUniSettings.ValueFromBuffer(const ValueName: String; Buffer: TMemoryBuffer; AccessDefVal: Boolean = False);
-var
-  Node: TUNSNodeLeaf;
 begin
 WriteLock;
 try
-  If FindLeafNode(ValueName,Node) then
-    Node.SetValueFromBuffer(Buffer,AccessDefVal)
-  else
-    raise EUNSValueNotFoundException.Create(ValueName,Self,'ValueFromBuffer');
+  CheckedLeafNodeAccess(ValueName,'ValueFromBuffer').SetValueFromBuffer(Buffer,AccessDefVal);
 finally
   WriteUnlock;
 end;
@@ -935,15 +943,10 @@ end;
 //------------------------------------------------------------------------------
 
 Function TUniSettings.ValueAsBuffer(const ValueName: String; AccessDefVal: Boolean = False): TMemoryBuffer;
-var
-  Node: TUNSNodeLeaf;
 begin
 ReadLock;
 try
-  If FindLeafNode(ValueName,Node) then
-    Result := Node.GetValueAsBuffer(AccessDefVal)
-  else
-    raise EUNSValueNotFoundException.Create(ValueName,Self,'ValueAsBuffer');
+  Result := CheckedLeafNodeAccess(ValueName,'ValueFromBuffer').GetValueAsBuffer(AccessDefVal);
 finally
   ReadUnlock;
 end;
@@ -952,19 +955,10 @@ end;
 //------------------------------------------------------------------------------
 
 Function TUniSettings.ValueItemAddress(const ValueName: String; Index: Integer; AccessDefVal: Boolean = False): Pointer;
-var
-  Node: TUNSNodeLeaf;
 begin
 ReadLock;
 try
-  If FindLeafNode(ValueName,Node) then
-    begin
-      If Node.IsPrimitiveArray then
-        Result := TUNSNodePrimitiveArray(Node).GetValueItemAddress(Index,AccessDefVal)
-      else
-        EUNSValueNotAnArrayException.Create(ValueName,Self,'ValueItemAddress');
-    end
-  else raise EUNSValueNotFoundException.Create(ValueName,Self,'ValueItemAddress');
+  Result := CheckedLeafArrayNodeAccess(ValueName,'ValueItemAddress').GetValueItemAddress(Index,AccessDefVal);
 finally
   ReadUnlock;
 end;
@@ -973,19 +967,10 @@ end;
 //------------------------------------------------------------------------------
 
 Function TUniSettings.ValueItemAsString(const ValueName: String; Index: Integer; AccessDefVal: Boolean = False): String;
-var
-  Node: TUNSNodeLeaf;
 begin
 ReadLock;
 try
-  If FindLeafNode(ValueName,Node) then
-    begin
-      If Node.IsPrimitiveArray then
-        Result := TUNSNodePrimitiveArray(Node).GetValueItemAsString(Index,AccessDefVal)
-      else
-        EUNSValueNotAnArrayException.Create(ValueName,Self,'ValueItemAsString');
-    end
-  else raise EUNSValueNotFoundException.Create(ValueName,Self,'ValueItemAsString');
+  Result := CheckedLeafArrayNodeAccess(ValueName,'ValueItemAsString').GetValueItemAsString(Index,AccessDefVal);
 finally
   ReadUnlock;
 end;
@@ -994,19 +979,10 @@ end;
 //------------------------------------------------------------------------------
 
 procedure TUniSettings.ValueItemFromString(const ValueName: String; Index: Integer; const Str: String; AccessDefVal: Boolean = False);
-var
-  Node: TUNSNodeLeaf;
 begin
 WriteLock;
 try
-  If FindLeafNode(ValueName,Node) then
-    begin
-      If Node.IsPrimitiveArray then
-        TUNSNodePrimitiveArray(Node).SetValueItemFromString(Index,Str,AccessDefVal)
-      else
-        EUNSValueNotAnArrayException.Create(ValueName,Self,'ValueItemFromString');
-    end
-  else raise EUNSValueNotFoundException.Create(ValueName,Self,'ValueItemFromString');
+  CheckedLeafArrayNodeAccess(ValueName,'ValueItemFromString').SetValueItemFromString(Index,Str,AccessDefVal);
 finally
   WriteUnlock;
 end;
@@ -1015,19 +991,10 @@ end;
 //------------------------------------------------------------------------------
 
 procedure TUniSettings.ValueItemToStream(const ValueName: String; Index: Integer; Stream: TStream; AccessDefVal: Boolean = False);
-var
-  Node: TUNSNodeLeaf;
 begin
 ReadLock;
 try
-  If FindLeafNode(ValueName,Node) then
-    begin
-      If Node.IsPrimitiveArray then
-        TUNSNodePrimitiveArray(Node).GetValueItemToStream(Index,Stream,AccessDefVal)
-      else
-        EUNSValueNotAnArrayException.Create(ValueName,Self,'ValueItemToStream');
-    end
-  else raise EUNSValueNotFoundException.Create(ValueName,Self,'ValueItemToStream');
+  CheckedLeafArrayNodeAccess(ValueName,'ValueItemToStream').GetValueItemToStream(Index,Stream,AccessDefVal);
 finally
   ReadUnlock;
 end;
@@ -1036,19 +1003,10 @@ end;
 //------------------------------------------------------------------------------
 
 procedure TUniSettings.ValueItemFromStream(const ValueName: String; Index: Integer; Stream: TStream; AccessDefVal: Boolean = False);
-var
-  Node: TUNSNodeLeaf;
 begin
 WriteLock;
 try
-  If FindLeafNode(ValueName,Node) then
-    begin
-      If Node.IsPrimitiveArray then
-        TUNSNodePrimitiveArray(Node).SetValueItemFromStream(Index,Stream,AccessDefVal)
-      else
-        EUNSValueNotAnArrayException.Create(ValueName,Self,'ValueItemFromStream');
-    end
-  else raise EUNSValueNotFoundException.Create(ValueName,Self,'ValueItemFromStream');
+  CheckedLeafArrayNodeAccess(ValueName,'ValueItemFromStream').SetValueItemFromStream(Index,Stream,AccessDefVal);
 finally
   WriteUnlock;
 end;
@@ -1057,19 +1015,10 @@ end;
 //------------------------------------------------------------------------------
 
 Function TUniSettings.ValueItemAsStream(const ValueName: String; Index: Integer; AccessDefVal: Boolean = False): TMemoryStream;
-var
-  Node: TUNSNodeLeaf;
 begin
 ReadLock;
 try
-  If FindLeafNode(ValueName,Node) then
-    begin
-      If Node.IsPrimitiveArray then
-        Result := TUNSNodePrimitiveArray(Node).GetValueItemAsStream(Index,AccessDefVal)
-      else
-        EUNSValueNotAnArrayException.Create(ValueName,Self,'ValueItemAsStream');
-    end
-  else raise EUNSValueNotFoundException.Create(ValueName,Self,'ValueItemAsStream');
+  Result := CheckedLeafArrayNodeAccess(ValueName,'ValueItemAsStream').GetValueItemAsStream(Index,AccessDefVal);
 finally
   ReadUnlock;
 end;
@@ -1078,19 +1027,10 @@ end;
 //------------------------------------------------------------------------------
 
 procedure TUniSettings.ValueItemToBuffer(const ValueName: String; Index: Integer; Buffer: TMemoryBuffer; AccessDefVal: Boolean = False);
-var
-  Node: TUNSNodeLeaf;
 begin
 ReadLock;
 try
-  If FindLeafNode(ValueName,Node) then
-    begin
-      If Node.IsPrimitiveArray then
-        TUNSNodePrimitiveArray(Node).GetValueItemToBuffer(Index,Buffer,AccessDefVal)
-      else
-        EUNSValueNotAnArrayException.Create(ValueName,Self,'ValueItemToBuffer');
-    end
-  else raise EUNSValueNotFoundException.Create(ValueName,Self,'ValueItemToBuffer');
+  CheckedLeafArrayNodeAccess(ValueName,'ValueItemToBuffer').GetValueItemToBuffer(Index,Buffer,AccessDefVal);
 finally
   ReadUnlock;
 end;
@@ -1099,19 +1039,10 @@ end;
 //------------------------------------------------------------------------------
 
 procedure TUniSettings.ValueItemFromBuffer(const ValueName: String; Index: Integer; Buffer: TMemoryBuffer; AccessDefVal: Boolean = False);
-var
-  Node: TUNSNodeLeaf;
 begin
 WriteLock;
 try
-  If FindLeafNode(ValueName,Node) then
-    begin
-      If Node.IsPrimitiveArray then
-        TUNSNodePrimitiveArray(Node).SetValueItemFromBuffer(Index,Buffer,AccessDefVal)
-      else
-        EUNSValueNotAnArrayException.Create(ValueName,Self,'ValueItemFromBuffer');
-    end
-  else raise EUNSValueNotFoundException.Create(ValueName,Self,'ValueItemFromBuffer');
+  CheckedLeafArrayNodeAccess(ValueName,'ValueItemFromBuffer').SetValueItemFromBuffer(Index,Buffer,AccessDefVal);
 finally
   WriteUnlock;
 end;
@@ -1120,19 +1051,10 @@ end;
 //------------------------------------------------------------------------------
 
 Function TUniSettings.ValueItemAsBuffer(const ValueName: String; Index: Integer; AccessDefVal: Boolean = False): TMemoryBuffer;
-var
-  Node: TUNSNodeLeaf;
 begin
 ReadLock;
 try
-  If FindLeafNode(ValueName,Node) then
-    begin
-      If Node.IsPrimitiveArray then
-        Result := TUNSNodePrimitiveArray(Node).GetValueItemAsBuffer(Index,AccessDefVal)
-      else
-        EUNSValueNotAnArrayException.Create(ValueName,Self,'ValueItemAsBuffer');
-    end
-  else raise EUNSValueNotFoundException.Create(ValueName,Self,'ValueItemAsBuffer');
+  Result := CheckedLeafArrayNodeAccess(ValueName,'ValueItemAsBuffer').GetValueItemAsBuffer(Index,AccessDefVal);
 finally
   ReadUnlock;
 end;
@@ -1141,19 +1063,10 @@ end;
 //------------------------------------------------------------------------------
 
 Function TUniSettings.ValueLowIndex(const ValueName: String; AccessDefVal: Boolean = False): Integer;
-var
-  Node: TUNSNodeLeaf;
 begin
 ReadLock;
 try
-  If FindLeafNode(ValueName,Node) then
-    begin
-      If Node.IsPrimitiveArray then
-        Result := TUNSNodePrimitiveArray(Node).ValueLowIndex(AccessDefVal)
-      else
-        EUNSValueNotAnArrayException.Create(ValueName,Self,'ValueLowIndex');
-    end
-  else raise EUNSValueNotFoundException.Create(ValueName,Self,'ValueLowIndex');
+  Result := CheckedLeafArrayNodeAccess(ValueName,'ValueLowIndex').ValueLowIndex(AccessDefVal);
 finally
   ReadUnlock;
 end;
@@ -1162,19 +1075,10 @@ end;
 //------------------------------------------------------------------------------
 
 Function TUniSettings.ValueHighIndex(const ValueName: String; AccessDefVal: Boolean = False): Integer;
-var
-  Node: TUNSNodeLeaf;
 begin
 ReadLock;
 try
-  If FindLeafNode(ValueName,Node) then
-    begin
-      If Node.IsPrimitiveArray then
-        Result := TUNSNodePrimitiveArray(Node).ValueHighIndex(AccessDefVal)
-      else
-        EUNSValueNotAnArrayException.Create(ValueName,Self,'ValueHighIndex');
-    end
-  else raise EUNSValueNotFoundException.Create(ValueName,Self,'ValueHighIndex');
+  Result := CheckedLeafArrayNodeAccess(ValueName,'ValueHighIndex').ValueHighIndex(AccessDefVal);
 finally
   ReadUnlock;
 end;
@@ -1183,22 +1087,67 @@ end;
 //------------------------------------------------------------------------------
 
 Function TUniSettings.ValueCheckIndex(const ValueName: String; Index: Integer; AccessDefVal: Boolean = False): Boolean;
-var
-  Node: TUNSNodeLeaf;
 begin
 ReadLock;
 try
-  If FindLeafNode(ValueName,Node) then
-    begin
-      If Node.IsPrimitiveArray then
-        Result := TUNSNodePrimitiveArray(Node).ValueCheckIndex(Index,AccessDefVal)
-      else
-        EUNSValueNotAnArrayException.Create(ValueName,Self,'ValueCheckIndex');
-    end
-  else raise EUNSValueNotFoundException.Create(ValueName,Self,'ValueCheckIndex');
+  Result := CheckedLeafArrayNodeAccess(ValueName,'ValueCheckIndex').ValueCheckIndex(Index,AccessDefVal);
 finally
   ReadUnlock;
 end;
 end;
+ 
+//------------------------------------------------------------------------------
+
+procedure TUniSettings.ValueExchange(const ValueName: String; Index1,Index2: Integer; AccessDefVal: Boolean = False);
+begin
+WriteLock;
+try
+  CheckedLeafArrayNodeAccess(ValueName,'ValueExchange').ValueExchange(Index1,Index2,AccessDefVal);
+finally
+  WriteUnlock;
+end;
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TUniSettings.ValueMove(const ValueName: String; SrcIndex,DstIndex: Integer; AccessDefVal: Boolean = False);
+begin
+WriteLock;
+try
+  CheckedLeafArrayNodeAccess(ValueName,'ValueMove').ValueMove(SrcIndex,DstIndex,AccessDefVal);
+finally
+  WriteUnlock;
+end;
+end;
+ 
+//------------------------------------------------------------------------------
+
+procedure TUniSettings.ValueDelete(const ValueName: String; Index: Integer; AccessDefVal: Boolean = False);
+begin
+WriteLock;
+try
+  CheckedLeafArrayNodeAccess(ValueName,'ValueDelete').ValueDelete(Index,AccessDefVal);
+finally
+  WriteUnlock;
+end;
+end;
+  
+//------------------------------------------------------------------------------
+
+procedure TUniSettings.ValueClear(const ValueName: String; AccessDefVal: Boolean = False);
+begin
+WriteLock;
+try
+  CheckedLeafArrayNodeAccess(ValueName,'ValueClear').ValueClear(AccessDefVal);
+finally
+  WriteUnlock;
+end;
+end;
+
+//------------------------------------------------------------------------------
+
+{$DEFINE Included}{$DEFINE Included_Implementation}
+  {$INCLUDE '.\UniSettings_NodeBool.pas'}
+{$UNDEF Included_Implementation}{$UNDEF Included}
 
 end.

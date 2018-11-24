@@ -14,20 +14,20 @@ type
   protected
     fSysFormatSettings: TFormatSettings;
     class Function GetNodeClass: TUNSNodeClass; override;
-{!} Function GetValueSize(AccessDefVal: Integer): TMemSize; virtual; abstract;
-{!} Function ConvToStr(const Value): String; virtual; abstract;
-{!} Function ConvFromStr(const Str: String): Pointer; virtual; abstract;
+    Function GetValueSize(AccessDefVal: Integer): TMemSize; virtual; abstract;
+    Function ConvToStr(const Value): String; virtual; abstract;
+    Function ConvFromStr(const Str: String): Pointer; virtual; abstract;
   public
-{*} class Function IsPrimitiveArray: Boolean; virtual;
+    class Function IsPrimitiveArray: Boolean; virtual;
     constructor Create(const Name: String; ParentNode: TUNSNodeBase);
-{!} Function GetValueAddress(AccessDefVal: Boolean = False): Pointer; virtual; abstract;
-{!} Function GetValueAsString(AccessDefVal: Boolean = False): String; virtual; abstract;
-{!} procedure SetValueFromString(const Str: String; AccessDefVal: Boolean = False); virtual; abstract;
-{!} procedure GetValueToStream(Stream: TStream; AccessDefVal: Boolean = False); virtual; abstract;
-{!} procedure SetValueFromStream(Stream: TStream; AccessDefVal: Boolean = False); virtual; abstract;
+    Function GetValueAddress(AccessDefVal: Boolean = False): Pointer; virtual; abstract;
+    Function GetValueAsString(AccessDefVal: Boolean = False): String; virtual; abstract;
+    procedure SetValueFromString(const Str: String; AccessDefVal: Boolean = False); virtual; abstract;
+    procedure GetValueToStream(Stream: TStream; AccessDefVal: Boolean = False); virtual; abstract;
+    procedure SetValueFromStream(Stream: TStream; AccessDefVal: Boolean = False); virtual; abstract;
     Function GetValueAsStream(AccessDefVal: Boolean = False): TMemoryStream; virtual;
-{!} procedure GetValueToBuffer(Buffer: TMemoryBuffer; AccessDefVal: Boolean = False); virtual; abstract;
-{!} procedure SetValueFromBuffer(Buffer: TMemoryBuffer; AccessDefVal: Boolean = False); virtual; abstract;
+    procedure GetValueToBuffer(Buffer: TMemoryBuffer; AccessDefVal: Boolean = False); virtual; abstract;
+    procedure SetValueFromBuffer(Buffer: TMemoryBuffer; AccessDefVal: Boolean = False); virtual; abstract;
     Function GetValueAsBuffer(AccessDefVal: Boolean = False): TMemoryBuffer; virtual; 
     property ValueSize: TMemSize index 1 read GetValueSize;
     property DefaultValueSize: TMemSize index 0 read GetValueSize;

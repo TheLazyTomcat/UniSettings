@@ -19,12 +19,12 @@ type
     fConvSettings:  TFormatSettings;
     fChanged:       Boolean;
     fOnChange:      TNotifyEvent;
-{*} class Function GetNodeClass: TUNSNodeClass; virtual;
-{*} class Function GetNodeDataType: TUNSNodeDataType; virtual;
+    class Function GetNodeClass: TUNSNodeClass; virtual;
+    class Function GetValueType: TUNSValueType; virtual;
     procedure SetNodeNameStr(const Value: String); virtual;
-{*} procedure SetMaster(Value: TObject); virtual;
+    procedure SetMaster(Value: TObject); virtual;
     Function GetNodeLevel: Integer; virtual;
-{*} Function GetMaxNodeLevel: Integer; virtual;
+    Function GetMaxNodeLevel: Integer; virtual;
     procedure SetChanged(Value: Boolean); virtual;
     Function ReconstructFullPathInternal(TopLevelCall: Boolean; IncludeRoot: Boolean): String; virtual;
     Function FormatSettings: TUNSFormatSettings; virtual;
@@ -34,12 +34,12 @@ type
     procedure SetFlag(Flag: TUNSNodeFlag); virtual;
     procedure ResetFlag(Flag: TUNSNodeFlag); virtual;
     Function ReconstructFullPath(IncludeRoot: Boolean = False): String; virtual;
-{!} procedure ActualFromDefault; overload; virtual; abstract;
-{!} procedure DefaultFromActual; overload; virtual; abstract;
-{!} procedure ExchangeActualAndDefault; overload; virtual; abstract;
-{!} Function ActualEqualsDefault: Boolean; overload; virtual; abstract;
+    procedure ActualFromDefault; overload; virtual; abstract;
+    procedure DefaultFromActual; overload; virtual; abstract;
+    procedure ExchangeActualAndDefault; overload; virtual; abstract;
+    Function ActualEqualsDefault: Boolean; overload; virtual; abstract;
     property NodeClass: TUNSNodeClass read GetNodeClass;
-    property NodeDataType: TUNSNodeDataType read GetNodeDataType;
+    property ValueType: TUNSValueType read GetValueType;
     property Name: TUNSHashedString read fName write fName;       
     property NameStr: String read fName.Str write SetNodeNameStr;
     property ParentNode: TUNSNodeBase read fParentNode;
@@ -64,9 +64,9 @@ end;
 
 //------------------------------------------------------------------------------
 
-class Function TUNSNodeBase.GetNodeDataType: TUNSNodeDataType;
+class Function TUNSNodeBase.GetValueType: TUNSValueType;
 begin
-Result := ndtUndefined;
+Result := vtUndefined;
 end;
 
 //------------------------------------------------------------------------------
