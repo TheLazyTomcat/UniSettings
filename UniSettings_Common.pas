@@ -13,6 +13,8 @@ type
     Hash: TCRC32;
   end;
 
+//------------------------------------------------------------------------------
+
   TDate = type TDateTime;
   TTime = type TDateTime;
 
@@ -96,6 +98,8 @@ type
     Count:  Integer;
   end;
 
+//------------------------------------------------------------------------------
+
   TUNSNodeClass = (ncUndefined,ncBranch,ncArrayItem,ncArray,ncLeaf);
 
   TUNSNodeDataType = (ndtUndefined,   // erroneous value
@@ -131,11 +135,30 @@ type
                       ndtAoTime,      // array of times
                       ndtAoDateTime,  // array of date + time values
                       ndtAoText,      // array of strings
-                      ndtAoBuffer);   // array of memory buffers
+                      ndtAoBuffer,    // array of memory buffers
+                      // some aliases...
+                      ndtInteger   = ndtInt32,
+                      ndtFloat     = ndtFloat32,
+                      ndtAoInteger = ndtAoInt32,
+                      ndtAoFloat   = ndtAoFloat32);
 
+  TUNSDataType = TUNSNodeDataType;                      
+
+const
+  UNS_NODEDATATYPE_STRS: array[TUNSNodeDataType] of String = (
+    'undefined','blank',
+    'Bool','Int8','UInt8','Int16','UInt16','Int32','UInt32','Int64','UInt64',
+    'Float32','Float64','Date','Time','DateTime','Text','Buffer',
+    'AoBool','AoInt8','AoUInt8','AoInt16','AoUInt16','AoInt32','AoUInt32',
+    'AoInt64','AoUInt64','AoFloat32','AoFloat64','AoDate','AoTime','AoDateTime',
+    'AoText','AoBuffer');
+
+type
   TUNSNodeFlag = (nfConst);
 
   TUNSNodeFlags = set of TUNSNodeFlag;
+
+//------------------------------------------------------------------------------
 
   TUNSFormatSettings = record
     NumericBools: Boolean;
@@ -144,37 +167,56 @@ type
     HexDateTime:  Boolean;
   end;
 
-  TUNSValueNamePartType = (vptName,vptIndex,vptBoth);
-
-  TUNSValueNamePart = record
-    PartType:   TUNSValueNamePartType;
-    PartName:   TUNSHashedString;
-    PartIndex:  Integer;
-  end;
-
-  TUNSValueNameParts = record
-    Arr:    array of TUNSValueNamePart;
-    Count:  Integer;
-  end;
-
 const
-  UNS_STRS_NODEDATATYPE: array[TUNSNodeDataType] of String = (
-    'undefined','blank',
-    'Bool','Int8','UInt8','Int16','UInt16','Int32','UInt32','Int64','UInt64',
-    'Float32','Float64','Date','Time','DateTime','Text','Buffer',
-    'AoBool','AoInt8','AoUInt8','AoInt16','AoUInt16','AoInt32','AoUInt32',
-    'AoInt64','AoUInt64','AoFloat32','AoFloat64','AoDate','AoTime','AoDateTime',
-    'AoText','AoBuffer');
-
-  UNS_NAME_ROOTNODE = 'root';
-
-  UNS_PATH_DELIMITER = '.';
-
   UNS_FORMATSETTINGS_DEFAULT: TUNSFormatSettings = (
     NumericBools: False;
     HexIntegers:  False;
     HexFloats:    False;
     HexDateTime:  False);
+
+//------------------------------------------------------------------------------
+
+type
+  TUNSNamePartType = (vptInvalid,vptIdentifier,vptArrayIdentifier,
+                      vptArrayIndex,vptArrayIndexDef,
+                      vptArrayItem,vptArrayItemDef);
+
+  TUNSNamePart = record
+    PartType:   TUNSNamePartType;
+    PartName:   TUNSHashedString;
+    PartIndex:  Integer;
+  end;
+
+  TUNSNameParts = record
+    Arr:    array of TUNSNamePart;
+    Count:  Integer;
+    Valid:  Boolean;
+  end;
+
+const
+  UNS_NAME_ROOTNODE = 'root';
+
+  UNS_PATH_INDEX_DEFAULT = -1;
+
+  UNS_PATH_IDENTIFIER_VALIDCHARS = ['0'..'9','a'..'z','A'..'Z','_'];
+
+  UNS_PATH_DELIMITER        = '.';
+  UNS_PATH_BRACKET_LEFT     = '[';
+  UNS_PATH_BRACKET_RIGHT    = ']';
+  UNS_PATH_BRACKETDEF_LEFT  = '<';
+  UNS_PATH_BRACKETDEF_RIGHT = '>';
+  UNS_PATH_ARRAYITEM_TAG    = '#';
+
+  UNS_PATH_BRACKETS_LEFT  = [UNS_PATH_BRACKET_LEFT,UNS_PATH_BRACKETDEF_LEFT];
+  UNS_PATH_BRACKETS_RIGHT = [UNS_PATH_BRACKET_RIGHT,UNS_PATH_BRACKETDEF_RIGHT];
+
+  UNS_PATH_BRACKETS = UNS_PATH_BRACKETS_LEFT + UNS_PATH_BRACKETS_RIGHT;
+
+  UNS_PATH_DELIMITERS = [UNS_PATH_DELIMITER] + UNS_PATH_BRACKETS_LEFT;
+
+  UNS_PATH_ARRAYITEM_NEW     = 0;
+  UNS_PATH_ARRAYITEM_LOW     = 1;
+  UNS_PATH_ARRAYITEM_HIGH    = 2;
 
 implementation
 

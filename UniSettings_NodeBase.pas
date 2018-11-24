@@ -120,7 +120,10 @@ var
   TempStr:  String;
 begin
 case GetNodeClass of
-  ncBranch:     TempStr := fName.Str + UNS_PATH_DELIMITER;
+  ncBranch:     If TopLevelCall then
+                  TempStr := fName.Str
+                else
+                  TempStr := fName.Str + UNS_PATH_DELIMITER;
   ncArray:      If TopLevelCall then
                   TempStr := Format('%s[]',[fName.Str])
                 else If (TUNSNodeArray(Self).Count <= 0) then
@@ -147,7 +150,7 @@ If not Assigned(fParentNode) then
     else
       Result := '';
   end
-else Result := Result + fParentNode.ReconstructFullPathInternal(False,IncludeRoot);
+else Result := fParentNode.ReconstructFullPathInternal(False,IncludeRoot) + TempStr;
 end;
 
 //------------------------------------------------------------------------------

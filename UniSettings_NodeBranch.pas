@@ -177,6 +177,7 @@ If fCount >= Length(fSubNodes) then
   SetLength(fSubNodes,Length(fSubNodes) + UNS_BRANCHNODE_GROWFACTOR);
 Result := fCount;
 fSubNodes[Result] := Node;
+fSubNodes[Result].Master := fMaster;
 Inc(fCount);
 DoChange;
 end;

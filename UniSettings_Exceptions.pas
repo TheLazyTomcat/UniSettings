@@ -32,6 +32,18 @@ type
     constructor Create(Buffer: TMemoryBuffer; FaultingObject: TObject; const FaultingMethod: String); overload;
   end;
 
+  EUNSValueNotFoundException = class(EUNSException)
+  public
+    constructor Create(const ValueName: String; const FaultingFunction: String); overload;
+    constructor Create(const ValueName: String; FaultingObject: TObject; const FaultingMethod: String); overload;
+  end;
+
+  EUNSValueNotAnArrayException = class(EUNSException)
+  public
+    constructor Create(const ValueName: String; const FaultingFunction: String); overload;
+    constructor Create(const ValueName: String; FaultingObject: TObject; const FaultingMethod: String); overload;
+  end;
+
 implementation
 
 constructor EUNSException.Create(const Msg, FaultingFunction: String);
@@ -89,6 +101,34 @@ end;
 constructor EUNSBufferTooSmallException.Create(Buffer: TMemoryBuffer; FaultingObject: TObject; const FaultingMethod: String);
 begin
 inherited CreateFmt('Provided buffer is too small (%dB).',[Buffer.Size],FaultingObject,FaultingMethod);
+end;
+
+//******************************************************************************
+
+constructor EUNSValueNotFoundException.Create(const ValueName: String; const FaultingFunction: String);
+begin
+inherited CreateFmt('Value (%s) not found.',[ValueName],FaultingFunction);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+constructor EUNSValueNotFoundException.Create(const ValueName: String; FaultingObject: TObject; const FaultingMethod: String);
+begin
+inherited CreateFmt('Value (%s) not found.',[ValueName],FaultingObject,FaultingMethod);
+end;
+
+//******************************************************************************
+
+constructor EUNSValueNotAnArrayException.Create(const ValueName: String; const FaultingFunction: String);
+begin
+inherited CreateFmt('Value (%s) is not an array.',[ValueName],FaultingFunction);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+constructor EUNSValueNotAnArrayException.Create(const ValueName: String; FaultingObject: TObject; const FaultingMethod: String);
+begin
+inherited CreateFmt('Value (%s) is not an array.',[ValueName],FaultingObject,FaultingMethod);
 end;
 
 end.
