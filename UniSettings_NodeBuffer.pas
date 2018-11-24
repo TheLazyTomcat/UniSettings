@@ -322,7 +322,7 @@ var
 begin
 ReadLock;
 try
-  with TUNSNodeBuffer(CheckedLeafNodeTypeAccess(ValueName,vtBool,'BufferValueGet')) do
+  with TUNSNodeBuffer(CheckedLeafNodeTypeAccess(ValueName,vtBuffer,'BufferValueGet')) do
     If AccessDefVal then
       Temp := Value
     else
@@ -348,7 +348,7 @@ try
     CopyBuffer(NewValue,Temp)
   else
     Temp := NewValue;
-  with TUNSNodeBuffer(CheckedLeafNodeTypeAccess(ValueName,vtBool,'BufferValueSet')) do
+  with TUNSNodeBuffer(CheckedLeafNodeTypeAccess(ValueName,vtBuffer,'BufferValueSet')) do
     If AccessDefVal then
       Value := Temp
     else

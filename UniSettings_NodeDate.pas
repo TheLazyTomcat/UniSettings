@@ -245,7 +245,7 @@ Function TUniSettings.DateValueGet(const ValueName: String; AccessDefVal: Boolea
 begin
 ReadLock;
 try
-  with TUNSNodeDate(CheckedLeafNodeTypeAccess(ValueName,vtBool,'DateValueGet')) do
+  with TUNSNodeDate(CheckedLeafNodeTypeAccess(ValueName,vtDate,'DateValueGet')) do
     If AccessDefVal then
       Result := Value
     else
@@ -261,7 +261,7 @@ procedure TUniSettings.DateValueSet(const ValueName: String; NewValue: TDate; Ac
 begin
 WriteLock;
 try
-  with TUNSNodeDate(CheckedLeafNodeTypeAccess(ValueName,vtBool,'DateValueSet')) do
+  with TUNSNodeDate(CheckedLeafNodeTypeAccess(ValueName,vtDate,'DateValueSet')) do
     If AccessDefVal then
       Value := NewValue
     else

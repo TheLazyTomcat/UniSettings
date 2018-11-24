@@ -238,7 +238,7 @@ Function TUniSettings.UInt16ValueGet(const ValueName: String; AccessDefVal: Bool
 begin
 ReadLock;
 try
-  with TUNSNodeUInt16(CheckedLeafNodeTypeAccess(ValueName,vtBool,'UInt16ValueGet')) do
+  with TUNSNodeUInt16(CheckedLeafNodeTypeAccess(ValueName,vtUInt16,'UInt16ValueGet')) do
     If AccessDefVal then
       Result := Value
     else
@@ -254,7 +254,7 @@ procedure TUniSettings.UInt16ValueSet(const ValueName: String; NewValue: UInt16;
 begin
 WriteLock;
 try
-  with TUNSNodeUInt16(CheckedLeafNodeTypeAccess(ValueName,vtBool,'UInt16ValueSet')) do
+  with TUNSNodeUInt16(CheckedLeafNodeTypeAccess(ValueName,vtUInt16,'UInt16ValueSet')) do
     If AccessDefVal then
       Value := NewValue
     else

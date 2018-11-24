@@ -20,6 +20,8 @@ type
     fRootNode:        TUNSNodeBranch;
     fWorkingPath:     String;
     fWorkingNode:     TUNSNodeBranch;
+    fChangeCounter:   Integer;
+    fChanged:         Boolean;
     fOnChange:        TNotifyEvent;
     Function GetWorkingPath: String;
     procedure SetWorkingPath(const Path: String);
@@ -34,6 +36,9 @@ type
     Function CheckedLeafNodeAccess(const NodeName, Caller: String): TUNSNodeLeaf; virtual;
     Function CheckedLeafArrayNodeAccess(const NodeName, Caller: String): TUNSNodePrimitiveArray; virtual;
     Function CheckedLeafNodeTypeAccess(const NodeName: String; ValueType: TUNSValueType; Caller: String): TUNSNodeLeaf; virtual;
+    procedure ChangingStart;
+    procedure ChangingEnd;
+    procedure OnChangeHandler(Sender: TObject); virtual;
   public
     constructor Create;
     destructor Destroy; override;
@@ -119,6 +124,7 @@ type
     //--- Properties -----------------------------------------------------------
     property WorkingPath: String read GetWorkingPath write SetWorkingPath;
     //--- Format settings properties -------------------------------------------
+    {$message 'ensure thread safety'}
     property FormatSettings: TUNSFormatSettings read fFormatSettings;
     property NumericBools: Boolean read fFormatSettings.NumericBools write fFormatSettings.NumericBools;
     property HexIntegers: Boolean read fFormatSettings.HexIntegers write fFormatSettings.HexIntegers;
@@ -465,6 +471,36 @@ If FindLeafNode(NodeName,Result) then
 else raise EUNSValueNotFoundException.Create(NodeName,Self,Caller);
 end;
 
+//------------------------------------------------------------------------------
+
+procedure TUniSettings.ChangingStart;
+begin
+Inc(fChangeCounter);
+fChanged := False;
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TUniSettings.ChangingEnd;
+begin
+Dec(fChangeCounter);
+If (fChangeCounter <= 0) and fChanged then
+  begin
+    fChangeCounter := 0;
+    OnChangeHandler(Self);
+    fChanged := False;
+  end;
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TUniSettings.OnChangeHandler(Sender: TObject);
+begin
+fChanged := True;
+If (fChangeCounter <= 0) and Assigned(fOnChange) then
+  fOnChange(Self);
+end;
+
 //==============================================================================
 
 constructor TUniSettings.Create;
@@ -474,8 +510,11 @@ fFormatSettings := UNS_FORMATSETTINGS_DEFAULT;
 fSynchronizer := TMultiReadExclusiveWriteSynchronizer.Create;
 fRootNode := TUNSNodeBranch.Create(UNS_NAME_ROOTNODE,nil);
 fRootNode.Master := Self;
+fRootNode.OnChange := OnChangeHandler;
 fWorkingPath := '';
 fWorkingNode := fRootNode;
+fChangeCounter := 0;
+fChanged := False;
 fOnChange := nil;
 end;
 
@@ -627,7 +666,12 @@ procedure TUniSettings.Clear;
 begin
 WriteLock;
 try
-  fRootNode.Clear;
+  ChangingStart;
+  try
+    fRootNode.Clear;
+  finally
+    ChangingEnd;
+  end;
   fWorkingPath := '';
   fWorkingNode := fRootNode;
 finally
@@ -663,7 +707,12 @@ procedure TUniSettings.ActualFromDefault;
 begin
 WriteLock;
 try
-  fWorkingNode.ActualFromDefault;
+  ChangingStart;
+  try
+    fWorkingNode.ActualFromDefault;
+  finally
+    ChangingEnd;
+  end;
 finally
   WriteUnlock;
 end;
@@ -675,7 +724,12 @@ procedure TUniSettings.DefaultFromActual;
 begin
 WriteLock;
 try
-  fWorkingNode.DefaultFromActual;
+  ChangingStart;
+  try
+    fWorkingNode.DefaultFromActual;
+  finally
+    ChangingEnd;
+  end;
 finally
   WriteUnlock;
 end;
@@ -687,7 +741,12 @@ procedure TUniSettings.ExchangeActualAndDefault;
 begin
 WriteLock;
 try
-  fWorkingNode.ExchangeActualAndDefault;
+  ChangingStart;
+  try
+    fWorkingNode.ExchangeActualAndDefault;
+  finally
+    ChangingEnd;
+  end;
 finally
   WriteUnlock;
 end;

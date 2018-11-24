@@ -245,7 +245,7 @@ Function TUniSettings.TimeValueGet(const ValueName: String; AccessDefVal: Boolea
 begin
 ReadLock;
 try
-  with TUNSNodeTime(CheckedLeafNodeTypeAccess(ValueName,vtBool,'TimeValueGet')) do
+  with TUNSNodeTime(CheckedLeafNodeTypeAccess(ValueName,vtTime,'TimeValueGet')) do
     If AccessDefVal then
       Result := Value
     else
@@ -261,7 +261,7 @@ procedure TUniSettings.TimeValueSet(const ValueName: String; NewValue: TTime; Ac
 begin
 WriteLock;
 try
-  with TUNSNodeTime(CheckedLeafNodeTypeAccess(ValueName,vtBool,'TimeValueSet')) do
+  with TUNSNodeTime(CheckedLeafNodeTypeAccess(ValueName,vtTime,'TimeValueSet')) do
     If AccessDefVal then
       Value := NewValue
     else

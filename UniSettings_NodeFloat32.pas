@@ -235,6 +235,8 @@ end.
 {$IFDEF Included_Declaration}
     Function Float32ValueGet(const ValueName: String; AccessDefVal: Boolean = False): Float32; virtual;
     procedure Float32ValueSet(const ValueName: String; NewValue: Float32; AccessDefVal: Boolean = False); virtual;
+    Function FloatValueGet(const ValueName: String; AccessDefVal: Boolean = False): Float32; virtual;
+    procedure FloatValueSet(const ValueName: String; NewValue: Float32; AccessDefVal: Boolean = False); virtual;
 {$ENDIF}
 
 //==============================================================================
@@ -245,7 +247,7 @@ Function TUniSettings.Float32ValueGet(const ValueName: String; AccessDefVal: Boo
 begin
 ReadLock;
 try
-  with TUNSNodeFloat32(CheckedLeafNodeTypeAccess(ValueName,vtBool,'Float32ValueGet')) do
+  with TUNSNodeFloat32(CheckedLeafNodeTypeAccess(ValueName,vtFloat32,'Float32ValueGet')) do
     If AccessDefVal then
       Result := Value
     else
@@ -261,7 +263,39 @@ procedure TUniSettings.Float32ValueSet(const ValueName: String; NewValue: Float3
 begin
 WriteLock;
 try
-  with TUNSNodeFloat32(CheckedLeafNodeTypeAccess(ValueName,vtBool,'Float32ValueSet')) do
+  with TUNSNodeFloat32(CheckedLeafNodeTypeAccess(ValueName,vtFloat32,'Float32ValueSet')) do
+    If AccessDefVal then
+      Value := NewValue
+    else
+      DefaultValue := NewValue;
+finally
+  WriteUnlock;
+end;
+end;
+
+//------------------------------------------------------------------------------
+
+Function TUniSettings.FloatValueGet(const ValueName: String; AccessDefVal: Boolean = False): Float32;
+begin
+ReadLock;
+try
+  with TUNSNodeFloat32(CheckedLeafNodeTypeAccess(ValueName,vtFloat,'FloatValueGet')) do
+    If AccessDefVal then
+      Result := Value
+    else
+      Result := DefaultValue;
+finally
+  ReadUnlock;
+end;
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TUniSettings.FloatValueSet(const ValueName: String; NewValue: Float32; AccessDefVal: Boolean = False);
+begin
+WriteLock;
+try
+  with TUNSNodeFloat32(CheckedLeafNodeTypeAccess(ValueName,vtFloat,'FloatValueSet')) do
     If AccessDefVal then
       Value := NewValue
     else

@@ -238,7 +238,7 @@ Function TUniSettings.TextValueGet(const ValueName: String; ThreadSafe: Boolean 
 begin
 ReadLock;
 try
-  with TUNSNodeText(CheckedLeafNodeTypeAccess(ValueName,vtBool,'TextValueGet')) do
+  with TUNSNodeText(CheckedLeafNodeTypeAccess(ValueName,vtText,'TextValueGet')) do
     If AccessDefVal then
       Result := Value
     else
@@ -258,7 +258,7 @@ WriteLock;
 try
   If ThreadSafe then
     UniqueString(NewValue);
-  with TUNSNodeText(CheckedLeafNodeTypeAccess(ValueName,vtBool,'TextValueSet')) do
+  with TUNSNodeText(CheckedLeafNodeTypeAccess(ValueName,vtText,'TextValueSet')) do
     If AccessDefVal then
       Value := NewValue
     else

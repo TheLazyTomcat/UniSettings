@@ -245,7 +245,7 @@ Function TUniSettings.Float64ValueGet(const ValueName: String; AccessDefVal: Boo
 begin
 ReadLock;
 try
-  with TUNSNodeFloat64(CheckedLeafNodeTypeAccess(ValueName,vtBool,'Float64ValueGet')) do
+  with TUNSNodeFloat64(CheckedLeafNodeTypeAccess(ValueName,vtFloat64,'Float64ValueGet')) do
     If AccessDefVal then
       Result := Value
     else
@@ -261,7 +261,7 @@ procedure TUniSettings.Float64ValueSet(const ValueName: String; NewValue: Float6
 begin
 WriteLock;
 try
-  with TUNSNodeFloat64(CheckedLeafNodeTypeAccess(ValueName,vtBool,'Float64ValueSet')) do
+  with TUNSNodeFloat64(CheckedLeafNodeTypeAccess(ValueName,vtFloat64,'Float64ValueSet')) do
     If AccessDefVal then
       Value := NewValue
     else

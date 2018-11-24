@@ -228,6 +228,8 @@ end.
 {$IFDEF Included_Declaration}
     Function Int32ValueGet(const ValueName: String; AccessDefVal: Boolean = False): Int32; virtual;
     procedure Int32ValueSet(const ValueName: String; NewValue: Int32; AccessDefVal: Boolean = False); virtual;
+    Function IntegerValueGet(const ValueName: String; AccessDefVal: Boolean = False): Int32; virtual;
+    procedure IntegerValueSet(const ValueName: String; NewValue: Int32; AccessDefVal: Boolean = False); virtual;
 {$ENDIF}
 
 //==============================================================================
@@ -254,7 +256,39 @@ procedure TUniSettings.Int32ValueSet(const ValueName: String; NewValue: Int32; A
 begin
 WriteLock;
 try
-  with TUNSNodeInt32(CheckedLeafNodeTypeAccess(ValueName,vtBool,'Int32ValueSet')) do
+  with TUNSNodeInt32(CheckedLeafNodeTypeAccess(ValueName,vtInt32,'Int32ValueSet')) do
+    If AccessDefVal then
+      Value := NewValue
+    else
+      DefaultValue := NewValue;
+finally
+  WriteUnlock;
+end;
+end;
+
+//------------------------------------------------------------------------------
+
+Function TUniSettings.IntegerValueGet(const ValueName: String; AccessDefVal: Boolean = False): Int32;
+begin
+ReadLock;
+try
+  with TUNSNodeInt32(CheckedLeafNodeTypeAccess(ValueName,vtInteger,'IntegerValueGet')) do
+    If AccessDefVal then
+      Result := Value
+    else
+      Result := DefaultValue;
+finally
+  ReadUnlock;
+end;
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TUniSettings.IntegerValueSet(const ValueName: String; NewValue: Int32; AccessDefVal: Boolean = False);
+begin
+WriteLock;
+try
+  with TUNSNodeInt32(CheckedLeafNodeTypeAccess(ValueName,vtInteger,'IntegerValueSet')) do
     If AccessDefVal then
       Value := NewValue
     else

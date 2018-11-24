@@ -238,7 +238,7 @@ Function TUniSettings.Int8ValueGet(const ValueName: String; AccessDefVal: Boolea
 begin
 ReadLock;
 try
-  with TUNSNodeInt8(CheckedLeafNodeTypeAccess(ValueName,vtBool,'Int8ValueGet')) do
+  with TUNSNodeInt8(CheckedLeafNodeTypeAccess(ValueName,vtInt8,'Int8ValueGet')) do
     If AccessDefVal then
       Result := Value
     else
@@ -254,7 +254,7 @@ procedure TUniSettings.Int8ValueSet(const ValueName: String; NewValue: Int8; Acc
 begin
 WriteLock;
 try
-  with TUNSNodeInt8(CheckedLeafNodeTypeAccess(ValueName,vtBool,'Int8ValueSet')) do
+  with TUNSNodeInt8(CheckedLeafNodeTypeAccess(ValueName,vtInt8,'Int8ValueSet')) do
     If AccessDefVal then
       Value := NewValue
     else

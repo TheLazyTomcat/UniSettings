@@ -178,6 +178,12 @@ If fCount >= Length(fSubNodes) then
 Result := fCount;
 fSubNodes[Result] := Node;
 fSubNodes[Result].Master := fMaster;
+{
+  The handler assigned here should be invariant for the entire lifetime of this
+  node, so there is no need for a redirection to a dynamic handler method that
+  will call fOnChange.
+}
+fSubNodes[Result].OnChange := fOnChange;
 Inc(fCount);
 DoChange;
 end;
