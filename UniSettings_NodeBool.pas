@@ -254,7 +254,7 @@ procedure TUniSettings.BooleanValueSet(const ValueName: String; NewValue: Boolea
 begin
 WriteLock;
 try
-  with TUNSNodeBool(CheckedLeafNodeTypeAccess(ValueName,vtBool,'BooleanValueGet')) do
+  with TUNSNodeBool(CheckedLeafNodeTypeAccess(ValueName,vtBool,'BooleanValueSet')) do
     If AccessDefVal then
       Value := NewValue
     else

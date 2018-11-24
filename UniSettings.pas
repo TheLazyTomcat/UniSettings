@@ -100,8 +100,22 @@ type
     //--- Inidividual value types access ---------------------------------------
   {$DEFINE Included}{$DEFINE Included_Declaration}
     {$INCLUDE '.\UniSettings_NodeBool.pas'}
+    {$INCLUDE '.\UniSettings_NodeInt8.pas'}
+    {$INCLUDE '.\UniSettings_NodeUInt8.pas'}
+    {$INCLUDE '.\UniSettings_NodeInt16.pas'}
+    {$INCLUDE '.\UniSettings_NodeUInt16.pas'}
+    {$INCLUDE '.\UniSettings_NodeInt32.pas'}
+    {$INCLUDE '.\UniSettings_NodeUInt32.pas'}
+    {$INCLUDE '.\UniSettings_NodeInt64.pas'}
+    {$INCLUDE '.\UniSettings_NodeUInt64.pas'}
+    {$INCLUDE '.\UniSettings_NodeFloat32.pas'}
+    {$INCLUDE '.\UniSettings_NodeFloat64.pas'}
+    {$INCLUDE '.\UniSettings_NodeDateTime.pas'}
+    {$INCLUDE '.\UniSettings_NodeDate.pas'}
+    {$INCLUDE '.\UniSettings_NodeTime.pas'}
+    {$INCLUDE '.\UniSettings_NodeText.pas'}
+    {$INCLUDE '.\UniSettings_NodeBuffer.pas'}
   {$UNDEF Included_Declaration}{$UNDEF Included}
-
     //--- Properties -----------------------------------------------------------
     property WorkingPath: String read GetWorkingPath write SetWorkingPath;
     //--- Format settings properties -------------------------------------------
@@ -1148,6 +1162,21 @@ end;
 
 {$DEFINE Included}{$DEFINE Included_Implementation}
   {$INCLUDE '.\UniSettings_NodeBool.pas'}
+  {$INCLUDE '.\UniSettings_NodeInt8.pas'}
+  {$INCLUDE '.\UniSettings_NodeUInt8.pas'}
+  {$INCLUDE '.\UniSettings_NodeInt16.pas'}
+  {$INCLUDE '.\UniSettings_NodeUInt16.pas'}
+  {$INCLUDE '.\UniSettings_NodeInt32.pas'}
+  {$INCLUDE '.\UniSettings_NodeUInt32.pas'}
+  {$INCLUDE '.\UniSettings_NodeInt64.pas'}
+  {$INCLUDE '.\UniSettings_NodeUInt64.pas'}
+  {$INCLUDE '.\UniSettings_NodeFloat32.pas'}
+  {$INCLUDE '.\UniSettings_NodeFloat64.pas'}
+  {$INCLUDE '.\UniSettings_NodeDateTime.pas'}
+  {$INCLUDE '.\UniSettings_NodeDate.pas'}
+  {$INCLUDE '.\UniSettings_NodeTime.pas'}
+  {$INCLUDE '.\UniSettings_NodeText.pas'}
+  {$INCLUDE '.\UniSettings_NodeBuffer.pas'}  
 {$UNDEF Included_Implementation}{$UNDEF Included}
 
 end.

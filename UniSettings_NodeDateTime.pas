@@ -1,3 +1,4 @@
+{$IFNDEF Included}
 unit UniSettings_NodeDateTime;
 
 {$INCLUDE '.\UniSettings_defs.inc'}
@@ -224,4 +225,52 @@ If Buffer.Size >= GetValueSize(Ord(AccessDefVal)) then
 else raise EUNSBufferTooSmallException.Create(Buffer,Self,'SetValueFromBuffer');
 end;
 
+{$WARNINGS OFF} // supresses warnings on lines after the final end
 end.
+
+{$ELSE Included}
+
+{$WARNINGS ON}
+
+{$IFDEF Included_Declaration}
+    Function DateTimeValueGet(const ValueName: String; AccessDefVal: Boolean = False): TDateTime; virtual;
+    procedure DateTimeValueSet(const ValueName: String; NewValue: TDateTime; AccessDefVal: Boolean = False); virtual;
+{$ENDIF}
+
+//==============================================================================
+
+{$IFDEF Included_Implementation}
+
+Function TUniSettings.DateTimeValueGet(const ValueName: String; AccessDefVal: Boolean = False): TDateTime;
+begin
+ReadLock;
+try
+  with TUNSNodeDateTime(CheckedLeafNodeTypeAccess(ValueName,vtBool,'DateTimeValueGet')) do
+    If AccessDefVal then
+      Result := Value
+    else
+      Result := DefaultValue;
+finally
+  ReadUnlock;
+end;
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TUniSettings.DateTimeValueSet(const ValueName: String; NewValue: TDateTime; AccessDefVal: Boolean = False);
+begin
+WriteLock;
+try
+  with TUNSNodeDateTime(CheckedLeafNodeTypeAccess(ValueName,vtBool,'DateTimeValueSet')) do
+    If AccessDefVal then
+      Value := NewValue
+    else
+      DefaultValue := NewValue;
+finally
+  WriteUnlock;
+end;
+end;
+
+{$ENDIF}
+
+{$ENDIF Included}

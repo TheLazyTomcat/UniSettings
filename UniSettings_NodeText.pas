@@ -1,3 +1,4 @@
+{$IFNDEF Included}
 unit UniSettings_NodeText;
 
 {$INCLUDE '.\UniSettings_defs.inc'}
@@ -217,4 +218,56 @@ If Buffer.Size >= SizeOf(Int32) then
 else raise EUNSBufferTooSmallException.Create(Buffer,Self,'SetValueFromBuffer');
 end;
 
+{$WARNINGS OFF} // supresses warnings on lines after the final end
 end.
+
+{$ELSE Included}
+
+{$WARNINGS ON}
+
+{$IFDEF Included_Declaration}
+    Function TextValueGet(const ValueName: String; ThreadSafe: Boolean = True; AccessDefVal: Boolean = False): String; virtual;
+    procedure TextValueSet(const ValueName: String; NewValue: String; ThreadSafe: Boolean = True; AccessDefVal: Boolean = False); virtual;
+{$ENDIF}
+
+//==============================================================================
+
+{$IFDEF Included_Implementation}
+
+Function TUniSettings.TextValueGet(const ValueName: String; ThreadSafe: Boolean = True; AccessDefVal: Boolean = False): String;
+begin
+ReadLock;
+try
+  with TUNSNodeText(CheckedLeafNodeTypeAccess(ValueName,vtBool,'TextValueGet')) do
+    If AccessDefVal then
+      Result := Value
+    else
+      Result := DefaultValue;
+  If ThreadSafe then
+    UniqueString(Result);
+finally
+  ReadUnlock;
+end;
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TUniSettings.TextValueSet(const ValueName: String; NewValue: String; ThreadSafe: Boolean = True; AccessDefVal: Boolean = False);
+begin
+WriteLock;
+try
+  If ThreadSafe then
+    UniqueString(NewValue);
+  with TUNSNodeText(CheckedLeafNodeTypeAccess(ValueName,vtBool,'TextValueSet')) do
+    If AccessDefVal then
+      Value := NewValue
+    else
+      DefaultValue := NewValue;
+finally
+  WriteUnlock;
+end;
+end;
+
+{$ENDIF}
+
+{$ENDIF Included}

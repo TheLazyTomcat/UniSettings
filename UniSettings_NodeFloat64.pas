@@ -1,3 +1,4 @@
+{$IFNDEF Included}
 unit UniSettings_NodeFloat64;
 
 {$INCLUDE '.\UniSettings_defs.inc'}
@@ -224,4 +225,52 @@ If Buffer.Size >= GetValueSize(Ord(AccessDefVal)) then
 else raise EUNSBufferTooSmallException.Create(Buffer,Self,'SetValueFromBuffer');
 end;
 
+{$WARNINGS OFF} // supresses warnings on lines after the final end
 end.
+
+{$ELSE Included}
+
+{$WARNINGS ON}
+
+{$IFDEF Included_Declaration}
+    Function Float64ValueGet(const ValueName: String; AccessDefVal: Boolean = False): Float64; virtual;
+    procedure Float64ValueSet(const ValueName: String; NewValue: Float64; AccessDefVal: Boolean = False); virtual;
+{$ENDIF}
+
+//==============================================================================
+
+{$IFDEF Included_Implementation}
+
+Function TUniSettings.Float64ValueGet(const ValueName: String; AccessDefVal: Boolean = False): Float64;
+begin
+ReadLock;
+try
+  with TUNSNodeFloat64(CheckedLeafNodeTypeAccess(ValueName,vtBool,'Float64ValueGet')) do
+    If AccessDefVal then
+      Result := Value
+    else
+      Result := DefaultValue;
+finally
+  ReadUnlock;
+end;
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TUniSettings.Float64ValueSet(const ValueName: String; NewValue: Float64; AccessDefVal: Boolean = False);
+begin
+WriteLock;
+try
+  with TUNSNodeFloat64(CheckedLeafNodeTypeAccess(ValueName,vtBool,'Float64ValueSet')) do
+    If AccessDefVal then
+      Value := NewValue
+    else
+      DefaultValue := NewValue;
+finally
+  WriteUnlock;
+end;
+end;
+
+{$ENDIF}
+
+{$ENDIF Included}

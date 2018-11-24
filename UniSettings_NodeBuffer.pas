@@ -1,3 +1,4 @@
+{$IFNDEF Included}
 unit UniSettings_NodeBuffer;
 
 {$INCLUDE '.\UniSettings_defs.inc'}
@@ -299,4 +300,64 @@ else
 DoChange;
 end;
 
+{$WARNINGS OFF} // supresses warnings on lines after the final end
 end.
+
+{$ELSE Included}
+
+{$WARNINGS ON}
+
+{$IFDEF Included_Declaration}
+    Function BufferValueGet(const ValueName: String; CreateCopy: Boolean = True; AccessDefVal: Boolean = False): TMemoryBuffer; virtual;
+    procedure BufferValueSet(const ValueName: String; NewValue: TMemoryBuffer; CreateCopy: Boolean = True; AccessDefVal: Boolean = False); virtual;
+{$ENDIF}
+
+//==============================================================================
+
+{$IFDEF Included_Implementation}
+
+Function TUniSettings.BufferValueGet(const ValueName: String; CreateCopy: Boolean = True; AccessDefVal: Boolean = False): TMemoryBuffer;
+var
+  Temp: TMemoryBuffer;
+begin
+ReadLock;
+try
+  with TUNSNodeBuffer(CheckedLeafNodeTypeAccess(ValueName,vtBool,'BufferValueGet')) do
+    If AccessDefVal then
+      Temp := Value
+    else
+      Temp := DefaultValue;
+  If CreateCopy then
+    CopyBuffer(Temp,Result)
+  else
+    Result := Temp;
+finally
+  ReadUnlock;
+end;
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TUniSettings.BufferValueSet(const ValueName: String; NewValue: TMemoryBuffer; CreateCopy: Boolean = True; AccessDefVal: Boolean = False);
+var
+  Temp: TMemoryBuffer;
+begin
+WriteLock;
+try
+  If CreateCopy then
+    CopyBuffer(NewValue,Temp)
+  else
+    Temp := NewValue;
+  with TUNSNodeBuffer(CheckedLeafNodeTypeAccess(ValueName,vtBool,'BufferValueSet')) do
+    If AccessDefVal then
+      Value := Temp
+    else
+      DefaultValue := Temp;
+finally
+  WriteUnlock;
+end;
+end;
+
+{$ENDIF}
+
+{$ENDIF Included}

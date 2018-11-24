@@ -1,3 +1,4 @@
+{$IFNDEF Included}
 unit UniSettings_NodeUInt8;
 
 {$INCLUDE '.\UniSettings_defs.inc'}
@@ -217,4 +218,52 @@ If Buffer.Size >= GetValueSize(Ord(AccessDefVal)) then
 else raise EUNSBufferTooSmallException.Create(Buffer,Self,'SetValueFromBuffer');
 end;
 
+{$WARNINGS OFF} // supresses warnings on lines after the final end
 end.
+
+{$ELSE Included}
+
+{$WARNINGS ON}
+
+{$IFDEF Included_Declaration}
+    Function UInt8ValueGet(const ValueName: String; AccessDefVal: Boolean = False): UInt8; virtual;
+    procedure UInt8ValueSet(const ValueName: String; NewValue: UInt8; AccessDefVal: Boolean = False); virtual;
+{$ENDIF}
+
+//==============================================================================
+
+{$IFDEF Included_Implementation}
+
+Function TUniSettings.UInt8ValueGet(const ValueName: String; AccessDefVal: Boolean = False): UInt8;
+begin
+ReadLock;
+try
+  with TUNSNodeUInt8(CheckedLeafNodeTypeAccess(ValueName,vtBool,'UInt8ValueGet')) do
+    If AccessDefVal then
+      Result := Value
+    else
+      Result := DefaultValue;
+finally
+  ReadUnlock;
+end;
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TUniSettings.UInt8ValueSet(const ValueName: String; NewValue: UInt8; AccessDefVal: Boolean = False);
+begin
+WriteLock;
+try
+  with TUNSNodeUInt8(CheckedLeafNodeTypeAccess(ValueName,vtBool,'UInt8ValueSet')) do
+    If AccessDefVal then
+      Value := NewValue
+    else
+      DefaultValue := NewValue;
+finally
+  WriteUnlock;
+end;
+end;
+
+{$ENDIF}
+
+{$ENDIF Included}
