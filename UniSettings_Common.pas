@@ -18,6 +18,8 @@ type
   TDate = type TDateTime;
   TTime = type TDateTime;
 
+{$message 'move following to units with corresponding nodes'}
+
   TUNSAoBool = record
     Arr:    array of Boolean;
     Count:  Integer;
@@ -152,13 +154,13 @@ const
     'AoText','AoBuffer');
 
 type
-  TUNSNodeFlag = (nfConst);
+  TUNSValueFlag = (vfNone); // atm. not implemented
 
-  TUNSNodeFlags = set of TUNSNodeFlag;
+  TUNSValueFlags = set of TUNSValueFlag;
 
 //------------------------------------------------------------------------------
 
-  TUNSFormatSettings = record
+  TUNSValueFormatSettings = record
     NumericBools: Boolean;
     HexIntegers:  Boolean;
     HexFloats:    Boolean;
@@ -166,22 +168,27 @@ type
   end;
 
 const
-  UNS_FORMATSETTINGS_DEFAULT: TUNSFormatSettings = (
+  UNS_VALUEFORMATSETTINGS_DEFAULT: TUNSValueFormatSettings = (
     NumericBools: False;
     HexIntegers:  False;
     HexFloats:    False;
     HexDateTime:  False);
 
+  UNS_VALUEFORMATSETTING_INDEX_NUMBOOL = 0;
+  UNS_VALUEFORMATSETTING_INDEX_HEXINTS = 1;
+  UNS_VALUEFORMATSETTING_INDEX_HEXFLTS = 2;
+  UNS_VALUEFORMATSETTING_INDEX_HEXDTTM = 3;
+
 //------------------------------------------------------------------------------
 
 type
-  TUNSNamePartType = (vptInvalid,vptIdentifier,vptArrayIdentifier,
-                      vptArrayIndex,vptArrayIndexDef,
-                      vptArrayItem,vptArrayItemDef);
+  TUNSNamePartType = (nptInvalid,nptIdentifier,nptArrayIdentifier,
+                      nptArrayIndex,nptArrayIndexDef,
+                      nptArrayItem,nptArrayItemDef);
 
   TUNSNamePart = record
     PartType:   TUNSNamePartType;
-    PartName:   TUNSHashedString;
+    PartStr:    TUNSHashedString;
     PartIndex:  Integer;
   end;
 
@@ -194,27 +201,30 @@ type
 const
   UNS_NAME_ROOTNODE = 'root';
 
-  UNS_PATH_INDEX_DEFAULT = -1;
+  UNS_NAME_INDEX_DEFAULT = -1;
 
-  UNS_PATH_IDENTIFIER_VALIDCHARS = ['0'..'9','a'..'z','A'..'Z','_'];
+  UNS_NAME_IDENTIFIER_VALIDCHARS = ['0'..'9','a'..'z','A'..'Z','_'];
 
-  UNS_PATH_DELIMITER        = '.';
-  UNS_PATH_BRACKET_LEFT     = '[';
-  UNS_PATH_BRACKET_RIGHT    = ']';
-  UNS_PATH_BRACKETDEF_LEFT  = '<';
-  UNS_PATH_BRACKETDEF_RIGHT = '>';
-  UNS_PATH_ARRAYITEM_TAG    = '#';
+  UNS_NAME_DELIMITER        = '.';
+  UNS_NAME_BRACKET_LEFT     = '[';
+  UNS_NAME_BRACKET_RIGHT    = ']';
+  UNS_NAME_BRACKETDEF_LEFT  = '<';
+  UNS_NAME_BRACKETDEF_RIGHT = '>';
+  UNS_NAME_ARRAYITEM_TAG    = '#';
 
-  UNS_PATH_BRACKETS_LEFT  = [UNS_PATH_BRACKET_LEFT,UNS_PATH_BRACKETDEF_LEFT];
-  UNS_PATH_BRACKETS_RIGHT = [UNS_PATH_BRACKET_RIGHT,UNS_PATH_BRACKETDEF_RIGHT];
+  UNS_NAME_BRACKETS_LEFT  = [UNS_NAME_BRACKET_LEFT,UNS_NAME_BRACKETDEF_LEFT];
+  UNS_NAME_BRACKETS_RIGHT = [UNS_NAME_BRACKET_RIGHT,UNS_NAME_BRACKETDEF_RIGHT];
 
-  UNS_PATH_BRACKETS = UNS_PATH_BRACKETS_LEFT + UNS_PATH_BRACKETS_RIGHT;
+  UNS_NAME_BRACKETS = UNS_NAME_BRACKETS_LEFT + UNS_NAME_BRACKETS_RIGHT;
 
-  UNS_PATH_DELIMITERS = [UNS_PATH_DELIMITER] + UNS_PATH_BRACKETS_LEFT;
+  UNS_NAME_DELIMITERS = [UNS_NAME_DELIMITER] + UNS_NAME_BRACKETS_LEFT;
 
-  UNS_PATH_ARRAYITEM_NEW     = 0;
-  UNS_PATH_ARRAYITEM_LOW     = 1;
-  UNS_PATH_ARRAYITEM_HIGH    = 2;
+  UNS_NAME_VALIDCHARS = UNS_NAME_IDENTIFIER_VALIDCHARS + UNS_NAME_DELIMITERS +
+                        UNS_NAME_BRACKETS + [UNS_NAME_ARRAYITEM_TAG];
+
+  UNS_NAME_ARRAYITEM_NEW     = 0;
+  UNS_NAME_ARRAYITEM_LOW     = 1;
+  UNS_NAME_ARRAYITEM_HIGH    = 2;
 
 implementation
 

@@ -83,7 +83,7 @@ end;
 
 Function TUNSNodeBool.ConvToStr(Value: Boolean): String;
 begin
-If FormatSettings.NumericBools then
+If ValueFormatSettings.NumericBools then
   Result := IntToStr(Ord(Value))
 else
   Result := BoolToStr(Value,True);

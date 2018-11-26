@@ -24,7 +24,8 @@ type
 implementation
 
 uses
-  SysUtils;
+  SysUtils,
+  UniSettings_Exceptions;
 
 Function TUNSNodeArray.GetItem(Index: Integer): TUNSNodeArrayItem;
 begin
@@ -57,7 +58,7 @@ If Node is TUNSNodeArrayItem then
     Result := inherited Add(Node);
     TUNSNodeArrayItem(Node).ArrayIndex := Result;
   end
-else raise Exception.Create('TUNSNodeArray.Add: Added node is not of type TUNSNodeArrayItem.');
+else raise EUNSException.Create('Added node is not of type TUNSNodeArrayItem.',Self,'Add');
 end;
 
 //------------------------------------------------------------------------------

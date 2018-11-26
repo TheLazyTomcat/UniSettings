@@ -12,6 +12,8 @@ Function UNSCharInSet(C: Char; CharSet: TSysCharSet): Boolean;
 
 Function UNSIsValidIdentifier(const Identifier: String): Boolean;
 
+Function UNSIsValidName(const Name: String): Boolean;
+
 Function UNSSameHashString(A,B: TUNSHashedString; FullEval: Boolean = False): Boolean;
 
 procedure UNSHashString(var HashStr: TUNSHashedString);
@@ -43,11 +45,30 @@ Function UNSIsValidIdentifier(const Identifier: String): Boolean;
 var
   i:  Integer;
 begin
-Result := True;
 If Length(Identifier) > 0 then
   begin
+    Result := True;
     For i := 1 to Length(Identifier) do
-      If not UNSCharInSet(Identifier[i],UNS_PATH_IDENTIFIER_VALIDCHARS) then
+      If not UNSCharInSet(Identifier[i],UNS_NAME_IDENTIFIER_VALIDCHARS) then
+        begin
+          Result := False;
+          Break{For i};
+        end;
+  end
+else Result := False;
+end;
+
+//------------------------------------------------------------------------------
+
+Function UNSIsValidName(const Name: String): Boolean;
+var
+  i:  Integer;
+begin
+If Length(Name) > 0 then
+  begin
+    Result := True;
+    For i := 1 to Length(Name) do
+      If not UNSCharInSet(Name[i],UNS_NAME_VALIDCHARS) then
         begin
           Result := False;
           Break{For i};
@@ -102,8 +123,8 @@ var
   begin
     // check if brackets match
     case Current of
-      UNS_PATH_BRACKET_RIGHT:     Result := Prev = UNS_PATH_BRACKET_LEFT;
-      UNS_PATH_BRACKETDEF_RIGHT:  Result := Prev = UNS_PATH_BRACKETDEF_LEFT;
+      UNS_NAME_BRACKET_RIGHT:     Result := Prev = UNS_NAME_BRACKET_LEFT;
+      UNS_NAME_BRACKETDEF_RIGHT:  Result := Prev = UNS_NAME_BRACKETDEF_LEFT;
     else
       Result := True;
     end;
@@ -115,74 +136,74 @@ If Length(Name) > 0 then
   begin
     Start := 1;
     i := 1;
-    PrevDelimiter := UNS_PATH_DELIMITER; 
+    PrevDelimiter := UNS_NAME_DELIMITER; 
     while i <= Length(Name) do
       begin
 { - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -}
-        If UNSCharInSet(Name[i],UNS_PATH_DELIMITERS) then
+        If UNSCharInSet(Name[i],UNS_NAME_DELIMITERS) then
           with NameParts do
             begin
               // last part was an (array) identifier
               GrowPartsArray;
-              If CheckAndSetIdentifier(Copy(Name,Start,i - Start),Arr[Count].PartName) then
+              If CheckAndSetIdentifier(Copy(Name,Start,i - Start),Arr[Count].PartStr) then
                 begin
-                  If Name[i] <> UNS_PATH_DELIMITER then
-                    Arr[Count].PartType := vptArrayIdentifier
+                  If Name[i] <> UNS_NAME_DELIMITER then
+                    Arr[Count].PartType := nptArrayIdentifier
                   else
-                    Arr[Count].PartType := vptIdentifier;
+                    Arr[Count].PartType := nptIdentifier;
                 end
-              else Arr[Count].PartType := vptInvalid;
-              Arr[Count].PartIndex := UNS_PATH_INDEX_DEFAULT;
+              else Arr[Count].PartType := nptInvalid;
+              Arr[Count].PartIndex := UNS_NAME_INDEX_DEFAULT;
               PrevDelimiter := Name[i];
               Start := i + 1;
               Inc(Count);
             end
 { - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -}
-        else If UNSCharInSet(Name[i],UNS_PATH_BRACKETS_RIGHT) then
+        else If UNSCharInSet(Name[i],UNS_NAME_BRACKETS_RIGHT) then
           with NameParts do
             begin
               // last part was in brackets, index or item number
               GrowPartsArray;
               If CheckDelimiters(PrevDelimiter,Name[i]) then
                 begin
-                  If Name[Start] = UNS_PATH_ARRAYITEM_TAG then
+                  If Name[Start] = UNS_NAME_ARRAYITEM_TAG then
                     begin
                       // there is item number in the brackets
-                      If Name[i] = UNS_PATH_BRACKETDEF_RIGHT then
-                        Arr[Count].PartType := vptArrayItemDef
+                      If Name[i] = UNS_NAME_BRACKETDEF_RIGHT then
+                        Arr[Count].PartType := nptArrayItemDef
                       else
-                        Arr[Count].PartType := vptArrayItem;
+                        Arr[Count].PartType := nptArrayItem;
                       // resolve to item number (not index!)
                       If (i - Start) = 2 then
                         case Name[Start + 1] of
-                          '0','N','n':  Arr[Count].PartIndex := UNS_PATH_ARRAYITEM_NEW;
-                          '1','L','l':  Arr[Count].PartIndex := UNS_PATH_ARRAYITEM_LOW;
-                          '2','H','h':  Arr[Count].PartIndex := UNS_PATH_ARRAYITEM_HIGH;
+                          '0','N','n':  Arr[Count].PartIndex := UNS_NAME_ARRAYITEM_NEW;
+                          '1','L','l':  Arr[Count].PartIndex := UNS_NAME_ARRAYITEM_LOW;
+                          '2','H','h':  Arr[Count].PartIndex := UNS_NAME_ARRAYITEM_HIGH;
                         else
-                          Arr[Count].PartType := vptInvalid;
+                          Arr[Count].PartType := nptInvalid;
                         end
-                      else Arr[Count].PartType := vptInvalid;
+                      else Arr[Count].PartType := nptInvalid;
                     end
                   else
                     begin
                       // there is item index in the brackets
                       If TryStrToInt(Copy(Name,Start,i - Start),Arr[Count].PartIndex) then
                         begin
-                          If Name[i] = UNS_PATH_BRACKETDEF_RIGHT then
-                            Arr[Count].PartType := vptArrayIndexDef
+                          If Name[i] = UNS_NAME_BRACKETDEF_RIGHT then
+                            Arr[Count].PartType := nptArrayIndexDef
                           else
-                            Arr[Count].PartType := vptArrayIndex;
+                            Arr[Count].PartType := nptArrayIndex;
                         end
-                      else Arr[Count].PartType := vptInvalid;
+                      else Arr[Count].PartType := nptInvalid;
                     end;
                 end
               else
                 begin
                   // wrong delimiter
-                  Arr[Count].PartType := vptInvalid;
-                  Arr[Count].PartIndex := UNS_PATH_INDEX_DEFAULT;
+                  Arr[Count].PartType := nptInvalid;
+                  Arr[Count].PartIndex := UNS_NAME_INDEX_DEFAULT;
                 end;
-              Arr[Count].PartName := UNSHashedString(Copy(Name,Start,i - Start));
+              Arr[Count].PartStr := UNSHashedString(Copy(Name,Start,i - Start));
               PrevDelimiter := Name[i];
               Start := i + 2; // delimiter is expected after the closing bracket
               Inc(Count);
@@ -196,11 +217,11 @@ If Length(Name) > 0 then
       with NameParts do
         begin
           GrowPartsArray;
-          If CheckAndSetIdentifier(Copy(Name,Start,Length(Name) - Start + 1),Arr[Count].PartName) then
-            Arr[Count].PartType := vptIdentifier
+          If CheckAndSetIdentifier(Copy(Name,Start,Length(Name) - Start + 1),Arr[Count].PartStr) then
+            Arr[Count].PartType := nptIdentifier
           else
-            Arr[Count].PartType := vptInvalid;
-          Arr[Count].PartIndex := UNS_PATH_INDEX_DEFAULT;
+            Arr[Count].PartType := nptInvalid;
+          Arr[Count].PartIndex := UNS_NAME_INDEX_DEFAULT;
           Inc(Count);
         end;
   end;
@@ -210,19 +231,19 @@ NameParts.Valid := True;
 For i := Low(NameParts.Arr) to Pred(NameParts.Count) do
   begin
     case NameParts.Arr[i].PartType of
-      vptInvalid:
+      nptInvalid:
         NameParts.Valid := False;
-      vptIdentifier:;       // do nothing
-      vptArrayIdentifier:   // must be followed by index or item number, or must be last
+      nptIdentifier:;       // do nothing
+      nptArrayIdentifier:   // must be followed by index or item number, or must be last
         If i < Pred(NameParts.Count) then
           NameParts.Valid := NameParts.Arr[i + 1].PartType in
-            [vptArrayIndex,vptArrayIndexDef,vptArrayItem,vptArrayItemDef];
-      vptArrayIndex,
-      vptArrayIndexDef,
-      vptArrayItem,
-      vptArrayItemDef:      // must be always preceded by an array identifier
+            [nptArrayIndex,nptArrayIndexDef,nptArrayItem,nptArrayItemDef];
+      nptArrayIndex,
+      nptArrayIndexDef,
+      nptArrayItem,
+      nptArrayItemDef:      // must be always preceded by an array identifier
         If i > Low(NameParts.Arr) then
-          NameParts.Valid := NameParts.Arr[i - 1].PartType = vptArrayIdentifier
+          NameParts.Valid := NameParts.Arr[i - 1].PartType = nptArrayIdentifier
         else
           NameParts.Valid := False;
     else

@@ -15,7 +15,7 @@ type
     fName:          TUNSHashedString;
     fParentNode:    TUNSNodeBase;
     fMaster:        TObject;
-    fFlags:         TUNSNodeFlags;
+    fFlags:         TUNSValueFlags;
     fConvSettings:  TFormatSettings;
     fChanged:       Boolean;
     fOnChange:      TNotifyEvent;
@@ -26,14 +26,15 @@ type
     Function GetNodeLevel: Integer; virtual;
     Function GetMaxNodeLevel: Integer; virtual;
     procedure SetChanged(Value: Boolean); virtual;
-    Function ReconstructFullPathInternal(TopLevelCall: Boolean; IncludeRoot: Boolean): String; virtual;
-    Function FormatSettings: TUNSFormatSettings; virtual;
+    Function ReconstructFullNameInternal(TopLevelCall: Boolean; IncludeRoot: Boolean): String; virtual;
+    Function ValueFormatSettings: TUNSValueFormatSettings; virtual;
     procedure DoChange; virtual;
   public
     constructor Create(const Name: String; ParentNode: TUNSNodeBase);
-    procedure SetFlag(Flag: TUNSNodeFlag); virtual;
-    procedure ResetFlag(Flag: TUNSNodeFlag); virtual;
-    Function ReconstructFullPath(IncludeRoot: Boolean = False): String; virtual;
+    Function GetFlag(Flag: TUNSValueFlag): Boolean; virtual;
+    procedure SetFlag(Flag: TUNSValueFlag); virtual;
+    procedure ResetFlag(Flag: TUNSValueFlag); virtual;
+    Function ReconstructFullName(IncludeRoot: Boolean = False): String; virtual;
     procedure ActualFromDefault; overload; virtual; abstract;
     procedure DefaultFromActual; overload; virtual; abstract;
     procedure ExchangeActualAndDefault; overload; virtual; abstract;
@@ -46,7 +47,7 @@ type
     property Master: TObject read fMaster write SetMaster;
     property NodeLevel: Integer read GetNodeLevel;
     property MaxNodeLevel: Integer read GetMaxNodeLevel;    
-    property Flags: TUNSNodeFlags read fFlags write fFlags;
+    property Flags: TUNSValueFlags read fFlags write fFlags;
     property Changed: Boolean read fChanged write SetChanged;
     property OnChange: TNotifyEvent read fOnChange write fOnChange;
   end;
@@ -115,7 +116,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function TUNSNodeBase.ReconstructFullPathInternal(TopLevelCall: Boolean; IncludeRoot: Boolean): String;
+Function TUNSNodeBase.ReconstructFullNameInternal(TopLevelCall: Boolean; IncludeRoot: Boolean): String;
 var
   TempStr:  String;
 begin
@@ -123,11 +124,11 @@ case GetNodeClass of
   ncBranch:     If TopLevelCall then
                   TempStr := fName.Str
                 else
-                  TempStr := fName.Str + UNS_PATH_DELIMITER;
+                  TempStr := fName.Str + UNS_NAME_DELIMITER;
   ncArray:      If TopLevelCall then
                   TempStr := Format('%s[]',[fName.Str])
                 else If (TUNSNodeArray(Self).Count <= 0) then
-                  TempStr := Format('%s[]',[fName.Str]) + UNS_PATH_DELIMITER
+                  TempStr := Format('%s[]',[fName.Str]) + UNS_NAME_DELIMITER
                 else
                   TempStr := fName.Str;
   ncArrayItem:  If Assigned(fParentNode) then
@@ -135,9 +136,9 @@ case GetNodeClass of
                     If TopLevelCall or (TUNSNodeArrayItem(Self).Count <= 0) then
                       TempStr := Format('[%d]',[TUNSNodeArrayItem(Self).ArrayIndex])
                     else
-                      TempStr := Format('[%d]',[TUNSNodeArrayItem(Self).ArrayIndex]) + UNS_PATH_DELIMITER;
+                      TempStr := Format('[%d]',[TUNSNodeArrayItem(Self).ArrayIndex]) + UNS_NAME_DELIMITER;
                   end
-                else raise EUNSException.Create('Parent node not assigned.',Self,'ReconstructFullPathInternal');
+                else raise EUNSException.Create('Parent node not assigned.',Self,'ReconstructFullNameInternal');
   ncLeaf:       TempStr := fName.Str;
 else
   {ncUndefined}
@@ -150,17 +151,17 @@ If not Assigned(fParentNode) then
     else
       Result := '';
   end
-else Result := fParentNode.ReconstructFullPathInternal(False,IncludeRoot) + TempStr;
+else Result := fParentNode.ReconstructFullNameInternal(False,IncludeRoot) + TempStr;
 end;
 
 //------------------------------------------------------------------------------
 
-Function TUNSNodeBase.FormatSettings: TUNSFormatSettings;
+Function TUNSNodeBase.ValueFormatSettings: TUNSValueFormatSettings;
 begin
 If Assigned(fMaster) then
-  Result := TUniSettings(fMaster).FormatSettings
+  Result := TUniSettings(fMaster).ValueFormatSettings
 else
-  Result := UNS_FORMATSETTINGS_DEFAULT;
+  Result := UNS_VALUEFORMATSETTINGS_DEFAULT;
 end;
 
 //------------------------------------------------------------------------------
@@ -195,23 +196,30 @@ end;
 
 //------------------------------------------------------------------------------
 
-procedure TUNSNodeBase.SetFlag(Flag: TUNSNodeFlag);
+Function TUNSNodeBase.GetFlag(Flag: TUNSValueFlag): Boolean;
+begin
+Result := Flag in fFlags;
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TUNSNodeBase.SetFlag(Flag: TUNSValueFlag);
 begin
 Include(fFlags,Flag);
 end;
 
 //------------------------------------------------------------------------------
 
-procedure TUNSNodeBase.ResetFlag(Flag: TUNSNodeFlag);
+procedure TUNSNodeBase.ResetFlag(Flag: TUNSValueFlag);
 begin
 Exclude(fFlags,Flag);
 end;
 
 //------------------------------------------------------------------------------
 
-Function TUNSNodeBase.ReconstructFullPath(IncludeRoot: Boolean = False): String;
+Function TUNSNodeBase.ReconstructFullName(IncludeRoot: Boolean = False): String;
 begin
-Result := ReconstructFullPathInternal(True,IncludeRoot);
+Result := ReconstructFullNameInternal(True,IncludeRoot);
 end;
 
 end.

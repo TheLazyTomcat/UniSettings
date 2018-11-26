@@ -48,7 +48,7 @@ implementation
 
 uses
   SysUtils,
-  UniSettings_Utils;
+  UniSettings_Exceptions, UniSettings_Utils;
 
 const
   UNS_BRANCHNODE_GROWFACTOR = 128;
@@ -58,7 +58,7 @@ begin
 If CheckIndex(Index) then
   Result := fSubNodes[Index]
 else
-  raise Exception.CreateFmt('TUNSNodeBranch.GetSubNode: Index (%d) out of bounds.',[Index]);
+  raise EUNSIndexOutOfBoundsException.Create(Index,Self,'GetSubNode');
 end;
 
 //==============================================================================
@@ -181,7 +181,7 @@ fSubNodes[Result].Master := fMaster;
 {
   The handler assigned here should be invariant for the entire lifetime of this
   node, so there is no need for a redirection to a dynamic handler method that
-  will call fOnChange.
+  will call actual fOnChange.
 }
 fSubNodes[Result].OnChange := fOnChange;
 Inc(fCount);
@@ -211,7 +211,7 @@ If CheckIndex(Index) then
     Dec(fCount);
     DoChange;
   end
-else raise Exception.CreateFmt('TUNSNodeBranch.Delete: Index (%d) out of bounds.',[Index]);
+else raise EUNSIndexOutOfBoundsException.Create(Index,Self,'Delete');
 end;
 
 //------------------------------------------------------------------------------

@@ -26,7 +26,7 @@ implementation
 
 uses
   SysUtils,
-  UniSettings_Utils, UniSettings_NodeArray;
+  UniSettings_Exceptions, UniSettings_Utils, UniSettings_NodeArray;
 
 procedure TUNSNodeArrayItem.SetName(Value: TUNSHashedString);
 begin
@@ -63,7 +63,7 @@ inherited Create(Name,ParentNode);
 fArrayIndex := -1;
 fName := UNSHashedString(IntToStr(fArrayIndex));
 If not(ParentNode is TUNSNodeArray) then
-  raise Exception.Create('TUNSNodeArrayItem.Create: Parent node is not of type TUNSNodeArray.');
+  raise EUNSException.Create('Parent node is not of type TUNSNodeArray.',Self,'Create');
 end;
 
 end.

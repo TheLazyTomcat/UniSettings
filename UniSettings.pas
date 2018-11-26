@@ -1,3 +1,12 @@
+(*
+todo
+
+arrays
+copy construcror(s)
+value save-restore system
+buffers - free replaced buffers (eg. def->curr and v.v.)
+unify nomenclature
+*)
 unit UniSettings;
 
 {$INCLUDE '.\UniSettings_defs.inc'}
@@ -15,20 +24,23 @@ type
 
   TUniSettings = class(TObject)
   private
-    fFormatSettings:  TUNSFormatSettings;
-    fSynchronizer:    TMultiReadExclusiveWriteSynchronizer;
-    fRootNode:        TUNSNodeBranch;
-    fWorkingPath:     String;
-    fWorkingNode:     TUNSNodeBranch;
-    fChangeCounter:   Integer;
-    fChanged:         Boolean;
-    fOnChange:        TNotifyEvent;
-    Function GetWorkingPath: String;
-    procedure SetWorkingPath(const Path: String);
+    fValueFormatSettings: TUNSValueFormatSettings;
+    fSynchronizer:        TMultiReadExclusiveWriteSynchronizer;
+    fRootNode:            TUNSNodeBranch;
+    fWorkingBranch:       String;
+    fWorkingNode:         TUNSNodeBranch;
+    fChangeCounter:       Integer;
+    fChanged:             Boolean;
+    fOnChange:            TNotifyEvent;
+    Function GetValueFormatSettings: TUNSValueFormatSettings;
+    Function GetValueFormatSettingBool(Index: Integer): Boolean;
+    procedure SetValueFormatSettingBool(Index: Integer; Value: Boolean);
+    Function GetWorkingBranch: String;
+    procedure SetWorkingBranch(const Branch: String);
   protected
     Function CreateLeafNode(ValueType: TUNSValueType; const NodeName: String; ParentNode: TUNSNodeBranch): TUNSNodeLeaf; virtual;
     Function GetSubNode(NodeNamePart: TUNSNamePart; Branch: TUNSNodeBranch; out Node: TUNSNode; CanCreate: Boolean): Boolean; virtual;
-    Function ConstructPath(NodeNameParts: TUNSNameParts): TUNSNodeBranch; virtual;
+    Function ConstructBranch(NodeNameParts: TUNSNameParts): TUNSNodeBranch; virtual;
     Function FindNode(NodeNameParts: TUNSNameParts): TUNSNode; virtual;
     Function AddNode(const NodeName: String; ValueType: TUNSValueType; out Node: TUNSNodeLeaf): Boolean; virtual;
     Function FindLeafNode(const NodeName: String; out Node: TUNSNodeLeaf): Boolean; overload; virtual;
@@ -72,7 +84,7 @@ type
     procedure ValueDefaultFromActual(const ValueName: String; Index: Integer = 0); virtual;
     procedure ValueExchangeActualAndDefault(const ValueName: String; Index: Integer = 0); virtual;
     Function ValueActualEqualsDefault(const ValueName: String; Index: Integer = 0): Boolean; virtual;
-    Function ValueFullPath(const ValueName: String): String; virtual;
+    Function ValueFullName(const ValueName: String): String; virtual;
     Function ValueType(const ValueName: String): TUNSValueType; virtual;
     Function ValueSize(const ValueName: String; AccessDefVal: Boolean = False): TMemSize; virtual;
     Function ValueCount(const ValueName: String; AccessDefVal: Boolean = False): Integer; virtual;
@@ -122,18 +134,15 @@ type
     {$INCLUDE '.\UniSettings_NodeBuffer.pas'}
   {$UNDEF Included_Declaration}{$UNDEF Included}
     //--- Properties -----------------------------------------------------------
-    property WorkingPath: String read GetWorkingPath write SetWorkingPath;
+    property WorkingBranch: String read GetWorkingBranch write SetWorkingBranch;
     //--- Format settings properties -------------------------------------------
-    {$message 'ensure thread safety'}
-    property FormatSettings: TUNSFormatSettings read fFormatSettings;
-    property NumericBools: Boolean read fFormatSettings.NumericBools write fFormatSettings.NumericBools;
-    property HexIntegers: Boolean read fFormatSettings.HexIntegers write fFormatSettings.HexIntegers;
-    property HexFloats: Boolean read fFormatSettings.HexFloats write fFormatSettings.HexFloats;
-    property HexDateTime: Boolean read fFormatSettings.HexDateTime write fFormatSettings.HexDateTime;
+    property ValueFormatSettings: TUNSValueFormatSettings read GetValueFormatSettings;
+    property NumericBools: Boolean index UNS_VALUEFORMATSETTING_INDEX_NUMBOOL read GetValueFormatSettingBool write SetValueFormatSettingBool;
+    property HexIntegers: Boolean index UNS_VALUEFORMATSETTING_INDEX_HEXINTS read GetValueFormatSettingBool write SetValueFormatSettingBool;
+    property HexFloats: Boolean index UNS_VALUEFORMATSETTING_INDEX_HEXFLTS read GetValueFormatSettingBool write SetValueFormatSettingBool;
+    property HexDateTime: Boolean index UNS_VALUEFORMATSETTING_INDEX_HEXDTTM read GetValueFormatSettingBool write SetValueFormatSettingBool;
     //--- Events ---------------------------------------------------------------
     property OnChange: TNotifyEvent read fOnChange write fOnChange;
-
-    property RootNode: TUNSNodeBranch read fRootNode;
   end;
 
 implementation
@@ -165,11 +174,11 @@ uses
   UniSettings_NodeArrayItem;
 
 
-Function TUniSettings.GetWorkingPath: String;
+Function TUniSettings.GetValueFormatSettings: TUNSValueFormatSettings;
 begin
 ReadLock;
 try
-  Result := fWorkingPath;
+  Result := fValueFormatSettings;
 finally
   ReadUnlock;
 end;
@@ -177,21 +186,73 @@ end;
 
 //------------------------------------------------------------------------------
 
-procedure TUniSettings.SetWorkingPath(const Path: String);
+Function TUniSettings.GetValueFormatSettingBool(Index: Integer): Boolean;
+begin
+ReadLock;
+try
+  case Index of
+    UNS_VALUEFORMATSETTING_INDEX_NUMBOOL:  Result := fValueFormatSettings.NumericBools;
+    UNS_VALUEFORMATSETTING_INDEX_HEXINTS:  Result := fValueFormatSettings.HexIntegers;
+    UNS_VALUEFORMATSETTING_INDEX_HEXFLTS:  Result := fValueFormatSettings.HexFloats;
+    UNS_VALUEFORMATSETTING_INDEX_HEXDTTM:  Result := fValueFormatSettings.HexDateTime;
+  else
+    raise EUNSException.CreateFmt('Invalid value format setting index (%d).',
+                                  [Index],Self,'GetValueFormatSettingBool');
+  end;
+finally
+  ReadUnlock;
+end;
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TUniSettings.SetValueFormatSettingBool(Index: Integer; Value: Boolean);
+begin
+WriteLock;
+try
+  case Index of
+    UNS_VALUEFORMATSETTING_INDEX_NUMBOOL:  fValueFormatSettings.NumericBools := Value;
+    UNS_VALUEFORMATSETTING_INDEX_HEXINTS:  fValueFormatSettings.HexIntegers := Value;
+    UNS_VALUEFORMATSETTING_INDEX_HEXFLTS:  fValueFormatSettings.HexFloats := Value;
+    UNS_VALUEFORMATSETTING_INDEX_HEXDTTM:  fValueFormatSettings.HexDateTime := Value;
+  else
+    raise EUNSException.CreateFmt('Invalid value format setting index (%d).',
+                                  [Index],Self,'SetValueFormatSettingBool');
+  end;
+finally
+  WriteUnlock;
+end;
+end;
+
+//------------------------------------------------------------------------------
+
+Function TUniSettings.GetWorkingBranch: String;
+begin
+ReadLock;
+try
+  Result := fWorkingBranch;
+finally
+  ReadUnlock;
+end;
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TUniSettings.SetWorkingBranch(const Branch: String);
 var
   NameParts:  TUNSNameParts;
   Node:       TUNSNode;
 begin
 WriteLock;
 try
-  fWorkingPath := '';
+  fWorkingBranch := '';
   fWorkingNode := fRootNode;
-  If UNSNameParts(Path,NameParts) > 0 then
+  If UNSNameParts(Branch,NameParts) > 0 then
     begin
       Node := FindNode(NameParts);
       If Node is TUNSNodeBranch then
         begin
-          fWorkingPath := Path;
+          fWorkingBranch := Branch;
           fWorkingNode := TUNSNodeBranch(Node);
         end;
     end;
@@ -252,15 +313,15 @@ Function TUniSettings.GetSubNode(NodeNamePart: TUNSNamePart; Branch: TUNSNodeBra
 begin
 Node := nil;
 case NodeNamePart.PartType of
-  vptIdentifier,
-  vptArrayIdentifier:
+  nptIdentifier,
+  nptArrayIdentifier:
     begin
-      Result := Branch.FindNode(NodeNamePart.PartName,Node,False);
+      Result := Branch.FindNode(NodeNamePart.PartStr,Node,False);
       Exit;
     end;
 {- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - }
-  vptArrayIndex,
-  vptArrayIndexDef:
+  nptArrayIndex,
+  nptArrayIndexDef:
     If Branch is TUNSNodeArray then
       begin
         If TUNSNodeArray(Branch).CheckIndex(NodeNamePart.PartIndex) then
@@ -269,21 +330,21 @@ case NodeNamePart.PartType of
     else raise EUNSException.CreateFmt('Invalid name part type (%d) for a given node branch class (%s).',
                  [Ord(NodeNamePart.PartType),Branch.ClassName],Self,'GetSubNode');
 {- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - }
-  vptArrayItem,
-  vptArrayItemDef:
+  nptArrayItem,
+  nptArrayItemDef:
     begin
       If Branch is TUNSNodeArray then
         case NodeNamePart.PartIndex of
-          UNS_PATH_ARRAYITEM_NEW:
+          UNS_NAME_ARRAYITEM_NEW:
             If CanCreate then
               begin
                 Node := TUNSNodeArrayItem.Create('',Branch);
                 Branch.Add(Node);
               end;
-          UNS_PATH_ARRAYITEM_LOW:
+          UNS_NAME_ARRAYITEM_LOW:
             If TUNSNodeArray(Branch).Count > 0 then
               Node := TUNSNodeArray(Branch)[TUNSNodeArray(Branch).LowIndex];
-          UNS_PATH_ARRAYITEM_HIGH:
+          UNS_NAME_ARRAYITEM_HIGH:
             If TUNSNodeArray(Branch).Count > 0 then
               Node := TUNSNodeArray(Branch)[TUNSNodeArray(Branch).HighIndex];
         end
@@ -299,7 +360,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function TUniSettings.ConstructPath(NodeNameParts: TUNSNameParts): TUNSNodeBranch;
+Function TUniSettings.ConstructBranch(NodeNameParts: TUNSNameParts): TUNSNodeBranch;
 var
   CurrentBranch:  TUNSNodeBranch;
   NextNode:       TUNSNode;
@@ -325,18 +386,18 @@ If NodeNameParts.Count > 0 then
               begin
                 // node was NOT found, create it
                 case NodeNameParts.Arr[i].PartType of
-                  vptIdentifier:
-                    NextNode := TUNSNodeBranch.Create(NodeNameParts.Arr[i].PartName.Str,CurrentBranch);
-                  vptArrayIdentifier:
-                    NextNode := TUNSNodeArray.Create(NodeNameParts.Arr[i].PartName.Str,CurrentBranch);
-                  vptArrayIndex,
-                  vptArrayIndexDef,
-                  vptArrayItem,
-                  vptArrayItemDef:
+                  nptIdentifier:
+                    NextNode := TUNSNodeBranch.Create(NodeNameParts.Arr[i].PartStr.Str,CurrentBranch);
+                  nptArrayIdentifier:
+                    NextNode := TUNSNodeArray.Create(NodeNameParts.Arr[i].PartStr.Str,CurrentBranch);
+                  nptArrayIndex,
+                  nptArrayIndexDef,
+                  nptArrayItem,
+                  nptArrayItemDef:
                     Exit; // array items can only be created in GetSubNode trough the use of [#N] (new array item), return nil
                 else
                   raise EUNSException.CreateFmt('Invalid name part type (%d).',
-                    [Ord(NodeNameParts.Arr[i].PartType)],Self,'ConstructPath');
+                    [Ord(NodeNameParts.Arr[i].PartType)],Self,'ConstructBranch');
                 end;
                 CurrentBranch.Add(NextNode);
                 CurrentBranch := TUNSNodeBranch(NextNode);
@@ -344,7 +405,7 @@ If NodeNameParts.Count > 0 then
           end;
         Result := CurrentBranch;
       end
-    else raise EUNSException.Create('Invalid path.',Self,'ConstructPath');
+    else raise EUNSException.Create('Invalid name.',Self,'ConstructBranch');
   end
 else Result := fRootNode;
 end;
@@ -385,22 +446,23 @@ begin
   If UNSNameParts(NodeName,NameParts) > 0 then
     // must not end with index or array item
     If not(NameParts.Arr[Pred(NameParts.Count)].PartType in
-      [vptArrayIndex,vptArrayIndexDef,vptArrayItem,vptArrayItemDef]) then
+      [nptArrayIndex,nptArrayIndexDef,nptArrayItem,nptArrayItemDef]) then
       begin
         Dec(NameParts.Count);
         try
-          BranchNode := ConstructPath(NameParts);
+          BranchNode := ConstructBranch(NameParts);
         finally
           Inc(NameParts.Count);
         end;
         If Assigned(BranchNode) then
-          begin
-            Node := CreateLeafNode(ValueType,NameParts.Arr[Pred(NameParts.Count)].PartName.Str,BranchNode);
-            If BranchNode.CheckIndex(BranchNode.Add(Node)) then
-              Result := True
-            else
-              FreeAndNil(Node);
-          end;
+          If not BranchNode.CheckIndex(BranchNode.IndexOf(NameParts.Arr[Pred(NameParts.Count)].PartStr)) then
+            begin
+              Node := CreateLeafNode(ValueType,NameParts.Arr[Pred(NameParts.Count)].PartStr.Str,BranchNode);
+              If BranchNode.CheckIndex(BranchNode.Add(Node)) then
+                Result := True
+              else
+                FreeAndNil(Node);
+            end;
       end;
 end;
 
@@ -506,12 +568,12 @@ end;
 constructor TUniSettings.Create;
 begin
 inherited Create;
-fFormatSettings := UNS_FORMATSETTINGS_DEFAULT;
+fValueFormatSettings := UNS_VALUEFORMATSETTINGS_DEFAULT;
 fSynchronizer := TMultiReadExclusiveWriteSynchronizer.Create;
 fRootNode := TUNSNodeBranch.Create(UNS_NAME_ROOTNODE,nil);
 fRootNode.Master := Self;
 fRootNode.OnChange := OnChangeHandler;
-fWorkingPath := '';
+fWorkingBranch := '';
 fWorkingNode := fRootNode;
 fChangeCounter := 0;
 fChanged := False;
@@ -583,7 +645,7 @@ try
   If UNSNameParts(ValueName,NameParts) > 0 then
     begin
       If NameParts.Arr[Pred(NameParts.Count)].PartType in
-        [vptArrayIndex,vptArrayIndexDef,vptArrayItem,vptArrayItemDef] then
+        [nptArrayIndex,nptArrayIndexDef,nptArrayItem,nptArrayItemDef] then
         begin
           // last name part is an index
           Dec(NameParts.Count);
@@ -596,15 +658,15 @@ try
             with NameParts.Arr[Pred(NameParts.Count)] do
               begin
                 case NameParts.Arr[Pred(NameParts.Count)].PartType of
-                  vptArrayIndex:
+                  nptArrayIndex:
                     Result := TUNSNodePrimitiveArray(Node).ValueCheckIndex(PartIndex,False);
-                  vptArrayIndexDef:
+                  nptArrayIndexDef:
                     Result := TUNSNodePrimitiveArray(Node).ValueCheckIndex(PartIndex,True);
-                  vptArrayItem:
-                    If PartIndex in [UNS_PATH_ARRAYITEM_LOW,UNS_PATH_ARRAYITEM_HIGH] then
+                  nptArrayItem:
+                    If PartIndex in [UNS_NAME_ARRAYITEM_LOW,UNS_NAME_ARRAYITEM_HIGH] then
                       Result := TUNSNodePrimitiveArray(Node).ValueCount > 0;
-                  vptArrayItemDef:
-                    If PartIndex in [UNS_PATH_ARRAYITEM_LOW,UNS_PATH_ARRAYITEM_HIGH] then
+                  nptArrayItemDef:
+                    If PartIndex in [UNS_NAME_ARRAYITEM_LOW,UNS_NAME_ARRAYITEM_HIGH] then
                       Result := TUNSNodePrimitiveArray(Node).DefaultValueCount > 0;
                 end;
             end;
@@ -648,7 +710,7 @@ try
   If UNSNameParts(ValueName,NameParts) > 0 then
     // must not end with index or array item
     If not(NameParts.Arr[Pred(NameParts.Count)].PartType in
-      [vptArrayIndex,vptArrayIndexDef,vptArrayItem,vptArrayItemDef]) then
+      [nptArrayIndex,nptArrayIndexDef,nptArrayItem,nptArrayItemDef]) then
       begin
         Node := FindNode(NameParts);
         If Assigned(Node) then
@@ -672,7 +734,7 @@ try
   finally
     ChangingEnd;
   end;
-  fWorkingPath := '';
+  fWorkingBranch := '';
   fWorkingNode := fRootNode;
 finally
   WriteUnlock;
@@ -692,7 +754,7 @@ Function TUniSettings.ListValues(Strings: TStrings): Integer;
         For i := TUNSNodeBranch(Node).LowIndex to TUNSNodeBranch(Node).HighIndex do
           AddNodeToListing(TUNSNodeBranch(Node)[i]);
       end
-    else Strings.Add(Node.ReconstructFullPath(False));
+    else Strings.Add(Node.ReconstructFullName(False));
   end;
 
 begin
@@ -851,11 +913,11 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function TUniSettings.ValueFullPath(const ValueName: String): String;
+Function TUniSettings.ValueFullName(const ValueName: String): String;
 begin
 ReadLock;
 try
-  CheckedLeafNodeAccess(ValueName,'ValueFullPath').ReconstructFullPath(False);
+  CheckedLeafNodeAccess(ValueName,'ValueFullName').ReconstructFullName(False);
 finally
   ReadUnlock;
 end;

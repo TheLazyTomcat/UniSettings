@@ -83,10 +83,10 @@ end;
 
 Function TUNSNodeFloat64.ConvToStr(Value: Float64): String;
 begin
-If not FormatSettings.HexFloats then
-  Result := FloatToStr(Value,fSysFormatSettings)
+If ValueFormatSettings.HexFloats then
+  Result := '$' + DoubleToHex(Value)
 else
-  Result := '$' + DoubleToHex(Value);
+  Result := FloatToStr(Value,fConvSettings);
 end;
 
 //------------------------------------------------------------------------------
@@ -98,9 +98,9 @@ If Length(Str) > 1 then
     If Str[1] = '$' then
       Result := HexToSingle(Str)
     else
-      Result := StrToFloat(Str,fSysFormatSettings);
+      Result := StrToFloat(Str,fConvSettings);
   end
-else Result := StrToFloat(Str,fSysFormatSettings);
+else Result := StrToFloat(Str,fConvSettings);
 end;
 
 //==============================================================================

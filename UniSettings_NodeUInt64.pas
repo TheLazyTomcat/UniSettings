@@ -83,7 +83,7 @@ end;
 
 Function TUNSNodeUInt64.ConvToStr(Value: UInt64): String;
 begin
-If FormatSettings.HexIntegers then
+If ValueFormatSettings.HexIntegers then
   Result := '$' + IntToHex(Value,16)
 else
   Result := IntToStr(Value);

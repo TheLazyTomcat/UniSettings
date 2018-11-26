@@ -83,10 +83,10 @@ end;
 
 Function TUNSNodeTime.ConvToStr(Value: TTime): String;
 begin
-If not FormatSettings.HexDateTime then
-  Result := TimeToStr(Value,fSysFormatSettings)
+If ValueFormatSettings.HexDateTime then
+  Result := '$' + DoubleToHex(Value)
 else
-  Result := '$' + DoubleToHex(Value);
+  Result := TimeToStr(Value,fConvSettings);
 end;
 
 //------------------------------------------------------------------------------
@@ -98,9 +98,9 @@ If Length(Str) > 1 then
     If Str[1] = '$' then
       Result := HexToDouble(Str)
     else
-      Result := StrToTime(Str,fSysFormatSettings);
+      Result := StrToTime(Str,fConvSettings);
   end
-else Result := StrToTime(Str,fSysFormatSettings);
+else Result := StrToTime(Str,fConvSettings);
 end;
 
 //==============================================================================
