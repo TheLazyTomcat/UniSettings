@@ -97,13 +97,13 @@ type
     Function ParseLines(const Lines: TStrings): Integer; virtual;
     Function ParseString(const Str: String): Integer; virtual;    
     Function ParseStream(Stream: TStream): Integer; virtual;
-    //Function ParseCompressedStream(Stream: TStream): Integer; virtual;
+    Function ParseCompressedStream(Stream: TStream): Integer; virtual;
   end;
 
 implementation
 
 uses
-  ExplicitStringLists,
+  ExplicitStringLists, SimpleCompress,
   UniSettings_Exceptions, UniSettings_Utils;
 
 const
@@ -452,6 +452,23 @@ try
   end;
 finally
   UTF8Lines.Free;
+end;
+end;
+
+//------------------------------------------------------------------------------
+
+Function TUNSParser.ParseCompressedStream(Stream: TStream): Integer;
+var
+  MemStream:  TMemoryStream;
+begin
+MemStream := TMemoryStream.Create;
+try
+  If ZDecompressStream(Stream,MemStream) then
+    Result := ParseStream(MemStream)
+  else
+    Result := 0;
+finally
+  MemStream.Free;
 end;
 end;
 

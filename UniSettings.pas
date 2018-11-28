@@ -1,11 +1,14 @@
 (*
-todo
+todo (* = completed):
 
-arrays
-copy construcror(s)
-value save-restore system
-buffers - free replaced buffers (eg. def->curr and v.v.)
-unify nomenclature
+  tree building
+  arrays
+  access to array items trough index in value name
+  copy construcror(s)
+  value save-restore system
+  buffers - free replaced buffers (eg. def->curr and v.v.)
+* unify nomenclature
+* replacing blank nodes
 *)
 unit UniSettings;
 
@@ -190,6 +193,7 @@ Function TUniSettings.GetValueFormatSettingBool(Index: Integer): Boolean;
 begin
 ReadLock;
 try
+  Result := False;
   case Index of
     UNS_VALUEFORMATSETTING_INDEX_NUMBOOL:  Result := fValueFormatSettings.NumericBools;
     UNS_VALUEFORMATSETTING_INDEX_HEXINTS:  Result := fValueFormatSettings.HexIntegers;
@@ -365,6 +369,7 @@ var
   CurrentBranch:  TUNSNodeBranch;
   NextNode:       TUNSNode;
   i:              Integer;
+  NodeFound:      Boolean;
 begin
 Result := nil;
 If NodeNameParts.Count > 0 then
@@ -374,13 +379,22 @@ If NodeNameParts.Count > 0 then
         CurrentBranch := fWorkingNode;
         For i := Low(NodeNameParts.Arr) to Pred(NodeNameParts.Count) do
           begin
-            If GetSubNode(NodeNameParts.Arr[i],CurrentBranch,NextNode,True) then
+            NodeFound := GetSubNode(NodeNameParts.Arr[i],CurrentBranch,NextNode,True);
+            If NextNode is TUNSNodeBlank then
+              begin
+                CurrentBranch.Remove(NextNode);
+                NextNode := nil;
+                NodeFound := False;
+              end;
+            If NodeFound then
               begin
                 // node was found
-                If NextNode is TUNSNodeBranch then
-                  CurrentBranch := TUNSNodeBranch(NextNode)
-                else
-                  Break{For i};
+                If not(NextNode is TUNSNodeBranch) then
+                  begin
+                    CurrentBranch := nil;
+                    Break{For i};
+                  end
+                else CurrentBranch := TUNSNodeBranch(NextNode);
               end
             else
               begin
@@ -440,6 +454,7 @@ Function TUniSettings.AddNode(const NodeName: String; ValueType: TUNSValueType; 
 var
   NameParts:  TUNSNameParts;
   BranchNode: TUNSNodeBranch;
+  Index:      Integer;
 begin
   Node := nil;
   Result := False;
@@ -455,14 +470,23 @@ begin
           Inc(NameParts.Count);
         end;
         If Assigned(BranchNode) then
-          If not BranchNode.CheckIndex(BranchNode.IndexOf(NameParts.Arr[Pred(NameParts.Count)].PartStr)) then
-            begin
-              Node := CreateLeafNode(ValueType,NameParts.Arr[Pred(NameParts.Count)].PartStr.Str,BranchNode);
-              If BranchNode.CheckIndex(BranchNode.Add(Node)) then
-                Result := True
-              else
-                FreeAndNil(Node);
-            end;
+          begin
+            Index := BranchNode.IndexOf(NameParts.Arr[Pred(NameParts.Count)].PartStr);
+            If BranchNode.CheckIndex(Index) then
+              If BranchNode[Index] is TUNSNodeBlank then
+                begin
+                  BranchNode.Delete(Index);
+                  Index := -1;
+                end;
+            If not BranchNode.CheckIndex(Index) then
+              begin
+                Node := CreateLeafNode(ValueType,NameParts.Arr[Pred(NameParts.Count)].PartStr.Str,BranchNode);
+                If BranchNode.CheckIndex(BranchNode.Add(Node)) then
+                  Result := True
+                else
+                  FreeAndNil(Node);
+              end;
+          end;
       end;
 end;
 
@@ -478,12 +502,11 @@ Node := nil;
 If UNSNameParts(NodeName,NameParts) > 0 then
   begin
     FoundNode := FindNode(NameParts);
-    If Assigned(FoundNode) then
-      If FoundNode is TUNSNodeLeaf then
-        begin
-          Node := TUNSNodeLeaf(FoundNode);
-          Result := True;
-        end;
+    If FoundNode is TUNSNodeLeaf then
+      begin
+        Node := TUNSNodeLeaf(FoundNode);
+        Result := True;
+      end;
   end;
 end;
 
@@ -674,8 +697,7 @@ try
       else
         begin
           Node := FindNode(NameParts);
-          If Assigned(Node) then
-            Result := Node is TUNSNodeLeaf; 
+          Result := Node is TUNSNodeLeaf;
         end;
     end;
 finally
@@ -713,9 +735,8 @@ try
       [nptArrayIndex,nptArrayIndexDef,nptArrayItem,nptArrayItemDef]) then
       begin
         Node := FindNode(NameParts);
-        If Assigned(Node) then
-          If Node.ParentNode is TUNSNodeBranch then
-            Result := TUNSNodeBranch(Node.ParentNode).Remove(Node) >= 0;
+        If Node.ParentNode is TUNSNodeBranch then
+          Result := TUNSNodeBranch(Node.ParentNode).Remove(Node) >= 0;
       end;
 finally
   WriteUnlock;
