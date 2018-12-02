@@ -51,6 +51,15 @@ type
     constructor Create(const ValueName: String; FaultingObject: TObject; const FaultingMethod: String); overload;
   end;
 
+  EUNSParsingException = class(EUNSException)
+  private
+    fLine:  String;
+  public
+    constructor Create(const Msg: String; FaultingObject: TObject; const FaultingMethod, Line: String); overload;
+    constructor CreateFmt(const Msg: String; Args: array of const; FaultingObject: TObject; const FaultingMethod, Line: String); overload;
+    property Line: String read fLine;
+  end;
+
 implementation
 
 constructor EUNSException.Create(const Msg, FaultingFunction: String);
@@ -152,6 +161,22 @@ end;
 constructor EUNSValueNotAnArrayException.Create(const ValueName: String; FaultingObject: TObject; const FaultingMethod: String);
 begin
 inherited CreateFmt('Value (%s) is not an array.',[ValueName],FaultingObject,FaultingMethod);
+end;
+
+//******************************************************************************
+
+constructor EUNSParsingException.Create(const Msg: String; FaultingObject: TObject; const FaultingMethod, Line: String);
+begin
+inherited Create(Msg,FaultingObject,FaultingMethod);
+fLine := Line;
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+constructor EUNSParsingException.CreateFmt(const Msg: String; Args: array of const; FaultingObject: TObject; const FaultingMethod, Line: String);
+begin
+inherited CreateFmt(Msg,Args,FaultingObject,FaultingMethod);
+fLine := Line;
 end;
 
 end.

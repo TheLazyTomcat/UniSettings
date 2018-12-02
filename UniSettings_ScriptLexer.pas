@@ -1,17 +1,15 @@
-unit UniSettings_TreeParsing;
+unit UniSettings_ScriptLexer;
 
 {$INCLUDE '.\UniSettings_defs.inc'}
 
 interface
 
 uses
-  Classes,
-  AuxClasses,
-  UniSettings_Common, UniSettings_NodeLeaf;
+  AuxClasses;
 
 type
-  TUNSLexemeType = (lxtUnknown,lxtIdentifier,lxtDirective,lxtSubDirective,
-                    lxtName,lxtText,lxtComment);
+  TUNSLexemeType = (lxtUnknown,lxtIdentifier,lxtCommand,lxtSubCommand,
+                    lxtName,lxtUnparsedName,lxtText,lxtComment);
 
   TUNSLexeme = record
     LexemeType: TUNSLexemeType;
@@ -54,67 +52,21 @@ type
     procedure Lexing_QuotedText; virtual;
     procedure Lexing_Comment; virtual;
   public
-    class Function IsValidUnparsedName(const Name: String): Boolean; virtual;
     destructor Destroy; override;
     Function LowIndex: Integer; override;
     Function HighIndex: Integer; override;
     Function ProcessLine(const Line: String): Integer; virtual;
+    procedure RemoveFirstLexeme; virtual;
     property RemoveComments: Boolean read fRemoveComments write fRemoveComments;
     property Line: String read fLine;
     property Lexemes[Index: Integer]: TUNSLexeme read GetLexeme; default;
   end;
 
-  TUNSParserNewValueEvent = Function(const ValueName: String; ValueType: TUNSValueType; out Node: TUNSNodeLeaf): Boolean of object;
-
-  TUNSParsedValue = record
-    Name:         String;
-    Flags:        Integer;
-    ValueType:    TUNSValueType;
-    DefValueStr:  String;
-  end;
-
-  TUNSExpansionBranches = array[0..9] of String;
-
-  TUNSExpansionStruct = record
-    Arr:    array of TUNSParsedValue;
-    Count:  Integer;
-  end;
-
-  TUNSExpansionStructs = record
-    Arr:    array of TUNSExpansionStruct;
-    Count:  Integer;
-  end;
-
-  TUNSParser = class(TObject)
-  private
-    fLexer:       TUNSLexer;
-    fAddMethod:   TUNSParserNewValueEvent;
-    fAddCounter:  Integer;
-  protected
-  public
-    constructor Create(AddMethod: TUNSParserNewValueEvent);
-    destructor Destroy; override;
-    Function ParseLines(const Lines: TStrings): Integer; virtual;
-    Function ParseString(const Str: String): Integer; virtual;    
-    Function ParseStream(Stream: TStream): Integer; virtual;
-    Function ParseCompressedStream(Stream: TStream): Integer; virtual;
-  end;
-
 implementation
 
 uses
-  ExplicitStringLists, SimpleCompress,
-  UniSettings_Exceptions, UniSettings_Utils;
-
-const
-
-  UNS_LEXING_DIRECTIVETAG     = '#';
-  UNS_LEXING_SUBDIRECTIVETAG  = '&';
-  UNS_LEXING_BRANCHAPPENDTAG  = '@';
-  UNS_LEXING_HEXNUMBERTAG     = '$';
-  UNS_LEXING_COMMENTSINGLETAG = '/';
-  UNS_LEXING_TEXTQUOTECHAR    = '"';
-  UNS_LEXING_WHITESPACES      = [#0..#32];
+  UniSettings_Exceptions, UniSettings_Utils, UniSettings_ScriptCommon,
+  UniSettings_ScriptUtils;
 
 Function TUNSLexer.GetLexeme(Index: Integer): TUNSLexeme;
 begin
@@ -194,17 +146,19 @@ procedure TUNSLexer.DiscernLexemeType(var Lexeme: TUNSLexeme);
 begin
 If (Lexeme.LexemeType = lxtUnknown) and (Length(Lexeme.LexemeText) > 0) then
   case Lexeme.LexemeText[1] of
-    UNS_LEXING_DIRECTIVETAG:
+    UNS_SCRIPT_COMMANDTAG:
       If UNSIsValidIdentifier(Copy(Lexeme.LexemeText,2,Length(Lexeme.LexemeText))) then
-        Lexeme.LexemeType := lxtDirective;
-    UNS_LEXING_SUBDIRECTIVETAG:
+        Lexeme.LexemeType := lxtCommand;
+    UNS_SCRIPT_SUBCOMMANDTAG:
       If UNSIsValidIdentifier(Copy(Lexeme.LexemeText,2,Length(Lexeme.LexemeText))) then
-        Lexeme.LexemeType := lxtSubDirective;
+        Lexeme.LexemeType := lxtSubCommand;
   else
     If UNSIsValidIdentifier(Lexeme.LexemeText) then
       Lexeme.LexemeType := lxtIdentifier
-    else If IsValidUnparsedName(Lexeme.LexemeText) then
-      Lexeme.LexemeType := lxtName;
+    else If UNSIsValidName(Lexeme.LexemeText) then
+      Lexeme.LexemeType := lxtName
+    else If UNSIsValidUnparsedName(Lexeme.LexemeText) then
+      Lexeme.LexemeType := lxtUnparsedName;
   end;
 end;
 
@@ -218,8 +172,8 @@ SetLength(Result,Length(Str));
 ResPos := 1;
 For i := 1 to Length(Str) do
   begin
-    If (Str[i] = UNS_LEXING_TEXTQUOTECHAR) and (i > 1) then
-      If Str[i - 1] = UNS_LEXING_TEXTQUOTECHAR then
+    If (Str[i] = UNS_SCRIPT_TEXTQUOTECHAR) and (i > 1) then
+      If Str[i - 1] = UNS_SCRIPT_TEXTQUOTECHAR then
         Continue; // char is not copied into result and ResPos is not increased
     Result[ResPos] := Str[i];
     Inc(ResPos);    
@@ -243,16 +197,16 @@ end;
 
 procedure TUNSLexer.Lexing_Traverse;
 begin
-If not(fLine[fPosition] in UNS_LEXING_WHITESPACES) then
+If not(fLine[fPosition] in UNS_SCRIPT_WHITESPACES) then
   begin
     case fLine[fPosition] of
-      UNS_LEXING_COMMENTSINGLETAG:
+      UNS_SCRIPT_COMMENTTAGSINGLE:
         begin
           fStage := lxsText;
           fLexemeStart := fPosition;
           fLexemeLength := 1;
           If fPosition < Length(fLine) then
-            If fLine[fPosition + 1] = UNS_LEXING_COMMENTSINGLETAG then
+            If fLine[fPosition + 1] = UNS_SCRIPT_COMMENTTAGSINGLE then
               begin
                 fStage := lxsComment;
                 fLexemeStart := fPosition + 2;
@@ -260,7 +214,7 @@ If not(fLine[fPosition] in UNS_LEXING_WHITESPACES) then
                 Inc(fPosition);
               end;
         end;
-      UNS_LEXING_TEXTQUOTECHAR:
+      UNS_SCRIPT_TEXTQUOTECHAR:
         begin
           fStage := lxsQuotedText;
           fLexemeStart := fPosition + 1;
@@ -278,7 +232,7 @@ end;
 
 procedure TUNSLexer.Lexing_Text;
 begin
-If fLine[fPosition] in UNS_LEXING_WHITESPACES then
+If fLine[fPosition] in UNS_SCRIPT_WHITESPACES then
   begin
     Add(lxtUnknown,Copy(fLine,fLexemeStart,fLexemeLength));
     fStage := lxsTraverse;
@@ -294,11 +248,11 @@ procedure TUNSLexer.Lexing_QuotedText;
   begin
     Result := False;
     If fPosition < Length(fLine) then
-      Result := fLine[fPosition + 1] = UNS_LEXING_TEXTQUOTECHAR;
+      Result := fLine[fPosition + 1] = UNS_SCRIPT_TEXTQUOTECHAR;
   end;
 
 begin
-If fLine[fPosition] = UNS_LEXING_TEXTQUOTECHAR then
+If fLine[fPosition] = UNS_SCRIPT_TEXTQUOTECHAR then
   begin
     If not QuoteAhead then
       begin
@@ -322,20 +276,6 @@ Inc(fLexemeLength);
 end;
 
 //==============================================================================
-
-class Function TUNSLexer.IsValidUnparsedName(const Name: String): Boolean;
-begin
-If Length(Name) > 0 then
-  begin
-    If Name[1] = UNS_LEXING_BRANCHAPPENDTAG then
-      Result := UNSIsValidName(Copy(Name,2,Length(Name) - 1))
-    else
-      Result := UNSIsValidName(Name);
-  end
-else Result := False;
-end;
-
-//------------------------------------------------------------------------------
 
 destructor TUNSLexer.Destroy;
 begin
@@ -385,91 +325,18 @@ For i := LowIndex to HighIndex do
   DiscernLexemeType(fLexemes.Arr[i]);
 // remove comments
 If fRemoveComments then
-For i := HighIndex downto LowIndex do
-  If fLexemes.Arr[i].LexemeType = lxtComment then
-    Delete(i);
+  For i := HighIndex downto LowIndex do
+    If fLexemes.Arr[i].LexemeType = lxtComment then
+      Delete(i);
 Result := fLexemes.Count;
 end;
 
-//******************************************************************************
-
-constructor TUNSParser.Create(AddMethod: TUNSParserNewValueEvent);
-begin
-inherited Create;
-fLexer := TUNSLexer.Create;
-fLexer.RemoveComments := True;
-fAddMethod := AddMethod;
-fAddCounter := 0;
-end;
-
 //------------------------------------------------------------------------------
 
-destructor TUNSParser.Destroy;
+procedure TUNSLexer.RemoveFirstLexeme;
 begin
-fLexer.Free;
-inherited;
-end;
-
-//------------------------------------------------------------------------------
-
-Function TUNSParser.ParseLines(const Lines: TStrings): Integer;
-begin
-{$message 'implement'}
-Result := 0;
-end;
-
-//------------------------------------------------------------------------------
-
-Function TUNSParser.ParseString(const Str: String): Integer;
-var
-  Lines:  TStringList;
-begin
-Lines := TStringList.Create;
-try
-  Lines.Text := Str;
-  Result := ParseLines(Lines);
-finally
-  Lines.Free;
-end;
-end;
-
-//------------------------------------------------------------------------------
-
-Function TUNSParser.ParseStream(Stream: TStream): Integer;
-var
-  UTF8Lines:  TUTF8StringList;
-  Lines:      TStringList;
-begin
-UTF8Lines := TUTF8StringList.Create;
-try
-  UTF8Lines.LoadFromStream(Stream);
-  Lines := TStringList.Create;
-  try
-    Lines.Assign(UTF8Lines);
-    Result := ParseLines(Lines);
-  finally
-    Lines.Free;
-  end;
-finally
-  UTF8Lines.Free;
-end;
-end;
-
-//------------------------------------------------------------------------------
-
-Function TUNSParser.ParseCompressedStream(Stream: TStream): Integer;
-var
-  MemStream:  TMemoryStream;
-begin
-MemStream := TMemoryStream.Create;
-try
-  If ZDecompressStream(Stream,MemStream) then
-    Result := ParseStream(MemStream)
-  else
-    Result := 0;
-finally
-  MemStream.Free;
-end;
+If fLexemes.Count > 0 then
+  Delete(LowIndex);
 end;
 
 end.

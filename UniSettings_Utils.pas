@@ -8,6 +8,8 @@ uses
   SysUtils,
   UniSettings_Common;
 
+Function UNSIsArrayValueType(ValueType: TUNSValueType): Boolean;
+
 Function UNSCharInSet(C: Char; CharSet: TSysCharSet): Boolean;
 
 Function UNSIsValidIdentifier(const Identifier: String): Boolean;
@@ -22,12 +24,24 @@ Function UNSHashedString(const Str: String): TUNSHashedString;
 
 Function UNSNameParts(const Name: String; out NameParts: TUNSNameParts): Integer;
 
+Function UNSIdentifyValueType(const Str: String): TUNSValueType;
+
 implementation
 
 uses
   StrUtils,
   CRC32,
   UniSettings_Exceptions;
+
+Function UNSIsArrayValueType(ValueType: TUNSValueType): Boolean;
+begin
+Result := ValueType in [vtAoBool,vtAoInt8,vtAoUInt8,vtAoInt16,vtAoUInt16,
+                        vtAoInt32,vtAoUInt32,vtAoInt64,vtAoUInt64,vtAoFloat32,
+                        vtAoFloat64,vtAoDate,vtAoTime,vtAoDateTime,vtAoText,
+                        vtAoBuffer]
+end;
+
+//------------------------------------------------------------------------------
 
 Function UNSCharInSet(C: Char; CharSet: TSysCharSet): Boolean;
 begin
@@ -256,6 +270,21 @@ If NameParts.Valid then
   Result := NameParts.Count
 else
   Result := 0;
+end;
+
+//------------------------------------------------------------------------------
+
+Function UNSIdentifyValueType(const Str: String): TUNSValueType;
+var
+  i:  TUNSValueType;
+begin
+Result := vtUndefined;
+For i := Low(TUNSValueType) to High(TUNSValueType) do
+  If AnsiSameText(Str,UNS_VALUETYPE_STRS[i]) then
+    begin
+      Result := i;
+      Break{For i};
+    end;
 end;
 
 end.
