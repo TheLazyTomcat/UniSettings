@@ -23,11 +23,11 @@ const
     ('add','prefix','struct');
 
 type
-  TUNSScriptSubCommand = (sscExpand,sscDefValBegin,sscDefValEnd);
+  TUNSScriptSubCommand = (sscExpand,sscDefValsBegin,sscDefValsEnd,sscOriginal);
 
 const  
   UNS_SCRIPT_SUBCOMMAND_STRS: array[TUNSScriptSubCommand] of string =
-    ('expand','defvalbegin','defvalend');
+    ('expand','defvalsbegin','defvalsend','original');
 
 implementation
 

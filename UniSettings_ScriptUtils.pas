@@ -13,6 +13,8 @@ Function UNSIndetifyCommand(const Str: String): TUNSScriptCommand;
 
 Function UNSIndetifySubCommand(const Str: String): TUNSScriptSubCommand;
 
+Function UNSIsSubcommand(const Str: String; SubCommand: TUNSScriptSubCommand): Boolean;
+
 implementation
 
 uses
@@ -67,6 +69,19 @@ If Length(Str) > 1 then
         Exit;
       end;
 raise EUNSException.CreateFmt('Unknown subcommand %s.',[Str],'UNSIndetifySubCommand');
+end;
+
+//------------------------------------------------------------------------------
+
+Function UNSIsSubcommand(const Str: String; SubCommand: TUNSScriptSubCommand): Boolean;
+begin
+If Length(Str) > 0 then
+  begin
+    Result := (Str[1] = UNS_SCRIPT_SUBCOMMANDTAG) and
+              AnsiSameText(UNS_SCRIPT_SUBCOMMAND_STRS[SubCommand],
+                           Copy(Str,2,Length(Str) - 1));
+  end
+else Result := False;
 end;
 
 end.
