@@ -13,7 +13,7 @@ Function UNSIndetifyCommand(const Str: String): TUNSScriptCommand;
 
 Function UNSIndetifySubCommand(const Str: String): TUNSScriptSubCommand;
 
-Function UNSIsSubcommand(const Str: String; SubCommand: TUNSScriptSubCommand): Boolean;
+Function UNSIsSubCommand(const Str: String; SubCommand: TUNSScriptSubCommand): Boolean;
 
 implementation
 
@@ -73,7 +73,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function UNSIsSubcommand(const Str: String; SubCommand: TUNSScriptSubCommand): Boolean;
+Function UNSIsSubCommand(const Str: String; SubCommand: TUNSScriptSubCommand): Boolean;
 begin
 If Length(Str) > 0 then
   begin
