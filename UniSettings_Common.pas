@@ -5,7 +5,7 @@ unit UniSettings_Common;
 interface
 
 uses
-  AuxTypes, CRC32, MemoryBuffer;
+  AuxTypes, CRC32;
 
 type
   TUNSHashedString = record
@@ -13,92 +13,8 @@ type
     Hash: TCRC32;
   end;
 
-//------------------------------------------------------------------------------
-
   TDate = type TDateTime;
   TTime = type TDateTime;
-
-{$message 'move following to units with corresponding nodes'}
-
-  TUNSAoBool = record
-    Arr:    array of Boolean;
-    Count:  Integer;
-  end;
-
-  TUNSAoInt8 = record
-    Arr:    array of Int8;
-    Count:  Integer;
-  end;
-
-  TUNSAoUInt8 = record
-    Arr:    array of UInt8;
-    Count:  Integer;
-  end;
-
-  TUNSAoInt16 = record
-    Arr:    array of Int16; 
-    Count:  Integer;
-  end;
-
-  TUNSAoUInt16 = record
-    Arr:    array of UInt16;
-    Count:  Integer;
-  end;
-
-  TUNSAoInt32 = record
-    Arr:    array of Int32;
-    Count:  Integer;
-  end;
-
-  TUNSAoUInt32 = record
-    Arr:    array of UInt32;
-    Count:  Integer;
-  end;
-
-  TUNSAoInt64 = record
-    Arr:    array of Int64; 
-    Count:  Integer;
-  end;
-
-  TUNSAoUInt64 = record
-    Arr:    array of UInt64; 
-    Count:  Integer;
-  end;
-
-  TUNSAoFloat32 = record
-    Arr:    array of Float32; 
-    Count:  Integer;
-  end;
-
-  TUNSAoFloat64 = record
-    Arr:    array of Float64; 
-    Count:  Integer;
-  end;
-
-  TUNSAoData = record
-    Arr:    array of TDate; 
-    Count:  Integer;
-  end;
-
-  TUNSAoTime = record
-    Arr:    array of TTime;
-    Count:  Integer;
-  end;
-
-  TUNSAoDateTime = record
-    Arr:    array of TDateTime; 
-    Count:  Integer;
-  end;
-
-  TUNSAoText = record
-    Arr:    array of String;
-    Count:  Integer;
-  end;
-
-  TUNSAoBuffer = record
-    Arr:    array of TMemoryBuffer;
-    Count:  Integer;
-  end;
 
 //------------------------------------------------------------------------------
 
