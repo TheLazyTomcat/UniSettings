@@ -6,7 +6,7 @@ todo (* = completed):
   access to array items trough index in value name
   copy construcror(s)
   value save-restore system
-  buffers - free replaced buffers (eg. def->curr and v.v.)
+* buffers - free replaced buffers (eg. def->curr and v.v.)
 * unify nomenclature
 * replacing blank nodes
 *)
@@ -994,7 +994,7 @@ Function TUniSettings.ValueItemSize(const ValueName: String): TMemSize;
 begin
 ReadLock;
 try
-  Result := CheckedLeafArrayNodeAccess(ValueName,'ValueItemSize').ValueItemSize;
+  //Result := CheckedLeafArrayNodeAccess(ValueName,'ValueItemSize').ValueItemSize;
 finally
   ReadUnlock;
 end;
@@ -1006,7 +1006,7 @@ Function TUniSettings.ValueAddress(const ValueName: String; AccessDefVal: Boolea
 begin
 ReadLock;
 try
-  Result := CheckedLeafNodeAccess(ValueName,'ValueAddress').GetValueAddress(AccessDefVal);
+  Result := CheckedLeafNodeAccess(ValueName,'ValueAddress').Address(AccessDefVal);
 finally
   ReadUnlock;
 end;
@@ -1018,7 +1018,7 @@ Function TUniSettings.ValueAsString(const ValueName: String; AccessDefVal: Boole
 begin
 ReadLock;
 try
-  Result := CheckedLeafNodeAccess(ValueName,'ValueAsString').GetValueAsString(AccessDefVal)
+  Result := CheckedLeafNodeAccess(ValueName,'ValueAsString').AsString(AccessDefVal)
 finally
   ReadUnlock;
 end;
@@ -1030,7 +1030,7 @@ procedure TUniSettings.ValueFromString(const ValueName: String; const Str: Strin
 begin
 WriteLock;
 try
-  CheckedLeafNodeAccess(ValueName,'ValueFromString').SetValueFromString(Str,AccessDefVal);
+  CheckedLeafNodeAccess(ValueName,'ValueFromString').FromString(Str,AccessDefVal);
 finally
   WriteUnlock;
 end;
@@ -1042,7 +1042,7 @@ procedure TUniSettings.ValueToStream(const ValueName: String; Stream: TStream; A
 begin
 ReadLock;
 try
-  CheckedLeafNodeAccess(ValueName,'ValueToStream').GetValueToStream(Stream,AccessDefVal);
+  CheckedLeafNodeAccess(ValueName,'ValueToStream').ToStream(Stream,AccessDefVal);
 finally
   ReadUnlock;
 end;
@@ -1054,7 +1054,7 @@ procedure TUniSettings.ValueFromStream(const ValueName: String; Stream: TStream;
 begin
 WriteLock;
 try
-  CheckedLeafNodeAccess(ValueName,'ValueFromStream').SetValueFromStream(Stream,AccessDefVal);
+  CheckedLeafNodeAccess(ValueName,'ValueFromStream').FromStream(Stream,AccessDefVal);
 finally
   WriteUnlock;
 end;
@@ -1066,7 +1066,7 @@ Function TUniSettings.ValueAsStream(const ValueName: String; AccessDefVal: Boole
 begin
 ReadLock;
 try
-  Result := CheckedLeafNodeAccess(ValueName,'ValueAsStream').GetValueAsStream(AccessDefVal);
+  Result := CheckedLeafNodeAccess(ValueName,'ValueAsStream').AsStream(AccessDefVal);
 finally
   ReadUnlock;
 end;
@@ -1078,7 +1078,7 @@ procedure TUniSettings.ValueToBuffer(const ValueName: String; Buffer: TMemoryBuf
 begin
 ReadLock;
 try
-  CheckedLeafNodeAccess(ValueName,'ValueToBuffer').GetValueToBuffer(Buffer,AccessDefVal);
+  CheckedLeafNodeAccess(ValueName,'ValueToBuffer').ToBuffer(Buffer,AccessDefVal);
 finally
   ReadUnlock;
 end;
@@ -1090,7 +1090,7 @@ procedure TUniSettings.ValueFromBuffer(const ValueName: String; Buffer: TMemoryB
 begin
 WriteLock;
 try
-  CheckedLeafNodeAccess(ValueName,'ValueFromBuffer').SetValueFromBuffer(Buffer,AccessDefVal);
+  CheckedLeafNodeAccess(ValueName,'ValueFromBuffer').FromBuffer(Buffer,AccessDefVal);
 finally
   WriteUnlock;
 end;
@@ -1102,7 +1102,7 @@ Function TUniSettings.ValueAsBuffer(const ValueName: String; AccessDefVal: Boole
 begin
 ReadLock;
 try
-  Result := CheckedLeafNodeAccess(ValueName,'ValueFromBuffer').GetValueAsBuffer(AccessDefVal);
+  Result := CheckedLeafNodeAccess(ValueName,'ValueFromBuffer').AsBuffer(AccessDefVal);
 finally
   ReadUnlock;
 end;

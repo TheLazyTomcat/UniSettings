@@ -13,7 +13,8 @@ type
   TUNSNodeBlank = class(TUNSNodeLeaf)
   protected
     class Function GetValueType: TUNSValueType; override;
-    Function GetValueSize(AccessDefVal: Integer): TMemSize; override;
+    Function GetValueSize: TMemSize; override;
+    Function GetDefaultValueSize: TMemSize; override;
     Function ConvToStr(const Value): String; override;
     Function ConvFromStr(const Str: String): Pointer; override;
   public
@@ -21,13 +22,13 @@ type
     procedure DefaultFromActual; override;
     procedure ExchangeActualAndDefault; override;
     Function ActualEqualsDefault: Boolean; override;
-    Function GetValueAddress(AccessDefVal: Boolean = False): Pointer; override;
-    Function GetValueAsString(AccessDefVal: Boolean = False): String; override;
-    procedure SetValueFromString(const Str: String; AccessDefVal: Boolean = False); override;
-    procedure GetValueToStream(Stream: TStream; AccessDefVal: Boolean = False); override;
-    procedure SetValueFromStream(Stream: TStream; AccessDefVal: Boolean = False); override;
-    procedure GetValueToBuffer(Buffer: TMemoryBuffer; AccessDefVal: Boolean = False); override;
-    procedure SetValueFromBuffer(Buffer: TMemoryBuffer; AccessDefVal: Boolean = False); override;
+    Function Address(AccessDefVal: Boolean = False): Pointer; override;
+    Function AsString(AccessDefVal: Boolean = False): String; override;
+    procedure FromString(const Str: String; AccessDefVal: Boolean = False); override;
+    procedure ToStream(Stream: TStream; AccessDefVal: Boolean = False); override;
+    procedure FromStream(Stream: TStream; AccessDefVal: Boolean = False); override;
+    procedure ToBuffer(Buffer: TMemoryBuffer; AccessDefVal: Boolean = False); override;
+    procedure FromBuffer(Buffer: TMemoryBuffer; AccessDefVal: Boolean = False); override;
   end;
 
 implementation
@@ -39,7 +40,14 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function TUNSNodeBlank.GetValueSize(AccessDefVal: Integer): TMemSize;
+Function TUNSNodeBlank.GetValueSize: TMemSize;
+begin
+Result := 0;
+end;
+
+//------------------------------------------------------------------------------
+
+Function TUNSNodeBlank.GetDefaultValueSize: TMemSize;
 begin
 Result := 0;
 end;
@@ -88,49 +96,49 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function TUNSNodeBlank.GetValueAddress(AccessDefVal: Boolean = False): Pointer;
+Function TUNSNodeBlank.Address(AccessDefVal: Boolean = False): Pointer;
 begin
 Result := nil;
 end;
 
 //------------------------------------------------------------------------------
 
-Function TUNSNodeBlank.GetValueAsString(AccessDefVal: Boolean = False): String;
+Function TUNSNodeBlank.AsString(AccessDefVal: Boolean = False): String;
 begin
 Result := '';
 end;
 
 //------------------------------------------------------------------------------
 
-procedure TUNSNodeBlank.SetValueFromString(const Str: String; AccessDefVal: Boolean = False);
+procedure TUNSNodeBlank.FromString(const Str: String; AccessDefVal: Boolean = False);
 begin
 // do nothing;
 end;
 
 //------------------------------------------------------------------------------
 
-procedure TUNSNodeBlank.GetValueToStream(Stream: TStream; AccessDefVal: Boolean = False);
+procedure TUNSNodeBlank.ToStream(Stream: TStream; AccessDefVal: Boolean = False);
 begin
 // do nothing
 end;
 
 //------------------------------------------------------------------------------
 
-procedure TUNSNodeBlank.SetValueFromStream(Stream: TStream; AccessDefVal: Boolean = False);
+procedure TUNSNodeBlank.FromStream(Stream: TStream; AccessDefVal: Boolean = False);
 begin
 // do nothing
 end;
 
 //------------------------------------------------------------------------------
 
-procedure TUNSNodeBlank.GetValueToBuffer(Buffer: TMemoryBuffer; AccessDefVal: Boolean = False);
+procedure TUNSNodeBlank.ToBuffer(Buffer: TMemoryBuffer; AccessDefVal: Boolean = False);
 begin
 // do nothing
 end;
 
 //------------------------------------------------------------------------------
 
-procedure TUNSNodeBlank.SetValueFromBuffer(Buffer: TMemoryBuffer; AccessDefVal: Boolean = False);
+procedure TUNSNodeBlank.FromBuffer(Buffer: TMemoryBuffer; AccessDefVal: Boolean = False);
 begin
 // do nothing
 end;

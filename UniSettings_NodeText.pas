@@ -19,7 +19,8 @@ type
     procedure SetDefaultValue(NewValue: String);
   protected
     class Function GetValueType: TUNSValueType; override;
-    Function GetValueSize(AccessDefVal: Integer): TMemSize; override;
+    Function GetValueSize: TMemSize; override;
+    Function GetDefaultValueSize: TMemSize; override;
     Function ConvToStr(const Value): String; override;
     Function ConvFromStr(const Str: String): Pointer; override;
   public
@@ -27,13 +28,13 @@ type
     procedure DefaultFromActual; override;
     procedure ExchangeActualAndDefault; override;
     Function ActualEqualsDefault: Boolean; override;
-    Function GetValueAddress(AccessDefVal: Boolean = False): Pointer; override;
-    Function GetValueAsString(AccessDefVal: Boolean = False): String; override;
-    procedure SetValueFromString(const Str: String; AccessDefVal: Boolean = False); override;
-    procedure GetValueToStream(Stream: TStream; AccessDefVal: Boolean = False); override;
-    procedure SetValueFromStream(Stream: TStream; AccessDefVal: Boolean = False); override;
-    procedure GetValueToBuffer(Buffer: TMemoryBuffer; AccessDefVal: Boolean = False); override;
-    procedure SetValueFromBuffer(Buffer: TMemoryBuffer; AccessDefVal: Boolean = False); override;
+    Function Address(AccessDefVal: Boolean = False): Pointer; override;
+    Function AsString(AccessDefVal: Boolean = False): String; override;
+    procedure FromString(const Str: String; AccessDefVal: Boolean = False); override;
+    procedure ToStream(Stream: TStream; AccessDefVal: Boolean = False); override;
+    procedure FromStream(Stream: TStream; AccessDefVal: Boolean = False); override;
+    procedure ToBuffer(Buffer: TMemoryBuffer; AccessDefVal: Boolean = False); override;
+    procedure FromBuffer(Buffer: TMemoryBuffer; AccessDefVal: Boolean = False); override;
     property Value: String read fValue write SetValue;
     property DefaultValue: String read fDefaultValue write SetDefaultValue;
   end;
@@ -74,12 +75,16 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function TUNSNodeText.GetValueSize(AccessDefVal: Integer): TMemSize;
+Function TUNSNodeText.GetValueSize: TMemSize;
 begin
-If AccessDefVal <> 0 then
-  Result := SizeOf(Int32) + Length(StrToUTF8(fDefaultValue)) * SizeOf(UTF8Char)
-else
-  Result := SizeOf(Int32) + Length(StrToUTF8(fValue)) * SizeOf(UTF8Char)
+Result := SizeOf(Int32) + Length(StrToUTF8(fValue)) * SizeOf(UTF8Char);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TUNSNodeText.GetDefaultValueSize: TMemSize;
+begin
+Result := SizeOf(Int32) + Length(StrToUTF8(fDefaultValue)) * SizeOf(UTF8Char);
 end;
 
 //------------------------------------------------------------------------------
@@ -142,7 +147,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function TUNSNodeText.GetValueAddress(AccessDefVal: Boolean = False): Pointer;
+Function TUNSNodeText.Address(AccessDefVal: Boolean = False): Pointer;
 begin
 If AccessDefVal then
   Result := PChar(fDefaultValue)
@@ -152,7 +157,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function TUNSNodeText.GetValueAsString(AccessDefVal: Boolean = False): String;
+Function TUNSNodeText.AsString(AccessDefVal: Boolean = False): String;
 begin
 If AccessDefVal then
   Result := fDefaultValue
@@ -162,7 +167,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-procedure TUNSNodeText.SetValueFromString(const Str: String; AccessDefVal: Boolean = False);
+procedure TUNSNodeText.FromString(const Str: String; AccessDefVal: Boolean = False);
 begin
 If AccessDefVal then
   SetDefaultValue(Str)
@@ -172,7 +177,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-procedure TUNSNodeText.GetValueToStream(Stream: TStream; AccessDefVal: Boolean = False);
+procedure TUNSNodeText.ToStream(Stream: TStream; AccessDefVal: Boolean = False);
 begin
 If AccessDefVal then
   Stream_WriteString(Stream,fDefaultValue)
@@ -182,7 +187,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-procedure TUNSNodeText.SetValueFromStream(Stream: TStream; AccessDefVal: Boolean = False);
+procedure TUNSNodeText.FromStream(Stream: TStream; AccessDefVal: Boolean = False);
 begin
 If AccessDefVal then
   SetDefaultValue(Stream_ReadString(Stream))
@@ -192,9 +197,9 @@ end;
 
 //------------------------------------------------------------------------------
 
-procedure TUNSNodeText.GetValueToBuffer(Buffer: TMemoryBuffer; AccessDefVal: Boolean = False);
+procedure TUNSNodeText.ToBuffer(Buffer: TMemoryBuffer; AccessDefVal: Boolean = False);
 begin
-If Buffer.Size >= GetValueSize(Ord(AccessDefVal)) then
+If Buffer.Size >= ObtainValueSize(AccessDefVal) then
   begin
     If AccessDefVal then
       Ptr_WriteString(Buffer.Memory,fDefaultValue)
@@ -206,7 +211,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-procedure TUNSNodeText.SetValueFromBuffer(Buffer: TMemoryBuffer; AccessDefVal: Boolean = False);
+procedure TUNSNodeText.FromBuffer(Buffer: TMemoryBuffer; AccessDefVal: Boolean = False);
 begin
 If Buffer.Size >= SizeOf(Int32) then
   begin

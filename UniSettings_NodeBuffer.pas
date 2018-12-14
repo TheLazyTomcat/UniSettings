@@ -8,7 +8,7 @@ interface
 uses
   Classes,
   AuxTypes, MemoryBuffer,
-  UniSettings_Common, UniSettings_NodeLeaf;
+  UniSettings_Common, UniSettings_NodeBase, UniSettings_NodeLeaf;
 
 type
   TUNSNodeBuffer = class(TUNSNodeLeaf)
@@ -20,21 +20,23 @@ type
   protected
     class Function SameMemoryBuffers(A,B: TMemoryBuffer): Boolean; virtual;
     class Function GetValueType: TUNSValueType; override;
-    Function GetValueSize(AccessDefVal: Integer): TMemSize; override;
+    Function GetValueSize: TMemSize; override;
+    Function GetDefaultValueSize: TMemSize; override;
     Function ConvToStr(const Value): String; override;
     Function ConvFromStr(const Str: String): Pointer; override;
   public
+    constructor Create(const Name: String; ParentNode: TUNSNodeBase);
     procedure ActualFromDefault; override;
     procedure DefaultFromActual; override;
     procedure ExchangeActualAndDefault; override;
     Function ActualEqualsDefault: Boolean; override;
-    Function GetValueAddress(AccessDefVal: Boolean = False): Pointer; override;
-    Function GetValueAsString(AccessDefVal: Boolean = False): String; override;
-    procedure SetValueFromString(const Str: String; AccessDefVal: Boolean = False); override;
-    procedure GetValueToStream(Stream: TStream; AccessDefVal: Boolean = False); override;
-    procedure SetValueFromStream(Stream: TStream; AccessDefVal: Boolean = False); override;
-    procedure GetValueToBuffer(Buffer: TMemoryBuffer; AccessDefVal: Boolean = False); override;
-    procedure SetValueFromBuffer(Buffer: TMemoryBuffer; AccessDefVal: Boolean = False); override;
+    Function Address(AccessDefVal: Boolean = False): Pointer; override;
+    Function AsString(AccessDefVal: Boolean = False): String; override;
+    procedure FromString(const Str: String; AccessDefVal: Boolean = False); override;
+    procedure ToStream(Stream: TStream; AccessDefVal: Boolean = False); override;
+    procedure FromStream(Stream: TStream; AccessDefVal: Boolean = False); override;
+    procedure ToBuffer(Buffer: TMemoryBuffer; AccessDefVal: Boolean = False); override;
+    procedure FromBuffer(Buffer: TMemoryBuffer; AccessDefVal: Boolean = False); override;
     property Value: TMemoryBuffer read fValue write SetValue;
     property DefaultValue: TMemoryBuffer read fDefaultValue write SetDefaultValue;
   end;
@@ -108,12 +110,16 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function TUNSNodeBuffer.GetValueSize(AccessDefVal: Integer): TMemSize;
+Function TUNSNodeBuffer.GetValueSize: TMemSize;
 begin
-If AccessDefVal <> 0 then
-  Result := fDefaultValue.Size
-else
-  Result := fValue.Size;
+Result := fValue.Size;
+end;
+
+//------------------------------------------------------------------------------
+
+Function TUNSNodeBuffer.GetDefaultValueSize: TMemSize;
+begin
+Result := fDefaultValue.Size;
 end;
 
 //------------------------------------------------------------------------------
@@ -131,6 +137,15 @@ Result := nil;
 end;
 
 //==============================================================================
+
+constructor TUNSNodeBuffer.Create(const Name: String; ParentNode: TUNSNodeBase);
+begin
+inherited Create(Name,ParentNode);
+FillChar(fValue,SizeOf(TMemoryBuffer),0);
+FillChar(fDefaultValue,SizeOf(TMemoryBuffer),0);
+end;
+
+//------------------------------------------------------------------------------
 
 procedure TUNSNodeBuffer.ActualFromDefault;
 begin
@@ -179,7 +194,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function TUNSNodeBuffer.GetValueAddress(AccessDefVal: Boolean = False): Pointer;
+Function TUNSNodeBuffer.Address(AccessDefVal: Boolean = False): Pointer;
 begin
 If AccessDefVal then
   Result := fDefaultValue.Memory
@@ -189,7 +204,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function TUNSNodeBuffer.GetValueAsString(AccessDefVal: Boolean = False): String;
+Function TUNSNodeBuffer.AsString(AccessDefVal: Boolean = False): String;
 var
   WorkBuff: TMemoryBuffer;
   i:        TMemSize;
@@ -214,7 +229,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-procedure TUNSNodeBuffer.SetValueFromString(const Str: String; AccessDefVal: Boolean = False);
+procedure TUNSNodeBuffer.FromString(const Str: String; AccessDefVal: Boolean = False);
 var
   TempSize: TMemSize;
   i:        TMemSize;
@@ -241,7 +256,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-procedure TUNSNodeBuffer.GetValueToStream(Stream: TStream; AccessDefVal: Boolean = False);
+procedure TUNSNodeBuffer.ToStream(Stream: TStream; AccessDefVal: Boolean = False);
 begin
 If AccessDefVal then
   Stream_WriteBuffer(Stream,fDefaultValue.Memory^,fDefaultValue.Size)
@@ -251,7 +266,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-procedure TUNSNodeBuffer.SetValueFromStream(Stream: TStream; AccessDefVal: Boolean = False);
+procedure TUNSNodeBuffer.FromStream(Stream: TStream; AccessDefVal: Boolean = False);
 var
   TempSize: TMemSize;
 begin
@@ -271,9 +286,9 @@ end;
 
 //------------------------------------------------------------------------------
 
-procedure TUNSNodeBuffer.GetValueToBuffer(Buffer: TMemoryBuffer; AccessDefVal: Boolean = False);
+procedure TUNSNodeBuffer.ToBuffer(Buffer: TMemoryBuffer; AccessDefVal: Boolean = False);
 begin
-If Buffer.Size >= GetValueSize(Ord(AccessDefVal)) then
+If Buffer.Size >= ObtainValueSize(AccessDefVal) then
   begin
     If AccessDefVal then
       Ptr_WriteBuffer(Buffer.Memory,fDefaultValue.Memory^,fDefaultValue.Size)
@@ -285,7 +300,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-procedure TUNSNodeBuffer.SetValueFromBuffer(Buffer: TMemoryBuffer; AccessDefVal: Boolean = False);
+procedure TUNSNodeBuffer.FromBuffer(Buffer: TMemoryBuffer; AccessDefVal: Boolean = False);
 begin
 If AccessDefVal then
   begin
@@ -294,7 +309,7 @@ If AccessDefVal then
   end
 else
   begin
-     ReallocBuffer(fValue,Buffer.Size);
+    ReallocBuffer(fValue,Buffer.Size);
     Ptr_ReadBuffer(Buffer.Memory,fValue.Memory^,fValue.Size);
   end;
 DoChange;

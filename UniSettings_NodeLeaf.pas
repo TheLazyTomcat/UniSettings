@@ -13,22 +13,24 @@ type
   TUNSNodeLeaf = class(TUNSNodeBase)
   protected
     class Function GetNodeClass: TUNSNodeClass; override;
-    Function GetValueSize(AccessDefVal: Integer): TMemSize; virtual; abstract;
+    Function GetValueSize: TMemSize; virtual; abstract;
+    Function GetDefaultValueSize: TMemSize; virtual; abstract;
     Function ConvToStr(const Value): String; virtual; abstract;
     Function ConvFromStr(const Str: String): Pointer; virtual; abstract;
+    Function ObtainValueSize(AccessDefVal: Boolean): TMemSize; virtual;
   public
     class Function IsPrimitiveArray: Boolean; virtual;
-    Function GetValueAddress(AccessDefVal: Boolean = False): Pointer; virtual; abstract;
-    Function GetValueAsString(AccessDefVal: Boolean = False): String; virtual; abstract;
-    procedure SetValueFromString(const Str: String; AccessDefVal: Boolean = False); virtual; abstract;
-    procedure GetValueToStream(Stream: TStream; AccessDefVal: Boolean = False); virtual; abstract;
-    procedure SetValueFromStream(Stream: TStream; AccessDefVal: Boolean = False); virtual; abstract;
-    Function GetValueAsStream(AccessDefVal: Boolean = False): TMemoryStream; virtual;
-    procedure GetValueToBuffer(Buffer: TMemoryBuffer; AccessDefVal: Boolean = False); virtual; abstract;
-    procedure SetValueFromBuffer(Buffer: TMemoryBuffer; AccessDefVal: Boolean = False); virtual; abstract;
-    Function GetValueAsBuffer(AccessDefVal: Boolean = False): TMemoryBuffer; virtual; 
-    property ValueSize: TMemSize index 1 read GetValueSize;
-    property DefaultValueSize: TMemSize index 0 read GetValueSize;
+    Function Address(AccessDefVal: Boolean = False): Pointer; virtual; abstract;
+    Function AsString(AccessDefVal: Boolean = False): String; virtual; abstract;
+    procedure FromString(const Str: String; AccessDefVal: Boolean = False); virtual; abstract;
+    procedure ToStream(Stream: TStream; AccessDefVal: Boolean = False); virtual; abstract;
+    procedure FromStream(Stream: TStream; AccessDefVal: Boolean = False); virtual; abstract;
+    Function AsStream(AccessDefVal: Boolean = False): TMemoryStream; virtual;
+    procedure ToBuffer(Buffer: TMemoryBuffer; AccessDefVal: Boolean = False); virtual; abstract;
+    procedure FromBuffer(Buffer: TMemoryBuffer; AccessDefVal: Boolean = False); virtual; abstract;
+    Function AsBuffer(AccessDefVal: Boolean = False): TMemoryBuffer; virtual; 
+    property ValueSize: TMemSize read GetValueSize;
+    property DefaultValueSize: TMemSize read GetDefaultValueSize;
   end;
 
 implementation
@@ -36,6 +38,16 @@ implementation
 class Function TUNSNodeLeaf.GetNodeClass: TUNSNodeClass;
 begin
 Result := ncLeaf;
+end;
+
+//------------------------------------------------------------------------------
+
+Function TUNSNodeLeaf.ObtainValueSize(AccessDefVal: Boolean): TMemSize;
+begin
+If AccessDefVal then
+  Result := GetDefaultValueSize
+else
+  Result := GetValueSize;
 end;
 
 //==============================================================================
@@ -47,18 +59,21 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function TUNSNodeLeaf.GetValueAsStream(AccessDefVal: Boolean = False): TMemoryStream;
+Function TUNSNodeLeaf.AsStream(AccessDefVal: Boolean = False): TMemoryStream;
 begin
 Result := TMemoryStream.Create;
-GetValueToStream(Result,AccessDefVal);
+ToStream(Result,AccessDefVal);
 end;
 
 //------------------------------------------------------------------------------
 
-Function TUNSNodeLeaf.GetValueAsBuffer(AccessDefVal: Boolean = False): TMemoryBuffer;
+Function TUNSNodeLeaf.AsBuffer(AccessDefVal: Boolean = False): TMemoryBuffer;
 begin
-GetBuffer(Result,GetValueSize(Ord(AccessDefVal)));
-GetValuetoBuffer(Result,AccessDefVal);
+If AccessDefVal then
+  GetBuffer(Result,GetDefaultValueSize)
+else
+  GetBuffer(Result,GetValueSize);
+ToBuffer(Result,AccessDefVal);
 end;
 
 end.

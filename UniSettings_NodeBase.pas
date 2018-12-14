@@ -31,6 +31,7 @@ type
     procedure DoChange; virtual;
   public
     constructor Create(const Name: String; ParentNode: TUNSNodeBase);
+    constructor CreateCopy(Source: TUNSNodeBase; const Name: String; ParentNode: TUNSNodeBase);
     Function GetFlag(Flag: TUNSValueFlag): Boolean; virtual;
     procedure SetFlag(Flag: TUNSValueFlag); virtual;
     procedure ResetFlag(Flag: TUNSValueFlag); virtual;
@@ -192,6 +193,17 @@ fConvSettings.ShortTimeFormat := fConvSettings.LongTimeFormat;
 fConvSettings.TimeSeparator := ':';
 fChanged := False;
 fOnChange := nil;
+end;
+
+//------------------------------------------------------------------------------
+
+constructor TUNSNodeBase.CreateCopy(Source: TUNSNodeBase; const Name: String; ParentNode: TUNSNodeBase);
+begin
+Create(Name,ParentNode);
+If not(Source is Self.ClassType) then
+  raise EUNSException.CreateFmt('Incompatible source class (%s).',[Source.ClassName],Self,'CreateCopy');
+// copy data in descendants
+{$message warn 'copy data in descendants'}
 end;
 
 //------------------------------------------------------------------------------

@@ -19,7 +19,8 @@ type
     procedure SetDefaultValue(NewValue: TDateTime);
   protected
     class Function GetValueType: TUNSValueType; override;
-    Function GetValueSize(AccessDefVal: Integer): TMemSize; override;
+    Function GetValueSize: TMemSize; override;
+    Function GetDefaultValueSize: TMemSize; override;
     Function ConvToStr(Value: TDateTime): String; reintroduce;
     Function ConvFromStr(const Str: String): TDateTime; reintroduce;
   public
@@ -27,13 +28,13 @@ type
     procedure DefaultFromActual; override;
     procedure ExchangeActualAndDefault; override;
     Function ActualEqualsDefault: Boolean; override;
-    Function GetValueAddress(AccessDefVal: Boolean = False): Pointer; override;
-    Function GetValueAsString(AccessDefVal: Boolean = False): String; override;
-    procedure SetValueFromString(const Str: String; AccessDefVal: Boolean = False); override;
-    procedure GetValueToStream(Stream: TStream; AccessDefVal: Boolean = False); override;
-    procedure SetValueFromStream(Stream: TStream; AccessDefVal: Boolean = False); override;
-    procedure GetValueToBuffer(Buffer: TMemoryBuffer; AccessDefVal: Boolean = False); override;
-    procedure SetValueFromBuffer(Buffer: TMemoryBuffer; AccessDefVal: Boolean = False); override;
+    Function Address(AccessDefVal: Boolean = False): Pointer; override;
+    Function AsString(AccessDefVal: Boolean = False): String; override;
+    procedure FromString(const Str: String; AccessDefVal: Boolean = False); override;
+    procedure ToStream(Stream: TStream; AccessDefVal: Boolean = False); override;
+    procedure FromStream(Stream: TStream; AccessDefVal: Boolean = False); override;
+    procedure ToBuffer(Buffer: TMemoryBuffer; AccessDefVal: Boolean = False); override;
+    procedure FromBuffer(Buffer: TMemoryBuffer; AccessDefVal: Boolean = False); override;
     property Value: TDateTime read fValue write SetValue;
     property DefaultValue: TDateTime read fDefaultValue write SetDefaultValue;
   end;
@@ -74,7 +75,14 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function TUNSNodeDateTime.GetValueSize(AccessDefVal: Integer): TMemSize;
+Function TUNSNodeDateTime.GetValueSize: TMemSize;
+begin
+Result := SizeOf(TDateTime);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TUNSNodeDateTime.GetDefaultValueSize: TMemSize;
 begin
 Result := SizeOf(TDateTime);
 end;
@@ -149,7 +157,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function TUNSNodeDateTime.GetValueAddress(AccessDefVal: Boolean = False): Pointer;
+Function TUNSNodeDateTime.Address(AccessDefVal: Boolean = False): Pointer;
 begin
 If AccessDefVal then
   Result := Addr(fDefaultValue)
@@ -159,7 +167,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function TUNSNodeDateTime.GetValueAsString(AccessDefVal: Boolean = False): String;
+Function TUNSNodeDateTime.AsString(AccessDefVal: Boolean = False): String;
 begin
 If AccessDefVal then
   Result := ConvToStr(fDefaultValue)
@@ -169,7 +177,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-procedure TUNSNodeDateTime.SetValueFromString(const Str: String; AccessDefVal: Boolean = False);
+procedure TUNSNodeDateTime.FromString(const Str: String; AccessDefVal: Boolean = False);
 begin
 If AccessDefVal then
   SetDefaultValue(ConvFromStr(Str))
@@ -179,7 +187,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-procedure TUNSNodeDateTime.GetValueToStream(Stream: TStream; AccessDefVal: Boolean = False);
+procedure TUNSNodeDateTime.ToStream(Stream: TStream; AccessDefVal: Boolean = False);
 begin
 If AccessDefVal then
   Stream_WriteFloat64(Stream,fDefaultValue)
@@ -189,7 +197,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-procedure TUNSNodeDateTime.SetValueFromStream(Stream: TStream; AccessDefVal: Boolean = False);
+procedure TUNSNodeDateTime.FromStream(Stream: TStream; AccessDefVal: Boolean = False);
 begin
 If AccessDefVal then
   SetDefaultValue(Stream_ReadFloat64(Stream))
@@ -199,9 +207,9 @@ end;
 
 //------------------------------------------------------------------------------
 
-procedure TUNSNodeDateTime.GetValueToBuffer(Buffer: TMemoryBuffer; AccessDefVal: Boolean = False);
+procedure TUNSNodeDateTime.ToBuffer(Buffer: TMemoryBuffer; AccessDefVal: Boolean = False);
 begin
-If Buffer.Size >= GetValueSize(Ord(AccessDefVal)) then
+If Buffer.Size >= ObtainValueSize(AccessDefVal) then
   begin
     If AccessDefVal then
       Ptr_WriteFloat64(Buffer.Memory,fDefaultValue)
@@ -213,9 +221,9 @@ end;
 
 //------------------------------------------------------------------------------
 
-procedure TUNSNodeDateTime.SetValueFromBuffer(Buffer: TMemoryBuffer; AccessDefVal: Boolean = False);
+procedure TUNSNodeDateTime.FromBuffer(Buffer: TMemoryBuffer; AccessDefVal: Boolean = False);
 begin
-If Buffer.Size >= GetValueSize(Ord(AccessDefVal)) then
+If Buffer.Size >= ObtainValueSize(AccessDefVal) then
   begin
     If AccessDefVal then
       SetDefaultValue(Ptr_ReadFloat64(Buffer.Memory))

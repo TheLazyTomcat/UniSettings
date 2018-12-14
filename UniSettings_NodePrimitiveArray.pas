@@ -14,7 +14,8 @@ type
   private
     Function GetCount: Integer;
   protected
-    class Function GetValueItemSize: TMemSize; virtual; abstract;
+    Function GetValueItemSize(Index: Integer): TMemSize; virtual; abstract;
+    Function GetDefaultValueItemSize(Index: Integer): TMemSize; virtual; abstract;
   public
     class Function IsPrimitiveArray: Boolean; override;
     destructor Destroy; override;
@@ -45,7 +46,8 @@ type
     Function ValueRemove(const Item; AccessDefVal: Boolean = False): Integer; virtual; abstract;
     procedure ValueDelete(Index: Integer; AccessDefVal: Boolean = False); virtual; abstract;
     procedure ValueClear(AccessDefVal: Boolean = False); virtual; abstract;                            
-    property ValueItemSize: TMemSize read GetValueItemSize;
+    property ValueItemSize[Index: Integer]: TMemSize read GetValueItemSize;
+    property DefaultValueItemSize[Index: Integer]: TMemSize read GetDefaultValueItemSize;
 
     property ValueCount: Integer read GetCount;
     property DefaultValueCount: Integer read GetCount;
