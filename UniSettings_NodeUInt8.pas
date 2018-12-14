@@ -17,31 +17,33 @@ type
     fSavedValue:    UInt8;
     fDefaultValue:  UInt8;
     procedure SetValue(NewValue: UInt8);
+    procedure SetSavedValue(NewValue: UInt8);
     procedure SetDefaultValue(NewValue: UInt8);
   protected
     class Function GetValueType: TUNSValueType; override;
     Function GetValueSize: TMemSize; override;
+    Function GetSavedValueSize: TMemSize; override;
     Function GetDefaultValueSize: TMemSize; override;
     Function ConvToStr(Value: UInt8): String; reintroduce;
     Function ConvFromStr(const Str: String): UInt8; reintroduce;
   public
     constructor Create(const Name: String; ParentNode: TUNSNodeBase);
     constructor CreateAsCopy(Source: TUNSNodeBase; const Name: String; ParentNode: TUNSNodeBase);
-    procedure ActualFromDefault; override;
-    procedure DefaultFromActual; override;
-    procedure ExchangeActualAndDefault; override;
-    Function ActualEqualsDefault: Boolean; override;
+    Function NodeEquals(Node: TUNSNodeLeaf; CompareValueKinds: TUNSValueKinds = [vkActual]): Boolean; override;
+    procedure ValueKindMove(Src,Dest: TUNSValueKind); override;
+    procedure ValueKindExchange(ValA,ValB: TUNSValueKind); override;
+    Function ValueKindCompare(ValA,ValB: TUNSValueKind): Boolean; override;    
     procedure Save; override;
     procedure Restore; override;
-    Function Address(AccessDefVal: Boolean = False): Pointer; override;
-    Function AsString(AccessDefVal: Boolean = False): String; override;
-    procedure FromString(const Str: String; AccessDefVal: Boolean = False); override;
-    procedure ToStream(Stream: TStream; AccessDefVal: Boolean = False); override;
-    procedure FromStream(Stream: TStream; AccessDefVal: Boolean = False); override;
-    procedure ToBuffer(Buffer: TMemoryBuffer; AccessDefVal: Boolean = False); override;
-    procedure FromBuffer(Buffer: TMemoryBuffer; AccessDefVal: Boolean = False); override;
+    Function Address(ValueKind: TUNSValueKind = vkActual): Pointer; override;
+    Function AsString(ValueKind: TUNSValueKind = vkActual): String; override;
+    procedure FromString(const Str: String; ValueKind: TUNSValueKind = vkActual); override;
+    procedure ToStream(Stream: TStream; ValueKind: TUNSValueKind = vkActual); override;
+    procedure FromStream(Stream: TStream; ValueKind: TUNSValueKind = vkActual); override;
+    procedure ToBuffer(Buffer: TMemoryBuffer; ValueKind: TUNSValueKind = vkActual); override;
+    procedure FromBuffer(Buffer: TMemoryBuffer; ValueKind: TUNSValueKind = vkActual); override;
     property Value: UInt8 read fValue write SetValue;
-    property SavedValue: UInt8 read fSavedValue;
+    property SavedValue: UInt8 read fSavedValue write SetSavedValue;
     property DefaultValue: UInt8 read fDefaultValue write SetDefaultValue;
   end;
 
@@ -57,6 +59,17 @@ begin
 If NewValue <> fValue then
   begin
     fValue := NewValue;
+    DoChange;
+  end;
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TUNSNodeUInt8.SetSavedValue(NewValue: UInt8);
+begin
+If NewValue <> fSavedValue then
+  begin
+    fSavedValue := NewValue;
     DoChange;
   end;
 end;
@@ -82,6 +95,13 @@ end;
 //------------------------------------------------------------------------------
 
 Function TUNSNodeUInt8.GetValueSize: TMemSize;
+begin
+Result := SizeOf(UInt8);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TUNSNodeUInt8.GetSavedValueSize: TMemSize;
 begin
 Result := SizeOf(UInt8);
 end;
@@ -132,53 +152,75 @@ end;
 
 //------------------------------------------------------------------------------
 
-procedure TUNSNodeUInt8.ActualFromDefault;
+Function TUNSNodeUInt8.NodeEquals(Node: TUNSNodeLeaf; CompareValueKinds: TUNSValueKinds = [vkActual]): Boolean;
 begin
-If not ActualEqualsDefault then
+If inherited NodeEquals(Node) then
   begin
-    fValue := fDefaultValue;
-    DoChange;
-  end;
+    Result := True;
+    If vkActual in CompareValueKinds then
+      Result := Result and (fValue = TUNSNodeUInt8(Node).Value);
+    If vkSaved in CompareValueKinds then
+      Result := Result and (fSavedValue = TUNSNodeUInt8(Node).SavedValue);
+    If vkDefault in CompareValueKinds then
+      Result := Result and (fDefaultValue = TUNSNodeUInt8(Node).DefaultValue);
+  end
+else Result := False;
 end;
 
 //------------------------------------------------------------------------------
 
-procedure TUNSNodeUInt8.DefaultFromActual;
-begin
-If not ActualEqualsDefault then
-  begin
-    fDefaultValue := fValue;
-    DoChange;
-  end;
-end;
-
-//------------------------------------------------------------------------------
-
-procedure TUNSNodeUInt8.ExchangeActualAndDefault;
+procedure TUNSNodeUInt8.ValueKindMove(Src,Dest: TUNSValueKind);
 var
-  Temp: UInt8;
+  SrcPtr, DestPtr:  PUInt8;
 begin
-If not ActualEqualsDefault then
+If Src <> Dest then
   begin
-    Temp := fDefaultValue;
-    fDefaultValue := fValue;
-    fValue := Temp;
-    DoChange;
+    SrcPtr := Address(Src);
+    DestPtr := Address(Dest);
+    If SrcPtr^ <> DestPtr^ then
+      begin
+        DestPtr^ := SrcPtr^;
+        DoChange;
+      end;
   end;
 end;
 
 //------------------------------------------------------------------------------
 
-Function TUNSNodeUInt8.ActualEqualsDefault: Boolean;
+procedure TUNSNodeUInt8.ValueKindExchange(ValA,ValB: TUNSValueKind);
+var
+  ValAPtr, ValBPtr: PUInt8;
+  Temp:             UInt8;
 begin
-Result := fValue = fDefaultValue;
+If ValA <> ValB then
+  begin
+    ValAPtr := Address(ValA);
+    ValBPtr := Address(ValB);
+    If ValAPtr^ <> ValBPtr^ then
+      begin
+        Temp := ValAPtr^;
+        ValAPtr^ := ValBPtr^;
+        ValBPtr^ := Temp;
+        DoChange;
+      end;
+  end;
+end;
+
+//------------------------------------------------------------------------------
+
+Function TUNSNodeUInt8.ValueKindCompare(ValA,ValB: TUNSValueKind): Boolean;
+begin
+If ValA <> ValB then
+  Result := UInt8(Address(ValA)^) = UInt8(Address(ValB)^)
+else
+  Result := True;
 end;
 
 //------------------------------------------------------------------------------
 
 procedure TUNSNodeUInt8.Save;
 begin
-fSavedValue := fValue;
+SetSavedValue(fValue);
 end;
 
 //------------------------------------------------------------------------------
@@ -190,80 +232,97 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function TUNSNodeUInt8.Address(AccessDefVal: Boolean = False): Pointer;
+Function TUNSNodeUInt8.Address(ValueKind: TUNSValueKind = vkActual): Pointer;
 begin
-If AccessDefVal then
-  Result := Addr(fDefaultValue)
+case ValueKind of
+  vkActual:   Result := Addr(fValue);
+  vkSaved:    Result := Addr(fSavedValue);
+  vkDefault:  Result := Addr(fDefaultValue);
 else
-  Result := Addr(fValue);
+  raise EUNSInvalidValueKindException.Create(ValueKind,Self,'Address');
+end;
 end;
 
 //------------------------------------------------------------------------------
 
-Function TUNSNodeUInt8.AsString(AccessDefVal: Boolean = False): String;
+Function TUNSNodeUInt8.AsString(ValueKind: TUNSValueKind = vkActual): String;
 begin
-If AccessDefVal then
-  Result := ConvToStr(fDefaultValue)
+case ValueKind of
+  vkActual:   Result := ConvToStr(fValue);
+  vkSaved:    Result := ConvToStr(fSavedValue);
+  vkDefault:  Result := ConvToStr(fDefaultValue);
 else
-  Result := ConvToStr(fValue);
+  raise EUNSInvalidValueKindException.Create(ValueKind,Self,'AsString');
+end;
 end;
 
 //------------------------------------------------------------------------------
 
-procedure TUNSNodeUInt8.FromString(const Str: String; AccessDefVal: Boolean = False);
+procedure TUNSNodeUInt8.FromString(const Str: String; ValueKind: TUNSValueKind = vkActual);
 begin
-If AccessDefVal then
-  SetDefaultValue(ConvFromStr(Str))
+case ValueKind of
+  vkActual:   SetValue(ConvFromStr(Str));
+  vkSaved:    SetSavedValue(ConvFromStr(Str));
+  vkDefault:  SetDefaultValue(ConvFromStr(Str));
 else
-  SetValue(ConvFromStr(Str));
+  raise EUNSInvalidValueKindException.Create(ValueKind,Self,'FromString');
+end;
 end;
 
 //------------------------------------------------------------------------------
 
-procedure TUNSNodeUInt8.ToStream(Stream: TStream; AccessDefVal: Boolean = False);
+procedure TUNSNodeUInt8.ToStream(Stream: TStream; ValueKind: TUNSValueKind = vkActual);
 begin
-If AccessDefVal then
-  Stream_WriteUInt8(Stream,fDefaultValue)
+case ValueKind of
+  vkActual:   Stream_WriteUInt8(Stream,fValue);
+  vkSaved:    Stream_WriteUInt8(Stream,fSavedValue);
+  vkDefault:  Stream_WriteUInt8(Stream,fDefaultValue);
 else
-  Stream_WriteUInt8(Stream,fValue);
+  raise EUNSInvalidValueKindException.Create(ValueKind,Self,'ToStream');
+end;
 end;
 
 //------------------------------------------------------------------------------
 
-procedure TUNSNodeUInt8.FromStream(Stream: TStream; AccessDefVal: Boolean = False);
+procedure TUNSNodeUInt8.FromStream(Stream: TStream; ValueKind: TUNSValueKind = vkActual);
 begin
-If AccessDefVal then
-  SetDefaultValue(Stream_ReadUInt8(Stream))
+case ValueKind of
+  vkActual:   SetValue(Stream_ReadUInt8(Stream));
+  vkSaved:    SetSavedValue(Stream_ReadUInt8(Stream));
+  vkDefault:  SetDefaultValue(Stream_ReadUInt8(Stream))
 else
-  SetValue(Stream_ReadUInt8(Stream));
+  raise EUNSInvalidValueKindException.Create(ValueKind,Self,'FromStream');
+end;
 end;
 
 //------------------------------------------------------------------------------
 
-procedure TUNSNodeUInt8.ToBuffer(Buffer: TMemoryBuffer; AccessDefVal: Boolean = False);
+procedure TUNSNodeUInt8.ToBuffer(Buffer: TMemoryBuffer; ValueKind: TUNSValueKind = vkActual);
 begin
-If Buffer.Size >= ObtainValueSize(AccessDefVal) then
-  begin
-    If AccessDefVal then
-      Ptr_WriteUInt8(Buffer.Memory,fDefaultValue)
-    else
-      Ptr_WriteUInt8(Buffer.Memory,fValue);
+If Buffer.Size >= ObtainValueSize(ValueKind) then
+  case ValueKind of
+    vkActual:   Ptr_WriteUInt8(Buffer.Memory,fValue);
+    vkSaved:    Ptr_WriteUInt8(Buffer.Memory,fSavedValue);
+    vkDefault:  Ptr_WriteUInt8(Buffer.Memory,fDefaultValue);
+  else
+    raise EUNSInvalidValueKindException.Create(ValueKind,Self,'ToBuffer');
   end
-else raise EUNSBufferTooSmallException.Create(Buffer,Self,'GetValueToBuffer');
+else raise EUNSBufferTooSmallException.Create(Buffer,Self,'ToBuffer');
 end;
 
 //------------------------------------------------------------------------------
 
-procedure TUNSNodeUInt8.FromBuffer(Buffer: TMemoryBuffer; AccessDefVal: Boolean = False);
+procedure TUNSNodeUInt8.FromBuffer(Buffer: TMemoryBuffer; ValueKind: TUNSValueKind = vkActual);
 begin
-If Buffer.Size >= ObtainValueSize(AccessDefVal) then
-  begin
-    If AccessDefVal then
-      SetDefaultValue(Ptr_ReadUInt8(Buffer.Memory))
-    else
-      SetValue(Ptr_ReadUInt8(Buffer.Memory));
+If Buffer.Size >= ObtainValueSize(ValueKind) then
+  case ValueKind of
+    vkActual:   SetValue(Ptr_ReadUInt8(Buffer.Memory));
+    vkSaved:    SetSavedValue(Ptr_ReadUInt8(Buffer.Memory));
+    vkDefault:  SetDefaultValue(Ptr_ReadUInt8(Buffer.Memory));
+  else
+    raise EUNSInvalidValueKindException.Create(ValueKind,Self,'FromBuffer');
   end
-else raise EUNSBufferTooSmallException.Create(Buffer,Self,'SetValueFromBuffer');
+else raise EUNSBufferTooSmallException.Create(Buffer,Self,'FromBuffer');
 end;
 
 {$WARNINGS OFF} // supresses warnings on lines after the final end
@@ -274,15 +333,15 @@ end.
 {$WARNINGS ON}
 
 {$IFDEF Included_Declaration}
-    Function UInt8ValueGet(const ValueName: String; AccessDefVal: Boolean = False): UInt8; virtual;
-    procedure UInt8ValueSet(const ValueName: String; NewValue: UInt8; AccessDefVal: Boolean = False); virtual;
+    Function UInt8ValueGet(const ValueName: String; ValueKind: TUNSValueKind = vkActual): UInt8; virtual;
+    procedure UInt8ValueSet(const ValueName: String; NewValue: UInt8; ValueKind: TUNSValueKind = vkActual); virtual;
 {$ENDIF}
 
 //==============================================================================
 
 {$IFDEF Included_Implementation}
 
-Function TUniSettings.UInt8ValueGet(const ValueName: String; AccessDefVal: Boolean = False): UInt8;
+Function TUniSettings.UInt8ValueGet(const ValueName: String; ValueKind: TUNSValueKind = vkActual): UInt8;
 begin
 ReadLock;
 try
@@ -298,7 +357,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-procedure TUniSettings.UInt8ValueSet(const ValueName: String; NewValue: UInt8; AccessDefVal: Boolean = False);
+procedure TUniSettings.UInt8ValueSet(const ValueName: String; NewValue: UInt8; ValueKind: TUNSValueKind = vkActual);
 begin
 WriteLock;
 try

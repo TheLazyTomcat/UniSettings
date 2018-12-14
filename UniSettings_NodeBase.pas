@@ -40,10 +40,10 @@ type
     procedure ValueKindMove(Src,Dest: TUNSValueKind); overload; virtual; abstract;
     procedure ValueKindExchange(ValA,ValB: TUNSValueKind); overload; virtual; abstract;
     Function ValueKindCompare(ValA,ValB: TUNSValueKind): Boolean; overload; virtual; abstract;
-    procedure ActualFromDefault; overload; virtual; abstract;
-    procedure DefaultFromActual; overload; virtual; abstract;
-    procedure ExchangeActualAndDefault; overload; virtual; abstract;
-    Function ActualEqualsDefault: Boolean; overload; virtual; abstract;
+    procedure ActualFromDefault; overload; virtual;
+    procedure DefaultFromActual; overload; virtual;
+    procedure ExchangeActualAndDefault; overload; virtual;
+    Function ActualEqualsDefault: Boolean; overload; virtual;
     procedure Save; overload; virtual; abstract;
     procedure Restore; overload; virtual; abstract;
     property NodeClass: TUNSNodeClass read GetNodeClass;
@@ -246,6 +246,34 @@ end;
 Function TUNSNodeBase.ReconstructFullName(IncludeRoot: Boolean = False): String;
 begin
 Result := ReconstructFullNameInternal(True,IncludeRoot);
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TUNSNodeBase.ActualFromDefault;
+begin
+ValueKindMove(vkDefault,vkActual);
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TUNSNodeBase.DefaultFromActual;
+begin
+ValueKindMove(vkActual,vkDefault);
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TUNSNodeBase.ExchangeActualAndDefault;
+begin
+ValueKindExchange(vkActual,vkDefault);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TUNSNodeBase.ActualEqualsDefault: Boolean;
+begin
+Result := ValueKindCompare(vkActual,vkDefault);
 end;
 
 end.

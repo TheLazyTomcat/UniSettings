@@ -22,10 +22,6 @@ type
     procedure ValueKindMove(Src,Dest: TUNSValueKind); override;
     procedure ValueKindExchange(ValA,ValB: TUNSValueKind); override;
     Function ValueKindCompare(ValA,ValB: TUNSValueKind): Boolean; override;
-    procedure ActualFromDefault; override;
-    procedure DefaultFromActual; override;
-    procedure ExchangeActualAndDefault; override;
-    Function ActualEqualsDefault: Boolean; override;
     procedure Save; override;
     procedure Restore; override;
     Function Address(ValueKind: TUNSValueKind = vkActual): Pointer; override;
@@ -96,34 +92,6 @@ end;
 //------------------------------------------------------------------------------
 
 Function TUNSNodeBlank.ValueKindCompare(ValA,ValB: TUNSValueKind): Boolean;
-begin
-Result := True;
-end;
-
-//------------------------------------------------------------------------------
-
-procedure TUNSNodeBlank.ActualFromDefault;
-begin
-// do nothing
-end;
-
-//------------------------------------------------------------------------------
-
-procedure TUNSNodeBlank.DefaultFromActual;
-begin
-// do nothing
-end;
-
-//------------------------------------------------------------------------------
-
-procedure TUNSNodeBlank.ExchangeActualAndDefault;
-begin
-// do nothing
-end;
-
-//------------------------------------------------------------------------------
-
-Function TUNSNodeBlank.ActualEqualsDefault: Boolean;
 begin
 Result := True;
 end;

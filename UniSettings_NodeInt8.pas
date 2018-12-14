@@ -33,10 +33,6 @@ type
     procedure ValueKindMove(Src,Dest: TUNSValueKind); override;
     procedure ValueKindExchange(ValA,ValB: TUNSValueKind); override;
     Function ValueKindCompare(ValA,ValB: TUNSValueKind): Boolean; override;
-    procedure ActualFromDefault; override;
-    procedure DefaultFromActual; override;
-    procedure ExchangeActualAndDefault; override;
-    Function ActualEqualsDefault: Boolean; override;
     procedure Save; override;
     procedure Restore; override;
     Function Address(ValueKind: TUNSValueKind = vkActual): Pointer; override;
@@ -47,7 +43,7 @@ type
     procedure ToBuffer(Buffer: TMemoryBuffer; ValueKind: TUNSValueKind = vkActual); override;
     procedure FromBuffer(Buffer: TMemoryBuffer; ValueKind: TUNSValueKind = vkActual); override;
     property Value: Int8 read fValue write SetValue;
-    property SavedValue: Int8 read fSavedValue;
+    property SavedValue: Int8 read fSavedValue write SetSavedValue;
     property DefaultValue: Int8 read fDefaultValue write SetDefaultValue;
   end;
 
@@ -222,37 +218,9 @@ end;
 
 //------------------------------------------------------------------------------
 
-procedure TUNSNodeInt8.ActualFromDefault;
-begin
-ValueKindMove(vkDefault,vkActual);
-end;
-
-//------------------------------------------------------------------------------
-
-procedure TUNSNodeInt8.DefaultFromActual;
-begin
-ValueKindMove(vkActual,vkDefault);
-end;
-
-//------------------------------------------------------------------------------
-
-procedure TUNSNodeInt8.ExchangeActualAndDefault;
-begin
-ValueKindExchange(vkActual,vkDefault);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TUNSNodeInt8.ActualEqualsDefault: Boolean;
-begin
-Result := ValueKindCompare(vkActual,vkDefault);
-end;
-
-//------------------------------------------------------------------------------
-
 procedure TUNSNodeInt8.Save;
 begin
-fSavedValue := fValue;
+SetSavedValue(fValue);
 end;
 
 //------------------------------------------------------------------------------
