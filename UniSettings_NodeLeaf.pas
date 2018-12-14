@@ -14,26 +14,32 @@ type
   protected
     class Function GetNodeClass: TUNSNodeClass; override;
     Function GetValueSize: TMemSize; virtual; abstract;
+    Function GetSavedValueSize: TMemSize; virtual; abstract;
     Function GetDefaultValueSize: TMemSize; virtual; abstract;
     Function ConvToStr(const Value): String; virtual; abstract;
     Function ConvFromStr(const Str: String): Pointer; virtual; abstract;
-    Function ObtainValueSize(AccessDefVal: Boolean): TMemSize; virtual;
+    Function ObtainValueSize(ValueKind: TUNSValueKind): TMemSize; virtual;
   public
     class Function IsPrimitiveArray: Boolean; virtual;
-    Function Address(AccessDefVal: Boolean = False): Pointer; virtual; abstract;
-    Function AsString(AccessDefVal: Boolean = False): String; virtual; abstract;
-    procedure FromString(const Str: String; AccessDefVal: Boolean = False); virtual; abstract;
-    procedure ToStream(Stream: TStream; AccessDefVal: Boolean = False); virtual; abstract;
-    procedure FromStream(Stream: TStream; AccessDefVal: Boolean = False); virtual; abstract;
-    Function AsStream(AccessDefVal: Boolean = False): TMemoryStream; virtual;
-    procedure ToBuffer(Buffer: TMemoryBuffer; AccessDefVal: Boolean = False); virtual; abstract;
-    procedure FromBuffer(Buffer: TMemoryBuffer; AccessDefVal: Boolean = False); virtual; abstract;
-    Function AsBuffer(AccessDefVal: Boolean = False): TMemoryBuffer; virtual; 
+    Function NodeEquals(Node: TUNSNodeLeaf; CompareValueKinds: TUNSValueKinds = [vkActual]): Boolean; virtual;
+    Function Address(ValueKind: TUNSValueKind = vkActual): Pointer; virtual; abstract;
+    Function AsString(ValueKind: TUNSValueKind = vkActual): String; virtual; abstract;
+    procedure FromString(const Str: String; ValueKind: TUNSValueKind = vkActual); virtual; abstract;
+    procedure ToStream(Stream: TStream; ValueKind: TUNSValueKind = vkActual); virtual; abstract;
+    procedure FromStream(Stream: TStream; ValueKind: TUNSValueKind = vkActual); virtual; abstract;
+    Function AsStream(ValueKind: TUNSValueKind = vkActual): TMemoryStream; virtual;
+    procedure ToBuffer(Buffer: TMemoryBuffer; ValueKind: TUNSValueKind = vkActual); virtual; abstract;
+    procedure FromBuffer(Buffer: TMemoryBuffer; ValueKind: TUNSValueKind = vkActual); virtual; abstract;
+    Function AsBuffer(ValueKind: TUNSValueKind = vkActual): TMemoryBuffer; virtual;
     property ValueSize: TMemSize read GetValueSize;
+    property SsvedValueSize: TMemSize read GetSavedValueSize;
     property DefaultValueSize: TMemSize read GetDefaultValueSize;
   end;
 
 implementation
+
+uses
+  UniSettings_Exceptions;
 
 class Function TUNSNodeLeaf.GetNodeClass: TUNSNodeClass;
 begin
@@ -42,12 +48,15 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function TUNSNodeLeaf.ObtainValueSize(AccessDefVal: Boolean): TMemSize;
+Function TUNSNodeLeaf.ObtainValueSize(ValueKind: TUNSValueKind): TMemSize;
 begin
-If AccessDefVal then
-  Result := GetDefaultValueSize
+case ValueKind of
+  vkActual:   Result := GetValueSize;
+  vkSaved:    Result := GetSavedValueSize;
+  vkDefault:  Result := GetDEfaultValueSize;
 else
-  Result := GetValueSize;
+  raise EUNSException.CreateFmt('Invalid value kind (%d).',[Ord(ValueKind)],Self,'ObtainValueSize');
+end;
 end;
 
 //==============================================================================
@@ -59,21 +68,25 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function TUNSNodeLeaf.AsStream(AccessDefVal: Boolean = False): TMemoryStream;
+Function TUNSNodeLeaf.NodeEquals(Node: TUNSNodeLeaf; CompareValueKinds: TUNSValueKinds = [vkActual]): Boolean;
 begin
-Result := TMemoryStream.Create;
-ToStream(Result,AccessDefVal);
+Result := Self is Node.ClassType;
 end;
 
 //------------------------------------------------------------------------------
 
-Function TUNSNodeLeaf.AsBuffer(AccessDefVal: Boolean = False): TMemoryBuffer;
+Function TUNSNodeLeaf.AsStream(ValueKind: TUNSValueKind = vkActual): TMemoryStream;
 begin
-If AccessDefVal then
-  GetBuffer(Result,GetDefaultValueSize)
-else
-  GetBuffer(Result,GetValueSize);
-ToBuffer(Result,AccessDefVal);
+Result := TMemoryStream.Create;
+ToStream(Result,ValueKind);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TUNSNodeLeaf.AsBuffer(ValueKind: TUNSValueKind = vkActual): TMemoryBuffer;
+begin
+GetBuffer(Result,ObtainValueSize(ValueKind));
+ToBuffer(Result,ValueKind);
 end;
 
 end.

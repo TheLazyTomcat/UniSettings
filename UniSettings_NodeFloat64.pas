@@ -8,12 +8,13 @@ interface
 uses
   Classes,
   AuxTypes, MemoryBuffer,
-  UniSettings_Common, UniSettings_NodeLeaf;
+  UniSettings_Common, UniSettings_NodeBase, UniSettings_NodeLeaf;
 
 type
   TUNSNodeFloat64 = class(TUNSNodeLeaf)
   private
     fValue:         Float64;
+    fSavedValue:    Float64;
     fDefaultValue:  Float64;
     procedure SetValue(NewValue: Float64);
     procedure SetDefaultValue(NewValue: Float64);
@@ -24,10 +25,14 @@ type
     Function ConvToStr(Value: Float64): String; reintroduce;
     Function ConvFromStr(const Str: String): Float64; reintroduce;
   public
+    constructor Create(const Name: String; ParentNode: TUNSNodeBase);
+    constructor CreateAsCopy(Source: TUNSNodeBase; const Name: String; ParentNode: TUNSNodeBase);
     procedure ActualFromDefault; override;
     procedure DefaultFromActual; override;
     procedure ExchangeActualAndDefault; override;
     Function ActualEqualsDefault: Boolean; override;
+    procedure Save; override;
+    procedure Restore; override;
     Function Address(AccessDefVal: Boolean = False): Pointer; override;
     Function AsString(AccessDefVal: Boolean = False): String; override;
     procedure FromString(const Str: String; AccessDefVal: Boolean = False); override;
@@ -36,6 +41,7 @@ type
     procedure ToBuffer(Buffer: TMemoryBuffer; AccessDefVal: Boolean = False); override;
     procedure FromBuffer(Buffer: TMemoryBuffer; AccessDefVal: Boolean = False); override;
     property Value: Float64 read fValue write SetValue;
+    property SavedValue: Float64 read fSavedValue;
     property DefaultValue: Float64 read fDefaultValue write SetDefaultValue;
   end;
 
@@ -113,6 +119,26 @@ end;
 
 //==============================================================================
 
+constructor TUNSNodeFloat64.Create(const Name: String; ParentNode: TUNSNodeBase);
+begin
+inherited Create(Name,ParentNode);
+fValue := 0.0;
+fSavedValue := 0.0;
+fDefaultValue := 0.0;
+end;
+
+//------------------------------------------------------------------------------
+
+constructor TUNSNodeFloat64.CreateAsCopy(Source: TUNSNodeBase; const Name: String; ParentNode: TUNSNodeBase);
+begin
+inherited CreateAsCopy(Source,Name,ParentNode);
+fValue := TUNSNodeFloat64(Source).Value;
+fSavedValue := TUNSNodeFloat64(Source).SavedValue;
+fDefaultValue := TUNSNodeFloat64(Source).DefaultValue;
+end;
+
+//------------------------------------------------------------------------------
+
 procedure TUNSNodeFloat64.ActualFromDefault;
 begin
 If not ActualEqualsDefault then
@@ -153,6 +179,20 @@ end;
 Function TUNSNodeFloat64.ActualEqualsDefault: Boolean;
 begin
 Result := fValue = fDefaultValue
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TUNSNodeFloat64.Save;
+begin
+fSavedValue := fValue;
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TUNSNodeFloat64.Restore;
+begin
+SetValue(fSavedValue);
 end;
 
 //------------------------------------------------------------------------------

@@ -8,12 +8,13 @@ interface
 uses
   Classes,
   AuxTypes, MemoryBuffer,
-  UniSettings_Common, UniSettings_NodeLeaf;
+  UniSettings_Common, UniSettings_NodeBase, UniSettings_NodeLeaf;
 
 type
   TUNSNodeInt8 = class(TUNSNodeLeaf)
   private
     fValue:         Int8;
+    fSavedValue:    Int8;
     fDefaultValue:  Int8;
     procedure SetValue(NewValue: Int8);
     procedure SetDefaultValue(NewValue: Int8);
@@ -24,10 +25,14 @@ type
     Function ConvToStr(Value: Int8): String; reintroduce;
     Function ConvFromStr(const Str: String): Int8; reintroduce;
   public
+    constructor Create(const Name: String; ParentNode: TUNSNodeBase);
+    constructor CreateAsCopy(Source: TUNSNodeBase; const Name: String; ParentNode: TUNSNodeBase);
     procedure ActualFromDefault; override;
     procedure DefaultFromActual; override;
     procedure ExchangeActualAndDefault; override;
     Function ActualEqualsDefault: Boolean; override;
+    procedure Save; override;
+    procedure Restore; override;
     Function Address(AccessDefVal: Boolean = False): Pointer; override;
     Function AsString(AccessDefVal: Boolean = False): String; override;
     procedure FromString(const Str: String; AccessDefVal: Boolean = False); override;
@@ -36,6 +41,7 @@ type
     procedure ToBuffer(Buffer: TMemoryBuffer; AccessDefVal: Boolean = False); override;
     procedure FromBuffer(Buffer: TMemoryBuffer; AccessDefVal: Boolean = False); override;
     property Value: Int8 read fValue write SetValue;
+    property SavedValue: Int8 read fSavedValue;
     property DefaultValue: Int8 read fDefaultValue write SetDefaultValue;
   end;
 
@@ -106,6 +112,26 @@ end;
 
 //==============================================================================
 
+constructor TUNSNodeInt8.Create(const Name: String; ParentNode: TUNSNodeBase);
+begin
+inherited Create(Name,ParentNode);
+fValue := 0;
+fSavedValue := 0;
+fDefaultValue := 0;
+end;
+
+//------------------------------------------------------------------------------
+
+constructor TUNSNodeInt8.CreateAsCopy(Source: TUNSNodeBase; const Name: String; ParentNode: TUNSNodeBase);
+begin
+inherited CreateAsCopy(Source,Name,ParentNode);
+fValue := TUNSNodeInt8(Source).Value;
+fSavedValue := TUNSNodeInt8(Source).SavedValue;
+fDefaultValue := TUNSNodeInt8(Source).DefaultValue;
+end;
+
+//------------------------------------------------------------------------------
+
 procedure TUNSNodeInt8.ActualFromDefault;
 begin
 If not ActualEqualsDefault then
@@ -146,6 +172,20 @@ end;
 Function TUNSNodeInt8.ActualEqualsDefault: Boolean;
 begin
 Result := fValue = fDefaultValue;
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TUNSNodeInt8.Save;
+begin
+fSavedValue := fValue;
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TUNSNodeInt8.Restore;
+begin
+SetValue(fSavedValue);
 end;
 
 //------------------------------------------------------------------------------

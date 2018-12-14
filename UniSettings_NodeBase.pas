@@ -31,15 +31,21 @@ type
     procedure DoChange; virtual;
   public
     constructor Create(const Name: String; ParentNode: TUNSNodeBase);
-    constructor CreateCopy(Source: TUNSNodeBase; const Name: String; ParentNode: TUNSNodeBase);
+    constructor CreateAsCopy(Source: TUNSNodeBase; const Name: String; ParentNode: TUNSNodeBase);
+    Function CreateCopy(const Name: String; ParentNode: TUNSNodeBase): TUNSNodeBase;
     Function GetFlag(Flag: TUNSValueFlag): Boolean; virtual;
     procedure SetFlag(Flag: TUNSValueFlag); virtual;
     procedure ResetFlag(Flag: TUNSValueFlag); virtual;
     Function ReconstructFullName(IncludeRoot: Boolean = False): String; virtual;
+    procedure ValueKindMove(Src,Dest: TUNSValueKind); overload; virtual; abstract;
+    procedure ValueKindExchange(ValA,ValB: TUNSValueKind); overload; virtual; abstract;
+    Function ValueKindCompare(ValA,ValB: TUNSValueKind): Boolean; overload; virtual; abstract;
     procedure ActualFromDefault; overload; virtual; abstract;
     procedure DefaultFromActual; overload; virtual; abstract;
     procedure ExchangeActualAndDefault; overload; virtual; abstract;
     Function ActualEqualsDefault: Boolean; overload; virtual; abstract;
+    procedure Save; overload; virtual; abstract;
+    procedure Restore; overload; virtual; abstract;
     property NodeClass: TUNSNodeClass read GetNodeClass;
     property ValueType: TUNSValueType read GetValueType;
     property Name: TUNSHashedString read fName write fName;       
@@ -57,7 +63,8 @@ implementation
 
 uses
   UniSettings_Utils, UniSettings_Exceptions, UniSettings_NodeBranch,
-  UniSettings_NodeArray, UniSettings_NodeArrayItem, UniSettings;
+  UniSettings_NodeArray, UniSettings_NodeArrayItem;
+  //UniSettings;
 
 class Function TUNSNodeBase.GetNodeClass: TUNSNodeClass;
 begin
@@ -160,7 +167,8 @@ end;
 Function TUNSNodeBase.ValueFormatSettings: TUNSValueFormatSettings;
 begin
 If Assigned(fMaster) then
-  Result := TUniSettings(fMaster).ValueFormatSettings
+  //Result := TUniSettings(fMaster).ValueFormatSettings
+  {$message 'activate'}
 else
   Result := UNS_VALUEFORMATSETTINGS_DEFAULT;
 end;
@@ -197,13 +205,19 @@ end;
 
 //------------------------------------------------------------------------------
 
-constructor TUNSNodeBase.CreateCopy(Source: TUNSNodeBase; const Name: String; ParentNode: TUNSNodeBase);
+constructor TUNSNodeBase.CreateAsCopy(Source: TUNSNodeBase; const Name: String; ParentNode: TUNSNodeBase);
 begin
 Create(Name,ParentNode);
 If not(Source is Self.ClassType) then
   raise EUNSException.CreateFmt('Incompatible source class (%s).',[Source.ClassName],Self,'CreateCopy');
 // copy data in descendants
-{$message warn 'copy data in descendants'}
+end;
+
+//------------------------------------------------------------------------------
+
+Function TUNSNodeBase.CreateCopy(const Name: String; ParentNode: TUNSNodeBase): TUNSNodeBase;
+begin
+Result := CreateAsCopy(Self,Name,ParentNode);
 end;
 
 //------------------------------------------------------------------------------

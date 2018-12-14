@@ -14,6 +14,7 @@ type
   TUNSNodeBuffer = class(TUNSNodeLeaf)
   private
     fValue:         TMemoryBuffer;
+    fSavedValue:    TMemoryBuffer;
     fDefaultValue:  TMemoryBuffer;
     procedure SetValue(NewValue: TMemoryBuffer);
     procedure SetDefaultValue(NewValue: TMemoryBuffer);
@@ -26,10 +27,13 @@ type
     Function ConvFromStr(const Str: String): Pointer; override;
   public
     constructor Create(const Name: String; ParentNode: TUNSNodeBase);
+    constructor CreateAsCopy(Source: TUNSNodeBase; const Name: String; ParentNode: TUNSNodeBase);
     procedure ActualFromDefault; override;
     procedure DefaultFromActual; override;
     procedure ExchangeActualAndDefault; override;
     Function ActualEqualsDefault: Boolean; override;
+    procedure Save; override;
+    procedure Restore; override;
     Function Address(AccessDefVal: Boolean = False): Pointer; override;
     Function AsString(AccessDefVal: Boolean = False): String; override;
     procedure FromString(const Str: String; AccessDefVal: Boolean = False); override;
@@ -38,6 +42,7 @@ type
     procedure ToBuffer(Buffer: TMemoryBuffer; AccessDefVal: Boolean = False); override;
     procedure FromBuffer(Buffer: TMemoryBuffer; AccessDefVal: Boolean = False); override;
     property Value: TMemoryBuffer read fValue write SetValue;
+    property SavedValue: TMemoryBuffer read fSavedValue;
     property DefaultValue: TMemoryBuffer read fDefaultValue write SetDefaultValue;
   end;
 
@@ -142,7 +147,21 @@ constructor TUNSNodeBuffer.Create(const Name: String; ParentNode: TUNSNodeBase);
 begin
 inherited Create(Name,ParentNode);
 FillChar(fValue,SizeOf(TMemoryBuffer),0);
+FillChar(fSavedValue,SizeOf(TMemoryBuffer),0);
 FillChar(fDefaultValue,SizeOf(TMemoryBuffer),0);
+end;
+
+//------------------------------------------------------------------------------
+
+constructor TUNSNodeBuffer.CreateAsCopy(Source: TUNSNodeBase; const Name: String; ParentNode: TUNSNodeBase);
+begin
+inherited CreateAsCopy(Source,Name,ParentNode);
+ReallocBuffer(fValue,TUNSNodeBuffer(Source).Value.Size);
+Move(TUNSNodeBuffer(Source).Value.Memory^,fValue.Memory^,fValue.Size);
+ReallocBuffer(fSavedValue,TUNSNodeBuffer(Source).SavedValue.Size);
+Move(TUNSNodeBuffer(Source).SavedValue.Memory^,fSavedValue.Memory^,fSavedValue.Size);
+ReallocBuffer(fDefaultValue,TUNSNodeBuffer(Source).DefaultValue.Size);
+Move(TUNSNodeBuffer(Source).DefaultValue.Memory^,fDefaultValue.Memory^,fDefaultValue.Size);
 end;
 
 //------------------------------------------------------------------------------
@@ -190,6 +209,21 @@ end;
 Function TUNSNodeBuffer.ActualEqualsDefault: Boolean;
 begin
 Result := SameMemoryBuffers(fValue,fDefaultValue);
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TUNSNodeBuffer.Save;
+begin
+ReallocBuffer(fSavedValue,fValue.Size);
+Move(fValue.Memory^,fSavedValue.Memory^,fSavedValue.Size);
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TUNSNodeBuffer.Restore;
+begin
+SetValue(fSavedValue);
 end;
 
 //------------------------------------------------------------------------------

@@ -20,6 +20,10 @@ type
 
   TUNSNodeClass = (ncUndefined,ncBranch,ncArrayItem,ncArray,ncLeaf);
 
+  TUNSValueKind = (vkActual,vkSaved,vkDefault);
+
+  TUNSValueKinds = set of TUNSValueKind;
+
   TUNSValueType = (vtUndefined,   // erroneous value
                    vtBlank,       // node containing no data (usually placeholder)
                    vtBool,        // boolean value (true/false)

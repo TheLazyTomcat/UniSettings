@@ -19,6 +19,7 @@ type
     Function GetMaxNodeLevel: Integer; override;
   public
     constructor Create(const Name: String; ParentNode: TUNSNodeBase);
+    constructor CreateAsCopy(Source: TUNSNodeBase; const Name: String; ParentNode: TUNSNodeBase);
     destructor Destroy; override;
     Function LowIndex: Integer; virtual;
     Function HighIndex: Integer; virtual;
@@ -40,6 +41,8 @@ type
     procedure DefaultFromActual; override;
     procedure ExchangeActualAndDefault; override;
     Function ActualEqualsDefault: Boolean; override;
+    procedure Save; override;
+    procedure Restore; override;
     property SubNodes[Index: Integer]: TUNSNodeBase read GetSubNode; default;
     property Count: Integer read fCount;
   end;
@@ -101,6 +104,17 @@ begin
 inherited Create(Name,ParentNode);
 SetLength(fSubNodes,0);
 fCount := 0;
+end;
+
+//------------------------------------------------------------------------------
+
+constructor TUNSNodeBranch.CreateAsCopy(Source: TUNSNodeBase; const Name: String; ParentNode: TUNSNodeBase);
+var
+  i:  Integer;
+begin
+inherited CreateAsCopy(Source,Name,ParentNode);
+For i := TUNSNodeBranch(Source).LowIndex to TUNSNodeBranch(Source).HighIndex do
+  Add(TUNSNodeBranch(Source)[i].CreateCopy(TUNSNodeBranch(Source)[i].NameStr,Self));
 end;
 
 //------------------------------------------------------------------------------
@@ -347,6 +361,26 @@ For i := LowIndex to HighIndex do
       Result := False;
       Break{For i};
     end;
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TUNSNodeBranch.Save;
+var
+  i:  Integer;
+begin
+For i := LowIndex to HighIndex do
+  fSubNodes[i].Save;
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TUNSNodeBranch.Restore;
+var
+  i:  Integer;
+begin
+For i := LowIndex to HighIndex do
+  fSubNodes[i].Restore;
 end;
 
 end.

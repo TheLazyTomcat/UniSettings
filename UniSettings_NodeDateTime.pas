@@ -8,12 +8,13 @@ interface
 uses
   Classes,
   AuxTypes, MemoryBuffer,
-  UniSettings_Common, UniSettings_NodeLeaf;
+  UniSettings_Common, UniSettings_NodeBase, UniSettings_NodeLeaf;
 
 type
   TUNSNodeDateTime = class(TUNSNodeLeaf)
   private
     fValue:         TDateTime;
+    fSavedValue:    TDateTime;
     fDefaultValue:  TDateTime;
     procedure SetValue(NewValue: TDateTime);
     procedure SetDefaultValue(NewValue: TDateTime);
@@ -24,10 +25,14 @@ type
     Function ConvToStr(Value: TDateTime): String; reintroduce;
     Function ConvFromStr(const Str: String): TDateTime; reintroduce;
   public
+    constructor Create(const Name: String; ParentNode: TUNSNodeBase);
+    constructor CreateAsCopy(Source: TUNSNodeBase; const Name: String; ParentNode: TUNSNodeBase);
     procedure ActualFromDefault; override;
     procedure DefaultFromActual; override;
     procedure ExchangeActualAndDefault; override;
     Function ActualEqualsDefault: Boolean; override;
+    procedure Save; override;
+    procedure Restore; override;
     Function Address(AccessDefVal: Boolean = False): Pointer; override;
     Function AsString(AccessDefVal: Boolean = False): String; override;
     procedure FromString(const Str: String; AccessDefVal: Boolean = False); override;
@@ -36,6 +41,7 @@ type
     procedure ToBuffer(Buffer: TMemoryBuffer; AccessDefVal: Boolean = False); override;
     procedure FromBuffer(Buffer: TMemoryBuffer; AccessDefVal: Boolean = False); override;
     property Value: TDateTime read fValue write SetValue;
+    property SavedValue: TDateTime read fSavedValue;
     property DefaultValue: TDateTime read fDefaultValue write SetDefaultValue;
   end;
 
@@ -113,6 +119,26 @@ end;
 
 //==============================================================================
 
+constructor TUNSNodeDateTime.Create(const Name: String; ParentNode: TUNSNodeBase);
+begin
+inherited Create(Name,ParentNode);
+fValue := Now;
+fSavedValue := fValue;
+fDefaultValue := fValue;
+end;
+
+//------------------------------------------------------------------------------
+
+constructor TUNSNodeDateTime.CreateAsCopy(Source: TUNSNodeBase; const Name: String; ParentNode: TUNSNodeBase);
+begin
+inherited CreateAsCopy(Source,Name,ParentNode);
+fValue := TUNSNodeDateTime(Source).Value;
+fSavedValue := TUNSNodeDateTime(Source).SavedValue;
+fDefaultValue := TUNSNodeDateTime(Source).DefaultValue;
+end;
+
+//------------------------------------------------------------------------------
+
 procedure TUNSNodeDateTime.ActualFromDefault;
 begin
 If not ActualEqualsDefault then
@@ -153,6 +179,20 @@ end;
 Function TUNSNodeDateTime.ActualEqualsDefault: Boolean;
 begin
 Result := fValue = fDefaultValue;
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TUNSNodeDateTime.Save;
+begin
+fSavedValue := fValue;
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TUNSNodeDateTime.Restore;
+begin
+SetValue(fSavedValue);
 end;
 
 //------------------------------------------------------------------------------

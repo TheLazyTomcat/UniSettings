@@ -4,8 +4,20 @@ todo (* = completed):
   tree building
   arrays
   access to array items trough index in value name
-  copy construcror(s)
-  value save-restore system
+  name parts -> CDA
+  TUniSettings copy constructor
+
+  nodes
+
+    Move(Src, Dest);
+    Exchange(A,B);
+    Compare(A,B): Boolean;
+    Equals(Node; ValType): Boolean;
+
+* copy constructor(s)
+* value save-restore system (saved value read only)
+* explicit value initialization
+
 * buffers - free replaced buffers (eg. def->curr and v.v.)
 * unify nomenclature
 * replacing blank nodes
@@ -79,6 +91,7 @@ type
     LoadFromRegistry
     *)
     //--- Common value access --------------------------------------------------
+    (*
     procedure ActualFromDefault; virtual;
     procedure DefaultFromActual; virtual;
     procedure ExchangeActualAndDefault; virtual;
@@ -116,7 +129,7 @@ type
     procedure ValueExchange(const ValueName: String; Index1,Index2: Integer; AccessDefVal: Boolean = False); virtual;
     procedure ValueMove(const ValueName: String; SrcIndex,DstIndex: Integer; AccessDefVal: Boolean = False); virtual;
     procedure ValueDelete(const ValueName: String; Index: Integer; AccessDefVal: Boolean = False); virtual;
-    procedure ValueClear(const ValueName: String; AccessDefVal: Boolean = False); virtual;    
+    procedure ValueClear(const ValueName: String; AccessDefVal: Boolean = False); virtual;
     //--- Inidividual value types access ---------------------------------------
   {$DEFINE Included}{$DEFINE Included_Declaration}
     {$INCLUDE '.\UniSettings_NodeBool.pas'}
@@ -136,6 +149,7 @@ type
     {$INCLUDE '.\UniSettings_NodeText.pas'}
     {$INCLUDE '.\UniSettings_NodeBuffer.pas'}
   {$UNDEF Included_Declaration}{$UNDEF Included}
+    *)
     //--- Properties -----------------------------------------------------------
     property WorkingBranch: String read GetWorkingBranch write SetWorkingBranch;
     //--- Format settings properties -------------------------------------------
@@ -682,15 +696,15 @@ try
               begin
                 case NameParts.Arr[Pred(NameParts.Count)].PartType of
                   nptArrayIndex:
-                    Result := TUNSNodePrimitiveArray(Node).ValueCheckIndex(PartIndex,False);
+                    Result := TUNSNodePrimitiveArray(Node).CheckIndex(PartIndex,False);
                   nptArrayIndexDef:
-                    Result := TUNSNodePrimitiveArray(Node).ValueCheckIndex(PartIndex,True);
+                    Result := TUNSNodePrimitiveArray(Node).CheckIndex(PartIndex,True);
                   nptArrayItem:
                     If PartIndex in [UNS_NAME_ARRAYITEM_LOW,UNS_NAME_ARRAYITEM_HIGH] then
-                      Result := TUNSNodePrimitiveArray(Node).ValueCount > 0;
+                      Result := TUNSNodePrimitiveArray(Node).Count > 0;
                   nptArrayItemDef:
                     If PartIndex in [UNS_NAME_ARRAYITEM_LOW,UNS_NAME_ARRAYITEM_HIGH] then
-                      Result := TUNSNodePrimitiveArray(Node).DefaultValueCount > 0;
+                      Result := TUNSNodePrimitiveArray(Node).DefaultCount > 0;
                 end;
             end;
         end
@@ -785,7 +799,7 @@ Result := Strings.Count;
 end;
 
 //------------------------------------------------------------------------------
-
+(*
 procedure TUniSettings.ActualFromDefault;
 begin
 WriteLock;
@@ -858,7 +872,7 @@ try
   If FindLeafNode(ValueName,Node) then
     begin
       If Node.IsPrimitiveArray then
-        TUNSNodePrimitiveArray(Node).ActualFromDefault(Index)
+        TUNSNodePrimitiveArray(Node).ItemActualFromDefault(Index)
       else
         Node.ActualFromDefault;
     end
@@ -879,7 +893,7 @@ try
   If FindLeafNode(ValueName,Node) then
     begin
       If Node.IsPrimitiveArray then
-        TUNSNodePrimitiveArray(Node).DefaultFromActual(Index)
+        TUNSNodePrimitiveArray(Node).ItemDefaultFromActual(Index)
       else
         Node.DefaultFromActual;
     end
@@ -900,7 +914,7 @@ try
   If FindLeafNode(ValueName,Node) then
     begin
       If Node.IsPrimitiveArray then
-        TUNSNodePrimitiveArray(Node).ExchangeActualAndDefault(Index)
+        TUNSNodePrimitiveArray(Node).ItemExchangeActualAndDefault(Index)
       else
         Node.ExchangeActualAndDefault;
     end
@@ -922,7 +936,7 @@ try
   If FindLeafNode(ValueName,Node) then
     begin
       If Node.IsPrimitiveArray then
-        Result := TUNSNodePrimitiveArray(Node).ActualEqualsDefault(Index)
+        Result := TUNSNodePrimitiveArray(Node).ItemActualEqualsDefault(Index)
       else
         Result := Node.ActualEqualsDefault;
     end
@@ -1114,7 +1128,7 @@ Function TUniSettings.ValueItemAddress(const ValueName: String; Index: Integer; 
 begin
 ReadLock;
 try
-  Result := CheckedLeafArrayNodeAccess(ValueName,'ValueItemAddress').GetValueItemAddress(Index,AccessDefVal);
+  Result := CheckedLeafArrayNodeAccess(ValueName,'ValueItemAddress').ItemAddress(Index,AccessDefVal);
 finally
   ReadUnlock;
 end;
@@ -1126,7 +1140,7 @@ Function TUniSettings.ValueItemAsString(const ValueName: String; Index: Integer;
 begin
 ReadLock;
 try
-  Result := CheckedLeafArrayNodeAccess(ValueName,'ValueItemAsString').GetValueItemAsString(Index,AccessDefVal);
+  Result := CheckedLeafArrayNodeAccess(ValueName,'ValueItemAsString').ItemAsString(Index,AccessDefVal);
 finally
   ReadUnlock;
 end;
@@ -1138,7 +1152,7 @@ procedure TUniSettings.ValueItemFromString(const ValueName: String; Index: Integ
 begin
 WriteLock;
 try
-  CheckedLeafArrayNodeAccess(ValueName,'ValueItemFromString').SetValueItemFromString(Index,Str,AccessDefVal);
+  CheckedLeafArrayNodeAccess(ValueName,'ValueItemFromString').ItemFromString(Index,Str,AccessDefVal);
 finally
   WriteUnlock;
 end;
@@ -1150,7 +1164,7 @@ procedure TUniSettings.ValueItemToStream(const ValueName: String; Index: Integer
 begin
 ReadLock;
 try
-  CheckedLeafArrayNodeAccess(ValueName,'ValueItemToStream').GetValueItemToStream(Index,Stream,AccessDefVal);
+  CheckedLeafArrayNodeAccess(ValueName,'ValueItemToStream').ItemToStream(Index,Stream,AccessDefVal);
 finally
   ReadUnlock;
 end;
@@ -1162,7 +1176,7 @@ procedure TUniSettings.ValueItemFromStream(const ValueName: String; Index: Integ
 begin
 WriteLock;
 try
-  CheckedLeafArrayNodeAccess(ValueName,'ValueItemFromStream').SetValueItemFromStream(Index,Stream,AccessDefVal);
+  CheckedLeafArrayNodeAccess(ValueName,'ValueItemFromStream').ItemFromStream(Index,Stream,AccessDefVal);
 finally
   WriteUnlock;
 end;
@@ -1174,7 +1188,7 @@ Function TUniSettings.ValueItemAsStream(const ValueName: String; Index: Integer;
 begin
 ReadLock;
 try
-  Result := CheckedLeafArrayNodeAccess(ValueName,'ValueItemAsStream').GetValueItemAsStream(Index,AccessDefVal);
+  Result := CheckedLeafArrayNodeAccess(ValueName,'ValueItemAsStream').ItemAsStream(Index,AccessDefVal);
 finally
   ReadUnlock;
 end;
@@ -1186,7 +1200,7 @@ procedure TUniSettings.ValueItemToBuffer(const ValueName: String; Index: Integer
 begin
 ReadLock;
 try
-  CheckedLeafArrayNodeAccess(ValueName,'ValueItemToBuffer').GetValueItemToBuffer(Index,Buffer,AccessDefVal);
+  CheckedLeafArrayNodeAccess(ValueName,'ValueItemToBuffer').ItemToBuffer(Index,Buffer,AccessDefVal);
 finally
   ReadUnlock;
 end;
@@ -1198,7 +1212,7 @@ procedure TUniSettings.ValueItemFromBuffer(const ValueName: String; Index: Integ
 begin
 WriteLock;
 try
-  CheckedLeafArrayNodeAccess(ValueName,'ValueItemFromBuffer').SetValueItemFromBuffer(Index,Buffer,AccessDefVal);
+  CheckedLeafArrayNodeAccess(ValueName,'ValueItemFromBuffer').ItemFromBuffer(Index,Buffer,AccessDefVal);
 finally
   WriteUnlock;
 end;
@@ -1210,7 +1224,7 @@ Function TUniSettings.ValueItemAsBuffer(const ValueName: String; Index: Integer;
 begin
 ReadLock;
 try
-  Result := CheckedLeafArrayNodeAccess(ValueName,'ValueItemAsBuffer').GetValueItemAsBuffer(Index,AccessDefVal);
+  Result := CheckedLeafArrayNodeAccess(ValueName,'ValueItemAsBuffer').ItemAsBuffer(Index,AccessDefVal);
 finally
   ReadUnlock;
 end;
@@ -1222,7 +1236,7 @@ Function TUniSettings.ValueLowIndex(const ValueName: String; AccessDefVal: Boole
 begin
 ReadLock;
 try
-  Result := CheckedLeafArrayNodeAccess(ValueName,'ValueLowIndex').ValueLowIndex(AccessDefVal);
+  Result := CheckedLeafArrayNodeAccess(ValueName,'ValueLowIndex').LowIndex(AccessDefVal);
 finally
   ReadUnlock;
 end;
@@ -1234,7 +1248,7 @@ Function TUniSettings.ValueHighIndex(const ValueName: String; AccessDefVal: Bool
 begin
 ReadLock;
 try
-  Result := CheckedLeafArrayNodeAccess(ValueName,'ValueHighIndex').ValueHighIndex(AccessDefVal);
+  Result := CheckedLeafArrayNodeAccess(ValueName,'ValueHighIndex').HighIndex(AccessDefVal);
 finally
   ReadUnlock;
 end;
@@ -1246,7 +1260,7 @@ Function TUniSettings.ValueCheckIndex(const ValueName: String; Index: Integer; A
 begin
 ReadLock;
 try
-  Result := CheckedLeafArrayNodeAccess(ValueName,'ValueCheckIndex').ValueCheckIndex(Index,AccessDefVal);
+  Result := CheckedLeafArrayNodeAccess(ValueName,'ValueCheckIndex').CheckIndex(Index,AccessDefVal);
 finally
   ReadUnlock;
 end;
@@ -1258,7 +1272,7 @@ procedure TUniSettings.ValueExchange(const ValueName: String; Index1,Index2: Int
 begin
 WriteLock;
 try
-  CheckedLeafArrayNodeAccess(ValueName,'ValueExchange').ValueExchange(Index1,Index2,AccessDefVal);
+  CheckedLeafArrayNodeAccess(ValueName,'ValueExchange').Exchange(Index1,Index2,AccessDefVal);
 finally
   WriteUnlock;
 end;
@@ -1270,7 +1284,7 @@ procedure TUniSettings.ValueMove(const ValueName: String; SrcIndex,DstIndex: Int
 begin
 WriteLock;
 try
-  CheckedLeafArrayNodeAccess(ValueName,'ValueMove').ValueMove(SrcIndex,DstIndex,AccessDefVal);
+  CheckedLeafArrayNodeAccess(ValueName,'ValueMove').Move(SrcIndex,DstIndex,AccessDefVal);
 finally
   WriteUnlock;
 end;
@@ -1282,7 +1296,7 @@ procedure TUniSettings.ValueDelete(const ValueName: String; Index: Integer; Acce
 begin
 WriteLock;
 try
-  CheckedLeafArrayNodeAccess(ValueName,'ValueDelete').ValueDelete(Index,AccessDefVal);
+  CheckedLeafArrayNodeAccess(ValueName,'ValueDelete').Delete(Index,AccessDefVal);
 finally
   WriteUnlock;
 end;
@@ -1294,7 +1308,7 @@ procedure TUniSettings.ValueClear(const ValueName: String; AccessDefVal: Boolean
 begin
 WriteLock;
 try
-  CheckedLeafArrayNodeAccess(ValueName,'ValueClear').ValueClear(AccessDefVal);
+  CheckedLeafArrayNodeAccess(ValueName,'ValueClear').Clear(AccessDefVal);
 finally
   WriteUnlock;
 end;
@@ -1320,5 +1334,5 @@ end;
   {$INCLUDE '.\UniSettings_NodeText.pas'}
   {$INCLUDE '.\UniSettings_NodeBuffer.pas'}  
 {$UNDEF Included_Implementation}{$UNDEF Included}
-
+*)
 end.

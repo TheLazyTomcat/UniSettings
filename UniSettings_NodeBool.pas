@@ -14,29 +14,40 @@ type
   TUNSNodeBool = class(TUNSNodeLeaf)
   private
     fValue:         Boolean;
+    fSavedValue:    Boolean;
     fDefaultValue:  Boolean;
     procedure SetValue(NewValue: Boolean);
+    procedure SetSavedValue(NewValue: Boolean);
     procedure SetDefaultValue(NewValue: Boolean);
   protected
     class Function GetValueType: TUNSValueType; override;
     Function GetValueSize: TMemSize; override;
+    Function GetSavedValueSize: TMemSize; override;
     Function GetDefaultValueSize: TMemSize; override;
     Function ConvToStr(Value: Boolean): String; reintroduce;
     Function ConvFromStr(const Str: String): Boolean; reintroduce;
   public
-    constructor CreateCopy(Source: TUNSNodeBase; const Name: String; ParentNode: TUNSNodeBase);
+    constructor Create(const Name: String; ParentNode: TUNSNodeBase);
+    constructor CreateAsCopy(Source: TUNSNodeBase; const Name: String; ParentNode: TUNSNodeBase);
+    Function NodeEquals(Node: TUNSNodeLeaf; CompareValueKinds: TUNSValueKinds = [vkActual]): Boolean; override;
+    procedure ValueKindMove(Src,Dest: TUNSValueKind); override;
+    procedure ValueKindExchange(ValA,ValB: TUNSValueKind); override;
+    Function ValueKindCompare(ValA,ValB: TUNSValueKind): Boolean; override;   
     procedure ActualFromDefault; override;
     procedure DefaultFromActual; override;
     procedure ExchangeActualAndDefault; override;
     Function ActualEqualsDefault: Boolean; override;
-    Function Address(AccessDefVal: Boolean = False): Pointer; override;
-    Function AsString(AccessDefVal: Boolean = False): String; override;
-    procedure FromString(const Str: String; AccessDefVal: Boolean = False); override;
-    procedure ToStream(Stream: TStream; AccessDefVal: Boolean = False); override;
-    procedure FromStream(Stream: TStream; AccessDefVal: Boolean = False); override;
-    procedure ToBuffer(Buffer: TMemoryBuffer; AccessDefVal: Boolean = False); override;
-    procedure FromBuffer(Buffer: TMemoryBuffer; AccessDefVal: Boolean = False); override;
+    procedure Save; override;
+    procedure Restore; override;
+    Function Address(ValueKind: TUNSValueKind = vkActual): Pointer; override;
+    Function AsString(ValueKind: TUNSValueKind = vkActual): String; override;
+    procedure FromString(const Str: String; ValueKind: TUNSValueKind = vkActual); override;
+    procedure ToStream(Stream: TStream; ValueKind: TUNSValueKind = vkActual); override;
+    procedure FromStream(Stream: TStream; ValueKind: TUNSValueKind = vkActual); override;
+    procedure ToBuffer(Buffer: TMemoryBuffer; ValueKind: TUNSValueKind = vkActual); override;
+    procedure FromBuffer(Buffer: TMemoryBuffer; ValueKind: TUNSValueKind = vkActual); override;
     property Value: Boolean read fValue write SetValue;
+    property SavedValue: Boolean read fSavedValue write SetSavedValue;
     property DefaultValue: Boolean read fDefaultValue write SetDefaultValue;
   end;
 
@@ -45,13 +56,24 @@ implementation
 uses
   SysUtils,
   BinaryStreaming,
-  UniSettings_Exceptions;   
+  UniSettings_Exceptions;
 
 procedure TUNSNodeBool.SetValue(NewValue: Boolean);
 begin
 If NewValue <> fValue then
   begin
     fValue := NewValue;
+    DoChange;
+  end;
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TUNSNodeBool.SetSavedValue(NewValue: Boolean);
+begin
+If NewValue <> fSavedValue then
+  begin
+    fSavedValue := NewValue;
     DoChange;
   end;
 end;
@@ -83,6 +105,13 @@ end;
 
 //------------------------------------------------------------------------------
 
+Function TUNSNodeBool.GetSavedValueSize: TMemSize;
+begin
+Result := SizeOf(ByteBool);
+end;
+
+//------------------------------------------------------------------------------
+
 Function TUNSNodeBool.GetDefaultValueSize: TMemSize;
 begin
 Result := SizeOf(ByteBool);
@@ -107,133 +136,225 @@ end;
 
 //==============================================================================
 
-constructor TUNSNodeBool.CreateCopy(Source: TUNSNodeBase; const Name: String; ParentNode: TUNSNodeBase);
+constructor TUNSNodeBool.Create(const Name: String; ParentNode: TUNSNodeBase);
 begin
-inherited CreateCopy(Source,Name,ParentNode);
+inherited Create(Name,ParentNode);
+fValue := False;
+fSavedValue := False;
+fDefaultValue := False;
+end;
+
+//------------------------------------------------------------------------------
+
+constructor TUNSNodeBool.CreateAsCopy(Source: TUNSNodeBase; const Name: String; ParentNode: TUNSNodeBase);
+begin
+inherited CreateAsCopy(Source,Name,ParentNode);
 fValue := TUNSNodeBool(Source).Value;
+fSavedValue := TUNSNodeBool(Source).SavedValue;
 fDefaultValue := TUNSNodeBool(Source).DefaultValue;
+end;
+
+//------------------------------------------------------------------------------
+
+Function TUNSNodeBool.NodeEquals(Node: TUNSNodeLeaf; CompareValueKinds: TUNSValueKinds = [vkActual]): Boolean;
+begin
+If inherited NodeEquals(Node) then
+  begin
+    Result := True;
+    If vkActual in CompareValueKinds then
+      Result := Result and (fValue = TUNSNodeBool(Node).Value);
+    If vkSaved in CompareValueKinds then
+      Result := Result and (fSavedValue = TUNSNodeBool(Node).SavedValue);
+    If vkDefault in CompareValueKinds then
+      Result := Result and (fDefaultValue = TUNSNodeBool(Node).DefaultValue);
+  end
+else Result := False;
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TUNSNodeBool.ValueKindMove(Src,Dest: TUNSValueKind);
+var
+  SrcPtr, DestPtr:  PBoolean;
+begin
+If Src <> Dest then
+  begin
+    SrcPtr := Address(Src);
+    DestPtr := Address(Dest);
+    If SrcPtr^ <> DestPtr^ then
+      begin
+        DestPtr^ := SrcPtr^;
+        DoChange;
+      end;
+  end;
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TUNSNodeBool.ValueKindExchange(ValA,ValB: TUNSValueKind);
+var
+  ValAPtr, ValBPtr: PBoolean;
+  Temp:             Boolean;
+begin
+If ValA <> ValB then
+  begin
+    ValAPtr := Address(ValA);
+    ValBPtr := Address(ValB);
+    If ValAPtr^ <> ValBPtr^ then
+      begin
+        Temp := ValAPtr^;
+        ValAPtr^ := ValBPtr^;
+        ValBPtr^ := Temp;
+        DoChange;
+      end;
+  end;
+end;
+
+//------------------------------------------------------------------------------
+
+Function TUNSNodeBool.ValueKindCompare(ValA,ValB: TUNSValueKind): Boolean;
+begin
+If ValA <> ValB then
+  Result := Boolean(Address(ValA)^) = Boolean(Address(ValB)^)
+else
+  Result := True;
 end;
 
 //------------------------------------------------------------------------------
 
 procedure TUNSNodeBool.ActualFromDefault;
 begin
-If not ActualEqualsDefault then
-  begin
-    fValue := fDefaultValue;
-    DoChange;
-  end;
+ValueKindMove(vkDefault,vkActual);
 end;
 
 //------------------------------------------------------------------------------
 
 procedure TUNSNodeBool.DefaultFromActual;
 begin
-If not ActualEqualsDefault then
-  begin
-    fDefaultValue := fValue;
-    DoChange;
-  end;
+ValueKindMove(vkActual,vkDefault);
 end;
 
 //------------------------------------------------------------------------------
 
 procedure TUNSNodeBool.ExchangeActualAndDefault;
-var
-  Temp: Boolean;
 begin
-If not ActualEqualsDefault then
-  begin
-    Temp := fDefaultValue;
-    fDefaultValue := fValue;
-    fValue := Temp;
-    DoChange;
-  end;
+ValueKindExchange(vkActual,vkDefault);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TUNSNodeBool.ActualEqualsDefault: Boolean;
 begin
-Result := fValue = fDefaultValue;
+Result := ValueKindCompare(vkActual,vkDefault);
 end;
 
 //------------------------------------------------------------------------------
 
-Function TUNSNodeBool.Address(AccessDefVal: Boolean = False): Pointer;
+procedure TUNSNodeBool.Save;
 begin
-If AccessDefVal then
-  Result := Addr(fDefaultValue)
+SetSavedValue(fValue);
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TUNSNodeBool.Restore;
+begin
+SetValue(fSavedValue);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TUNSNodeBool.Address(ValueKind: TUNSValueKind = vkActual): Pointer;
+begin
+case ValueKind of
+  vkActual:   Result := Addr(fValue);
+  vkSaved:    Result := Addr(fSavedValue);
+  vkDefault:  Result := Addr(fDefaultValue);
 else
-  Result := Addr(fValue);
+  raise EUNSException.CreateFmt('Invalid value kind (%d).',[Ord(ValueKind)],Self,'Address');
+end;
 end;
 
 //------------------------------------------------------------------------------
 
-Function TUNSNodeBool.AsString(AccessDefVal: Boolean = False): String;
+Function TUNSNodeBool.AsString(ValueKind: TUNSValueKind = vkActual): String;
 begin
-If AccessDefVal then
-  Result := ConvToStr(fDefaultValue)
+case ValueKind of
+  vkActual:   Result := ConvToStr(fValue);
+  vkSaved:    Result := ConvToStr(fSavedValue);
+  vkDefault:  Result := ConvToStr(fDefaultValue);
 else
-  Result := ConvToStr(fValue);
+  raise EUNSException.CreateFmt('Invalid value kind (%d).',[Ord(ValueKind)],Self,'AsString');
+end;
 end;
 
 //------------------------------------------------------------------------------
 
-procedure TUNSNodeBool.FromString(const Str: String; AccessDefVal: Boolean = False);
+procedure TUNSNodeBool.FromString(const Str: String; ValueKind: TUNSValueKind = vkActual);
 begin
-If AccessDefVal then
-  SetDefaultValue(ConvFromStr(Str))
+case ValueKind of
+  vkActual:   SetValue(ConvFromStr(Str));
+  vkSaved:    SetSavedValue(ConvFromStr(Str));
+  vkDefault:  SetDefaultValue(ConvFromStr(Str));
 else
-  SetValue(ConvFromStr(Str));
+  raise EUNSException.CreateFmt('Invalid value kind (%d).',[Ord(ValueKind)],Self,'FromString');
+end;
 end;
 
 //------------------------------------------------------------------------------
 
-procedure TUNSNodeBool.ToStream(Stream: TStream; AccessDefVal: Boolean = False);
+procedure TUNSNodeBool.ToStream(Stream: TStream; ValueKind: TUNSValueKind = vkActual);
 begin
-If AccessDefVal then
-  Stream_WriteBool(Stream,fDefaultValue)
+case ValueKind of
+  vkActual:   Stream_WriteBool(Stream,fValue);
+  vkSaved:    Stream_WriteBool(Stream,fSavedValue);
+  vkDefault:  Stream_WriteBool(Stream,fDefaultValue);
 else
-  Stream_WriteBool(Stream,fValue);
+  raise EUNSException.CreateFmt('Invalid value kind (%d).',[Ord(ValueKind)],Self,'ToStream');
+end;
 end;
 
 //------------------------------------------------------------------------------
 
-procedure TUNSNodeBool.FromStream(Stream: TStream; AccessDefVal: Boolean = False);
+procedure TUNSNodeBool.FromStream(Stream: TStream; ValueKind: TUNSValueKind = vkActual);
 begin
-If AccessDefVal then
-  SetDefaultValue(Stream_ReadBool(Stream))
+case ValueKind of
+  vkActual:   SetValue(Stream_ReadBool(Stream));
+  vkSaved:    SetSavedValue(Stream_ReadBool(Stream));
+  vkDefault:  SetDefaultValue(Stream_ReadBool(Stream))
 else
-  SetValue(Stream_ReadBool(Stream));
+  raise EUNSException.CreateFmt('Invalid value kind (%d).',[Ord(ValueKind)],Self,'FromStream');
+end;
 end;
 
 //------------------------------------------------------------------------------
 
-procedure TUNSNodeBool.ToBuffer(Buffer: TMemoryBuffer; AccessDefVal: Boolean = False);
+procedure TUNSNodeBool.ToBuffer(Buffer: TMemoryBuffer; ValueKind: TUNSValueKind = vkActual);
 begin
-If Buffer.Size >= ObtainValueSize(AccessDefVal) then
-  begin
-    If AccessDefVal then
-      Ptr_WriteBool(Buffer.Memory,fDefaultValue)
-    else
-      Ptr_WriteBool(Buffer.Memory,fValue);
+If Buffer.Size >= ObtainValueSize(ValueKind) then
+  case ValueKind of
+    vkActual:   Ptr_WriteBool(Buffer.Memory,fValue);
+    vkSaved:    Ptr_WriteBool(Buffer.Memory,fSavedValue);
+    vkDefault:  Ptr_WriteBool(Buffer.Memory,fDefaultValue);
+  else
+    raise EUNSException.CreateFmt('Invalid value kind (%d).',[Ord(ValueKind)],Self,'ToBuffer');
   end
-else raise EUNSBufferTooSmallException.Create(Buffer,Self,'GetValueToBuffer');
+else raise EUNSBufferTooSmallException.Create(Buffer,Self,'ToBuffer');
 end;
 
 //------------------------------------------------------------------------------
 
-procedure TUNSNodeBool.FromBuffer(Buffer: TMemoryBuffer; AccessDefVal: Boolean = False);
+procedure TUNSNodeBool.FromBuffer(Buffer: TMemoryBuffer; ValueKind: TUNSValueKind = vkActual);
 begin
-If Buffer.Size >= ObtainValueSize(AccessDefVal) then
-  begin
-    If AccessDefVal then
-      SetDefaultValue(Ptr_ReadBool(Buffer.Memory))
-    else
-      SetValue(Ptr_ReadBool(Buffer.Memory));
+If Buffer.Size >= ObtainValueSize(ValueKind) then
+  case ValueKind of
+    vkActual:   SetValue(Ptr_ReadBool(Buffer.Memory));
+    vkSaved:    SetSavedValue(Ptr_ReadBool(Buffer.Memory));
+    vkDefault:  SetDefaultValue(Ptr_ReadBool(Buffer.Memory));
+  else
+    raise EUNSException.CreateFmt('Invalid value kind (%d).',[Ord(ValueKind)],Self,'ToBuffer');
   end
-else raise EUNSBufferTooSmallException.Create(Buffer,Self,'SetValueFromBuffer');
+else raise EUNSBufferTooSmallException.Create(Buffer,Self,'FromBuffer');
 end;
 
 {$WARNINGS OFF} // supresses warnings on lines after the final end
@@ -244,15 +365,15 @@ end.
 {$WARNINGS ON}
 
 {$IFDEF Included_Declaration}
-    Function BooleanValueGet(const ValueName: String; AccessDefVal: Boolean = False): Boolean; virtual;
-    procedure BooleanValueSet(const ValueName: String; NewValue: Boolean; AccessDefVal: Boolean = False); virtual;
+    Function BooleanValueGet(const ValueName: String; ValueKind: TUNSValueKind = vkActual): Boolean; virtual;
+    procedure BooleanValueSet(const ValueName: String; NewValue: Boolean; ValueKind: TUNSValueKind = vkActual); virtual;
 {$ENDIF}
 
 //==============================================================================
 
 {$IFDEF Included_Implementation}
 
-Function TUniSettings.BooleanValueGet(const ValueName: String; AccessDefVal: Boolean = False): Boolean;
+Function TUniSettings.BooleanValueGet(const ValueName: String; ValueKind: TUNSValueKind = vkActual): Boolean;
 begin
 ReadLock;
 try
@@ -268,7 +389,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-procedure TUniSettings.BooleanValueSet(const ValueName: String; NewValue: Boolean; AccessDefVal: Boolean = False);
+procedure TUniSettings.BooleanValueSet(const ValueName: String; NewValue: Boolean; ValueKind: TUNSValueKind = vkActual);
 begin
 WriteLock;
 try

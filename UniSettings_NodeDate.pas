@@ -8,12 +8,13 @@ interface
 uses
   Classes,
   AuxTypes, MemoryBuffer,
-  UniSettings_Common, UniSettings_NodeLeaf;
+  UniSettings_Common, UniSettings_NodeBase, UniSettings_NodeLeaf;
 
 type
   TUNSNodeDate = class(TUNSNodeLeaf)
   private
     fValue:         TDate;
+    fSavedValue:    TDate;
     fDefaultValue:  TDate;
     procedure SetValue(NewValue: TDate);
     procedure SetDefaultValue(NewValue: TDate);
@@ -24,10 +25,14 @@ type
     Function ConvToStr(Value: TDate): String; reintroduce;
     Function ConvFromStr(const Str: String): TDate; reintroduce;
   public
+    constructor Create(const Name: String; ParentNode: TUNSNodeBase);
+    constructor CreateAsCopy(Source: TUNSNodeBase; const Name: String; ParentNode: TUNSNodeBase);
     procedure ActualFromDefault; override;
     procedure DefaultFromActual; override;
     procedure ExchangeActualAndDefault; override;
     Function ActualEqualsDefault: Boolean; override;
+    procedure Save; override;
+    procedure Restore; override;
     Function Address(AccessDefVal: Boolean = False): Pointer; override;
     Function AsString(AccessDefVal: Boolean = False): String; override;
     procedure FromString(const Str: String; AccessDefVal: Boolean = False); override;
@@ -36,6 +41,7 @@ type
     procedure ToBuffer(Buffer: TMemoryBuffer; AccessDefVal: Boolean = False); override;
     procedure FromBuffer(Buffer: TMemoryBuffer; AccessDefVal: Boolean = False); override;
     property Value: TDate read fValue write SetValue;
+    property SavedValue: TDate read fSavedValue;
     property DefaultValue: TDate read fDefaultValue write SetDefaultValue;
   end;
 
@@ -113,6 +119,26 @@ end;
 
 //==============================================================================
 
+constructor TUNSNodeDate.Create(const Name: String; ParentNode: TUNSNodeBase);
+begin
+inherited Create(Name,ParentNode);
+fValue := Now;
+fSavedValue := fValue;
+fDefaultValue := fValue;
+end;
+
+//------------------------------------------------------------------------------
+
+constructor TUNSNodeDate.CreateAsCopy(Source: TUNSNodeBase; const Name: String; ParentNode: TUNSNodeBase);
+begin
+inherited CreateAsCopy(Source,Name,ParentNode);
+fValue := TUNSNodeDate(Source).Value;
+fSavedValue := TUNSNodeDate(Source).SavedValue;
+fDefaultValue := TUNSNodeDate(Source).DefaultValue;
+end;
+
+//------------------------------------------------------------------------------
+
 procedure TUNSNodeDate.ActualFromDefault;
 begin
 If not ActualEqualsDefault then
@@ -153,6 +179,20 @@ end;
 Function TUNSNodeDate.ActualEqualsDefault: Boolean;
 begin
 Result := Int(fValue) = Int(fDefaultValue);
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TUNSNodeDate.Save;
+begin
+fSavedValue := fValue;
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TUNSNodeDate.Restore;
+begin
+SetValue(fSavedValue);
 end;
 
 //------------------------------------------------------------------------------

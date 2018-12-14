@@ -8,12 +8,13 @@ interface
 uses
   Classes,
   AuxTypes, MemoryBuffer,
-  UniSettings_Common, UniSettings_NodeLeaf;
+  UniSettings_Common, UniSettings_NodeBase, UniSettings_NodeLeaf;
 
 type
   TUNSNodeTime = class(TUNSNodeLeaf)
   private
     fValue:         TTime;
+    fSavedValue:    TTime;
     fDefaultValue:  TTime;
     procedure SetValue(NewValue: TTime);
     procedure SetDefaultValue(NewValue: TTime);
@@ -24,10 +25,14 @@ type
     Function ConvToStr(Value: TTime): String; reintroduce;
     Function ConvFromStr(const Str: String): TTime; reintroduce;
   public
+    constructor Create(const Name: String; ParentNode: TUNSNodeBase);
+    constructor CreateAsCopy(Source: TUNSNodeBase; const Name: String; ParentNode: TUNSNodeBase);
     procedure ActualFromDefault; override;
     procedure DefaultFromActual; override;
     procedure ExchangeActualAndDefault; override;
     Function ActualEqualsDefault: Boolean; override;
+    procedure Save; override;
+    procedure Restore; override;
     Function Address(AccessDefVal: Boolean = False): Pointer; override;
     Function AsString(AccessDefVal: Boolean = False): String; override;
     procedure FromString(const Str: String; AccessDefVal: Boolean = False); override;
@@ -36,6 +41,7 @@ type
     procedure ToBuffer(Buffer: TMemoryBuffer; AccessDefVal: Boolean = False); override;
     procedure FromBuffer(Buffer: TMemoryBuffer; AccessDefVal: Boolean = False); override;
     property Value: TTime read fValue write SetValue;
+    property SavedValue: TTime read fSavedValue;
     property DefaultValue: TTime read fDefaultValue write SetDefaultValue;
   end;
 
@@ -114,6 +120,26 @@ end;
 
 //==============================================================================
 
+constructor TUNSNodeTime.Create(const Name: String; ParentNode: TUNSNodeBase);
+begin
+inherited Create(Name,ParentNode);
+fValue := Now;
+fSavedValue := fValue;
+fDefaultValue := fValue;
+end;
+
+//------------------------------------------------------------------------------
+
+constructor TUNSNodeTime.CreateAsCopy(Source: TUNSNodeBase; const Name: String; ParentNode: TUNSNodeBase);
+begin
+inherited CreateAsCopy(Source,Name,ParentNode);
+fValue := TUNSNodeTime(Source).Value;
+fSavedValue := TUNSNodeTime(Source).SavedValue;
+fDefaultValue := TUNSNodeTime(Source).DefaultValue;
+end;
+
+//------------------------------------------------------------------------------
+
 procedure TUNSNodeTime.ActualFromDefault;
 begin
 If not ActualEqualsDefault then
@@ -154,6 +180,20 @@ end;
 Function TUNSNodeTime.ActualEqualsDefault: Boolean;
 begin
 Result := Frac(fValue) = Frac(fDefaultValue);
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TUNSNodeTime.Save;
+begin
+fSavedValue := fValue;
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TUNSNodeTime.Restore;
+begin
+SetValue(fSavedValue);
 end;
 
 //------------------------------------------------------------------------------
