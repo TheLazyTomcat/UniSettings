@@ -55,7 +55,7 @@ case ValueKind of
   vkSaved:    Result := GetSavedValueSize;
   vkDefault:  Result := GetDEfaultValueSize;
 else
-  raise EUNSException.CreateFmt('Invalid value kind (%d).',[Ord(ValueKind)],Self,'ObtainValueSize');
+  raise EUNSInvalidValueKindException.Create(ValueKind,Self,'ObtainValueSize');
 end;
 end;
 

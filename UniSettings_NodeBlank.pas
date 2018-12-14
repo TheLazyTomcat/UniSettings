@@ -19,6 +19,9 @@ type
     Function ConvToStr(const Value): String; override;
     Function ConvFromStr(const Str: String): Pointer; override;
   public
+    procedure ValueKindMove(Src,Dest: TUNSValueKind); override;
+    procedure ValueKindExchange(ValA,ValB: TUNSValueKind); override;
+    Function ValueKindCompare(ValA,ValB: TUNSValueKind): Boolean; override;
     procedure ActualFromDefault; override;
     procedure DefaultFromActual; override;
     procedure ExchangeActualAndDefault; override;
@@ -77,6 +80,27 @@ Result := nil;
 end;
 
 //==============================================================================
+
+procedure TUNSNodeBlank.ValueKindMove(Src,Dest: TUNSValueKind);
+begin
+// do nothing
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TUNSNodeBlank.ValueKindExchange(ValA,ValB: TUNSValueKind);
+begin
+// do nothing
+end;
+
+//------------------------------------------------------------------------------
+
+Function TUNSNodeBlank.ValueKindCompare(ValA,ValB: TUNSValueKind): Boolean;
+begin
+Result := True;
+end;
+
+//------------------------------------------------------------------------------
 
 procedure TUNSNodeBlank.ActualFromDefault;
 begin

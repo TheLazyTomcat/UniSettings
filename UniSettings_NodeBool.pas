@@ -271,7 +271,7 @@ case ValueKind of
   vkSaved:    Result := Addr(fSavedValue);
   vkDefault:  Result := Addr(fDefaultValue);
 else
-  raise EUNSException.CreateFmt('Invalid value kind (%d).',[Ord(ValueKind)],Self,'Address');
+  raise EUNSInvalidValueKindException.Create(ValueKind,Self,'Address');
 end;
 end;
 
@@ -284,7 +284,7 @@ case ValueKind of
   vkSaved:    Result := ConvToStr(fSavedValue);
   vkDefault:  Result := ConvToStr(fDefaultValue);
 else
-  raise EUNSException.CreateFmt('Invalid value kind (%d).',[Ord(ValueKind)],Self,'AsString');
+  raise EUNSInvalidValueKindException.Create(ValueKind,Self,'AsString');
 end;
 end;
 
@@ -297,7 +297,7 @@ case ValueKind of
   vkSaved:    SetSavedValue(ConvFromStr(Str));
   vkDefault:  SetDefaultValue(ConvFromStr(Str));
 else
-  raise EUNSException.CreateFmt('Invalid value kind (%d).',[Ord(ValueKind)],Self,'FromString');
+  raise EUNSInvalidValueKindException.Create(ValueKind,Self,'FromString');
 end;
 end;
 
@@ -310,7 +310,7 @@ case ValueKind of
   vkSaved:    Stream_WriteBool(Stream,fSavedValue);
   vkDefault:  Stream_WriteBool(Stream,fDefaultValue);
 else
-  raise EUNSException.CreateFmt('Invalid value kind (%d).',[Ord(ValueKind)],Self,'ToStream');
+  raise EUNSInvalidValueKindException.Create(ValueKind,Self,'ToStream');
 end;
 end;
 
@@ -323,7 +323,7 @@ case ValueKind of
   vkSaved:    SetSavedValue(Stream_ReadBool(Stream));
   vkDefault:  SetDefaultValue(Stream_ReadBool(Stream))
 else
-  raise EUNSException.CreateFmt('Invalid value kind (%d).',[Ord(ValueKind)],Self,'FromStream');
+  raise EUNSInvalidValueKindException.Create(ValueKind,Self,'FromStream');
 end;
 end;
 
@@ -337,7 +337,7 @@ If Buffer.Size >= ObtainValueSize(ValueKind) then
     vkSaved:    Ptr_WriteBool(Buffer.Memory,fSavedValue);
     vkDefault:  Ptr_WriteBool(Buffer.Memory,fDefaultValue);
   else
-    raise EUNSException.CreateFmt('Invalid value kind (%d).',[Ord(ValueKind)],Self,'ToBuffer');
+    raise EUNSInvalidValueKindException.Create(ValueKind,Self,'ToBuffer');
   end
 else raise EUNSBufferTooSmallException.Create(Buffer,Self,'ToBuffer');
 end;
@@ -352,7 +352,7 @@ If Buffer.Size >= ObtainValueSize(ValueKind) then
     vkSaved:    SetSavedValue(Ptr_ReadBool(Buffer.Memory));
     vkDefault:  SetDefaultValue(Ptr_ReadBool(Buffer.Memory));
   else
-    raise EUNSException.CreateFmt('Invalid value kind (%d).',[Ord(ValueKind)],Self,'ToBuffer');
+    raise EUNSInvalidValueKindException.Create(ValueKind,Self,'FromBuffer');
   end
 else raise EUNSBufferTooSmallException.Create(Buffer,Self,'FromBuffer');
 end;
