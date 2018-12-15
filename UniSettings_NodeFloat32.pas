@@ -2,6 +2,7 @@
 unit UniSettings_NodeFloat32;
 
 {$INCLUDE '.\UniSettings_defs.inc'}
+{$DEFINE UNS_NodeFloat32}
 
 interface
 
@@ -11,38 +12,14 @@ uses
   UniSettings_Common, UniSettings_NodeBase, UniSettings_NodeLeaf;
 
 type
+  TUNSNodeValueType    = Float32;
+  TUNSNodeValueTypeBin = Float32;
+  TUNSNodeValueTypePtr = PFloat32;
+
   TUNSNodeFloat32 = class(TUNSNodeLeaf)
-  private
-    fValue:         Float32;
-    fSavedValue:    Float32;
-    fDefaultValue:  Float32;
-    procedure SetValue(NewValue: Float32);
-    procedure SetDefaultValue(NewValue: Float32);
-  protected
-    class Function GetValueType: TUNSValueType; override;
-    Function GetValueSize: TMemSize; override;
-    Function GetDefaultValueSize: TMemSize; override;
-    Function ConvToStr(Value: Float32): String; reintroduce;
-    Function ConvFromStr(const Str: String): Float32; reintroduce;
-  public
-    constructor Create(const Name: String; ParentNode: TUNSNodeBase);
-    constructor CreateAsCopy(Source: TUNSNodeBase; const Name: String; ParentNode: TUNSNodeBase);
-    procedure ActualFromDefault; override;
-    procedure DefaultFromActual; override;
-    procedure ExchangeActualAndDefault; override;
-    Function ActualEqualsDefault: Boolean; override;
-    procedure Save; override;
-    procedure Restore; override;
-    Function Address(AccessDefVal: Boolean = False): Pointer; override;
-    Function AsString(AccessDefVal: Boolean = False): String; override;
-    procedure FromString(const Str: String; AccessDefVal: Boolean = False); override;
-    procedure ToStream(Stream: TStream; AccessDefVal: Boolean = False); override;
-    procedure FromStream(Stream: TStream; AccessDefVal: Boolean = False); override;
-    procedure ToBuffer(Buffer: TMemoryBuffer; AccessDefVal: Boolean = False); override;
-    procedure FromBuffer(Buffer: TMemoryBuffer; AccessDefVal: Boolean = False); override;
-    property Value: Float32 read fValue write SetValue;
-    property SavedValue: Float32 read fSavedValue;
-    property DefaultValue: Float32 read fDefaultValue write SetDefaultValue;
+  {$DEFINE UNS_NodeInclude_Declaration}
+    {$INCLUDE '.\UniSettings_Node.inc'}
+  {$UNDEF UNS_NodeInclude_Declaration}
   end;
 
 implementation
@@ -52,50 +29,36 @@ uses
   BinaryStreaming, FloatHex,
   UniSettings_Exceptions;
 
-procedure TUNSNodeFloat32.SetValue(NewValue: Float32);
-begin
-If NewValue <> fValue then
-  begin
-    fValue := NewValue;
-    DoChange;
-  end;
-end;
+type
+  TUNSNodeClassType = TUNSNodeFloat32;
 
-//------------------------------------------------------------------------------
+var
+  UNS_StreamWriteFunction:
+    Function(Stream: TStream; Value: Float32; Advance: Boolean = True): TMemSize
+      = BinaryStreaming.Stream_WriteFloat32;
 
-procedure TUNSNodeFloat32.SetDefaultValue(NewValue: Float32);
-begin
-If NewValue <> fDefaultValue then
-  begin
-    fDefaultValue := NewValue;
-    DoChange;
-  end;
-end;
+  UNS_StreamReadFunction:
+    Function(Stream: TStream; Advance: Boolean = True): Float32
+      = BinaryStreaming.Stream_ReadFloat32;
+
+  UNS_BufferWriteFunction:
+    Function(Dest: Pointer; Value: Float32): TMemSize
+      = BinaryStreaming.Ptr_WriteFloat32;
+      
+  UNS_BufferReadFunction:
+    Function(Dest: Pointer): Float32
+      = BinaryStreaming.Ptr_ReadFloat32;
 
 //==============================================================================
 
-class Function TUNSNodeFloat32.GetValueType: TUNSValueType;
+class Function TUNSNodeClassType.GetValueType: TUNSValueType;
 begin
 Result := vtFloat32;
 end;
 
 //------------------------------------------------------------------------------
 
-Function TUNSNodeFloat32.GetValueSize: TMemSize;
-begin
-Result := SizeOf(Float32);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TUNSNodeFloat32.GetDefaultValueSize: TMemSize;
-begin
-Result := SizeOf(Float32);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TUNSNodeFloat32.ConvToStr(Value: Float32): String;
+Function TUNSNodeClassType.ConvToStr(Value: TUNSNodeValueType): String;
 begin
 If ValueFormatSettings.HexFloats then
   Result := '$' + SingleToHex(Value)
@@ -105,7 +68,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function TUNSNodeFloat32.ConvFromStr(const Str: String): Float32;
+Function TUNSNodeClassType.ConvFromStr(const Str: String): TUNSNodeValueType;
 begin
 If Length(Str) > 1 then
   begin
@@ -119,7 +82,7 @@ end;
 
 //==============================================================================
 
-constructor TUNSNodeFloat32.Create(const Name: String; ParentNode: TUNSNodeBase);
+constructor TUNSNodeClassType.Create(const Name: String; ParentNode: TUNSNodeBase);
 begin
 inherited Create(Name,ParentNode);
 fValue := 0.0;
@@ -129,149 +92,9 @@ end;
 
 //------------------------------------------------------------------------------
 
-constructor TUNSNodeFloat32.CreateAsCopy(Source: TUNSNodeBase; const Name: String; ParentNode: TUNSNodeBase);
-begin
-inherited CreateAsCopy(Source,Name,ParentNode);
-fValue := TUNSNodeFloat32(Source).Value;
-fSavedValue := TUNSNodeFloat32(Source).SavedValue;
-fDefaultValue := TUNSNodeFloat32(Source).DefaultValue;
-end;
-
-//------------------------------------------------------------------------------
-
-procedure TUNSNodeFloat32.ActualFromDefault;
-begin
-If not ActualEqualsDefault then
-  begin
-    fValue := fDefaultValue;
-    DoChange;
-  end;
-end;
-
-//------------------------------------------------------------------------------
-
-procedure TUNSNodeFloat32.DefaultFromActual;
-begin
-If not ActualEqualsDefault then
-  begin
-    fDefaultValue := fValue;
-    DoChange;
-  end;
-end;
-
-//------------------------------------------------------------------------------
-
-procedure TUNSNodeFloat32.ExchangeActualAndDefault;
-var
-  Temp: Float32;
-begin
-If not ActualEqualsDefault then
-  begin
-    Temp := fDefaultValue;
-    fDefaultValue := fValue;
-    fValue := Temp;
-    DoChange;
-  end;
-end;
-
-//------------------------------------------------------------------------------
-
-Function TUNSNodeFloat32.ActualEqualsDefault: Boolean;
-begin
-Result := fValue = fDefaultValue
-end;
-
-//------------------------------------------------------------------------------
-
-procedure TUNSNodeFloat32.Save;
-begin
-fSavedValue := fValue;
-end;
-
-//------------------------------------------------------------------------------
-
-procedure TUNSNodeFloat32.Restore;
-begin
-SetValue(fSavedValue);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TUNSNodeFloat32.Address(AccessDefVal: Boolean = False): Pointer;
-begin
-If AccessDefVal then
-  Result := Addr(fDefaultValue)
-else
-  Result := Addr(fValue);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TUNSNodeFloat32.AsString(AccessDefVal: Boolean = False): String;
-begin
-If AccessDefVal then
-  Result := ConvToStr(fDefaultValue)
-else
-  Result := ConvToStr(fValue);
-end;
-
-//------------------------------------------------------------------------------
-
-procedure TUNSNodeFloat32.FromString(const Str: String; AccessDefVal: Boolean = False);
-begin
-If AccessDefVal then
-  SetDefaultValue(ConvFromStr(Str))
-else
-  SetValue(ConvFromStr(Str));
-end;
-
-//------------------------------------------------------------------------------
-
-procedure TUNSNodeFloat32.ToStream(Stream: TStream; AccessDefVal: Boolean = False);
-begin
-If AccessDefVal then
-  Stream_WriteFloat32(Stream,fDefaultValue)
-else
-  Stream_WriteFloat32(Stream,fValue);
-end;
-
-//------------------------------------------------------------------------------
-
-procedure TUNSNodeFloat32.FromStream(Stream: TStream; AccessDefVal: Boolean = False);
-begin
-If AccessDefVal then
-  SetDefaultValue(Stream_ReadFloat32(Stream))
-else
-  SetValue(Stream_ReadFloat32(Stream));
-end;
-
-//------------------------------------------------------------------------------
-
-procedure TUNSNodeFloat32.ToBuffer(Buffer: TMemoryBuffer; AccessDefVal: Boolean = False);
-begin
-If Buffer.Size >= ObtainValueSize(AccessDefVal) then
-  begin
-    If AccessDefVal then
-      Ptr_WriteFloat32(Buffer.Memory,fDefaultValue)
-    else
-      Ptr_WriteFloat32(Buffer.Memory,fValue);
-  end
-else raise EUNSBufferTooSmallException.Create(Buffer,Self,'GetValueToBuffer');
-end;
-
-//------------------------------------------------------------------------------
-
-procedure TUNSNodeFloat32.FromBuffer(Buffer: TMemoryBuffer; AccessDefVal: Boolean = False);
-begin
-If Buffer.Size >= ObtainValueSize(AccessDefVal) then
-  begin
-    If AccessDefVal then
-      SetDefaultValue(Ptr_ReadFloat32(Buffer.Memory))
-    else
-      SetValue(Ptr_ReadFloat32(Buffer.Memory));
-  end
-else raise EUNSBufferTooSmallException.Create(Buffer,Self,'SetValueFromBuffer');
-end;
+{$DEFINE UNS_NodeInclude_Implementation}
+  {$INCLUDE '.\UniSettings_Node.inc'}
+{$UNDEF UNS_NodeInclude_Implementation}
 
 {$WARNINGS OFF} // supresses warnings on lines after the final end
 end.
