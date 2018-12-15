@@ -41,7 +41,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function TUNSNodeClassType.ConvToStr(Value: TUNSNodeValueType): String;
+Function TUNSNodeClassType.ConvToStr(const Value: TUNSNodeValueType): String;
 var
   i:        TMemSize;
   TempStr:  String;
@@ -79,7 +79,6 @@ If TempSize > 0 then
       TempPtr^ := Byte(StrToInt('$' + Copy(Str,(i * 2) + StrOff,2)));
       Inc(TempPtr);
     end;
-DoChange;
 end;
 
 //==============================================================================

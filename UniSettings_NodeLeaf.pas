@@ -17,21 +17,21 @@ type
     Function GetValueSize: TMemSize; virtual; abstract;
     Function GetSavedValueSize: TMemSize; virtual; abstract;
     Function GetDefaultValueSize: TMemSize; virtual; abstract;
-    Function ConvToStr(const Value): String; virtual; abstract;
-    Function ConvFromStr(const Str: String): Pointer; virtual; abstract;
     Function ObtainValueSize(ValueKind: TUNSValueKind): TMemSize; virtual;
+    Function ConvToStr(const Value): String; virtual; abstract;
+    Function ConvFromStr(const Str: String): Pointer; virtual; abstract;    
   public
     class Function IsPrimitiveArray: Boolean; virtual;
     Function NodeEquals(Node: TUNSNodeLeaf; CompareValueKinds: TUNSValueKinds = [vkActual]): Boolean; virtual;
-    Function Address(ValueKind: TUNSValueKind = vkActual): Pointer; virtual; abstract;
-    Function AsString(ValueKind: TUNSValueKind = vkActual): String; virtual; abstract;
-    procedure FromString(const Str: String; ValueKind: TUNSValueKind = vkActual); virtual; abstract;
-    procedure ToStream(Stream: TStream; ValueKind: TUNSValueKind = vkActual); virtual; abstract;
-    procedure FromStream(Stream: TStream; ValueKind: TUNSValueKind = vkActual); virtual; abstract;
-    Function AsStream(ValueKind: TUNSValueKind = vkActual): TMemoryStream; virtual;
-    procedure ToBuffer(Buffer: TMemoryBuffer; ValueKind: TUNSValueKind = vkActual); virtual; abstract;
-    procedure FromBuffer(Buffer: TMemoryBuffer; ValueKind: TUNSValueKind = vkActual); virtual; abstract;
-    Function AsBuffer(ValueKind: TUNSValueKind = vkActual): TMemoryBuffer; virtual;
+    Function Address(ValueKind: TUNSValueKind = vkActual): Pointer; overload; virtual; abstract;
+    Function AsString(ValueKind: TUNSValueKind = vkActual): String; overload; virtual; abstract;
+    procedure FromString(const Str: String; ValueKind: TUNSValueKind = vkActual); overload; virtual; abstract;
+    procedure ToStream(Stream: TStream; ValueKind: TUNSValueKind = vkActual); overload; virtual; abstract;
+    procedure FromStream(Stream: TStream; ValueKind: TUNSValueKind = vkActual); overload; virtual; abstract;
+    Function AsStream(ValueKind: TUNSValueKind = vkActual): TMemoryStream; overload; virtual;
+    procedure ToBuffer(Buffer: TMemoryBuffer; ValueKind: TUNSValueKind = vkActual); overload; virtual; abstract;
+    procedure FromBuffer(Buffer: TMemoryBuffer; ValueKind: TUNSValueKind = vkActual); overload; virtual; abstract;
+    Function AsBuffer(ValueKind: TUNSValueKind = vkActual): TMemoryBuffer; overload; virtual;
     property ValueSize: TMemSize read GetValueSize;
     property SsvedValueSize: TMemSize read GetSavedValueSize;
     property DefaultValueSize: TMemSize read GetDefaultValueSize;
@@ -54,7 +54,7 @@ begin
 case ValueKind of
   vkActual:   Result := GetValueSize;
   vkSaved:    Result := GetSavedValueSize;
-  vkDefault:  Result := GetDEfaultValueSize;
+  vkDefault:  Result := GetDefaultValueSize;
 else
   raise EUNSInvalidValueKindException.Create(ValueKind,Self,'ObtainValueSize');
 end;

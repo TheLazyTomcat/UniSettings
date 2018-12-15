@@ -1,6 +1,7 @@
 unit UniSettings_NodeBlank;
 
 {$INCLUDE '.\UniSettings_defs.inc'}
+{$DEFINE UNS_NodeBlank}
 
 interface
 
@@ -22,8 +23,6 @@ type
     procedure ValueKindMove(Src,Dest: TUNSValueKind); override;
     procedure ValueKindExchange(ValA,ValB: TUNSValueKind); override;
     Function ValueKindCompare(ValA,ValB: TUNSValueKind): Boolean; override;
-    procedure Save; override;
-    procedure Restore; override;
     Function Address(ValueKind: TUNSValueKind = vkActual): Pointer; override;
     Function AsString(ValueKind: TUNSValueKind = vkActual): String; override;
     procedure FromString(const Str: String; ValueKind: TUNSValueKind = vkActual); override;
@@ -94,20 +93,6 @@ end;
 Function TUNSNodeBlank.ValueKindCompare(ValA,ValB: TUNSValueKind): Boolean;
 begin
 Result := True;
-end;
-
-//------------------------------------------------------------------------------
-
-procedure TUNSNodeBlank.Save;
-begin
-// do nothing
-end;
-
-//------------------------------------------------------------------------------
-
-procedure TUNSNodeBlank.Restore;
-begin
-// do nothing
 end;
 
 //------------------------------------------------------------------------------

@@ -12,58 +12,94 @@ uses
 type
   TUNSNodePrimitiveArray = class(TUNSNodeLeaf)
   protected
-    Function GetValueCount: Integer;
-    Function GetValueItemSize(Index: Integer): TMemSize; virtual; abstract;
-    Function GetSavedValueItemSize(Index: Integer): TMemSize; virtual; abstract;
-    Function GetDefaultValueItemSize(Index: Integer): TMemSize; virtual; abstract;
-    procedure ClearSaved; virtual; abstract;
+    class Function SameItemValues(const A,B): Boolean; virtual; abstract;
+    Function GetCount: Integer; virtual; abstract;
+    Function GetSavedCount: Integer; virtual; abstract;
+    Function GetDefaultCount: Integer; virtual; abstract;
+    Function ObtainCount(ValueKind: TUNSValueKind): Integer; virtual;
+    Function GetItemSize(Index: Integer): TMemSize; virtual; abstract;
+    Function GetSavedItemSize(Index: Integer): TMemSize; virtual; abstract;
+    Function GetDefaultItemSize(Index: Integer): TMemSize; virtual; abstract;
+    Function ObtainItemSize(Index: Integer; ValueKind: TUNSValueKind): TMemSize; virtual;
+    Function ConvItemToStr(const Value): String; virtual; abstract;
+    Function ConvItemFromStr(const Str: String): Pointer; virtual; abstract;
   public
     class Function IsPrimitiveArray: Boolean; override;
     destructor Destroy; override;
-    Function ItemActualFromDefault(Index: Integer): Boolean; overload; virtual; abstract;
-    Function ItemDefaultFromActual(Index: Integer): Boolean; overload; virtual; abstract;
-    Function ItemExchangeActualAndDefault(Index: Integer): Boolean; overload; virtual; abstract;
-    Function ItemActualEqualsDefault(Index: Integer): Boolean; overload; virtual; abstract;
+
+    procedure ValueKindMove(Index: Integer; Src,Dest: TUNSValueKind); overload; virtual; abstract;
+    procedure ValueKindExchange(Index: Integer; ValA,ValB: TUNSValueKind); overload; virtual; abstract;
+    Function ValueKindCompare(Index: Integer; ValA,ValB: TUNSValueKind): Boolean; overload; virtual; abstract;
+
+    Function ActualFromDefault(Index: Integer): Boolean; overload; virtual;
+    Function DefaultFromActual(Index: Integer): Boolean; overload; virtual;
+    Function ExchangeActualAndDefault(Index: Integer): Boolean; overload; virtual;
+    Function ActualEqualsDefault(Index: Integer): Boolean; overload; virtual;
+    procedure Save(Index: Integer); overload; virtual;
+    procedure Restore(Index: Integer); overload; virtual;
     
-    Function ItemAddress(Index: Integer; AccessDefVal: Boolean = False): Pointer; virtual; abstract;
-    Function ItemAsString(Index: Integer; AccessDefVal: Boolean = False): String; virtual; abstract;
-    procedure ItemFromString(Index: Integer; const Str: String; AccessDefVal: Boolean = False); virtual; abstract;
-    procedure ItemToStream(Index: Integer; Stream: TStream; AccessDefVal: Boolean = False); virtual; abstract;
-    procedure ItemFromStream(Index: Integer; Stream: TStream; AccessDefVal: Boolean = False); virtual; abstract;
-    Function ItemAsStream(Index: Integer; AccessDefVal: Boolean = False): TMemoryStream; virtual; abstract;
-    procedure ItemToBuffer(Index: Integer; Buffer: TMemoryBuffer; AccessDefVal: Boolean = False); virtual; abstract;
-    procedure ItemFromBuffer(Index: Integer; Buffer: TMemoryBuffer; AccessDefVal: Boolean = False); virtual; abstract;
-    Function ItemAsBuffer(Index: Integer; AccessDefVal: Boolean = False): TMemoryBuffer; virtual; abstract;
+    Function Address(Index: Integer; ValueKind: TUNSValueKind = vkActual): Pointer; overload; virtual; abstract;
+    Function AsString(Index: Integer; ValueKind: TUNSValueKind = vkActual): String; overload; virtual; abstract;
+    procedure FromString(Index: Integer; const Str: String; ValueKind: TUNSValueKind = vkActual); overload; virtual; abstract;
+    procedure ToStream(Index: Integer; Stream: TStream; ValueKind: TUNSValueKind = vkActual); overload; virtual; abstract;
+    procedure FromStream(Index: Integer; Stream: TStream; ValueKind: TUNSValueKind = vkActual); overload; virtual; abstract;
+    Function AsStream(Index: Integer; ValueKind: TUNSValueKind = vkActual): TMemoryStream; overload; virtual;
+    procedure ToBuffer(Index: Integer; Buffer: TMemoryBuffer; ValueKind: TUNSValueKind = vkActual); overload; virtual; abstract;
+    procedure FromBuffer(Index: Integer; Buffer: TMemoryBuffer; ValueKind: TUNSValueKind = vkActual); overload; virtual; abstract;
+    Function AsBuffer(Index: Integer; ValueKind: TUNSValueKind = vkActual): TMemoryBuffer; overload; virtual;
 
-    Function LowIndex(AccessDefVal: Boolean = False): Integer; virtual; abstract;
-    Function HighIndex(AccessDefVal: Boolean = False): Integer; virtual; abstract;
-    Function CheckIndex(Index: Integer; AccessDefVal: Boolean = False): Boolean; virtual;
+    Function LowIndex(ValueKind: TUNSValueKind = vkActual): Integer; virtual; abstract;
+    Function HighIndex(ValueKind: TUNSValueKind = vkActual): Integer; virtual; abstract;
+    Function CheckIndex(Index: Integer; ValueKind: TUNSValueKind = vkActual): Boolean; virtual;
 
-    Function IndexOf(const Item; AccessDefVal: Boolean = False): Integer; virtual; abstract;
-    Function Add(const Item; AccessDefVal: Boolean = False): Integer; virtual; abstract;
-    Function Append(const Items; AccessDefVal: Boolean = False): Integer; virtual; abstract;
-    Function Insert(Index: Integer; const Item; AccessDefVal: Boolean = False): Integer; virtual; abstract;
-    procedure Exchange(Index1,Index2: Integer; AccessDefVal: Boolean = False); virtual; abstract;
-    procedure Move(SrcIndex,DstIndex: Integer; AccessDefVal: Boolean = False); virtual; abstract;
-    Function Remove(const Item; AccessDefVal: Boolean = False): Integer; virtual; abstract;
-    procedure Delete(Index: Integer; AccessDefVal: Boolean = False); virtual; abstract;
-    procedure Clear(AccessDefVal: Boolean = False); virtual; abstract;
+    procedure First(ValueKind: TUNSValueKind = vkActual); virtual; abstract;
+    procedure Last(ValueKind: TUNSValueKind = vkActual); virtual; abstract;
 
-    property ItemSize[Index: Integer]: TMemSize read GetValueItemSize;
-    property SavedItemSize[Index: Integer]: TMemSize read GetSavedValueItemSize;
-    property DefaultValueItemSize[Index: Integer]: TMemSize read GetDefaultValueItemSize;
+    Function IndexOf(const Item; ValueKind: TUNSValueKind = vkActual): Integer; virtual; abstract;
+    Function Add(const Item; ValueKind: TUNSValueKind = vkActual): Integer; virtual; abstract;
+    Function Append(const Items; ValueKind: TUNSValueKind = vkActual): Integer; virtual; abstract;
+    procedure Insert(Index: Integer; const Item; ValueKind: TUNSValueKind = vkActual); virtual; abstract;
+    procedure Exchange(Index1,Index2: Integer; ValueKind: TUNSValueKind = vkActual); virtual; abstract;
+    procedure Move(SrcIndex,DstIndex: Integer; ValueKind: TUNSValueKind = vkActual); virtual; abstract;
+    Function Remove(const Item; ValueKind: TUNSValueKind = vkActual): Integer; virtual; abstract;
+    procedure Delete(Index: Integer; ValueKind: TUNSValueKind = vkActual); virtual; abstract;
+    procedure Clear(ValueKind: TUNSValueKind = vkActual); virtual; abstract;
 
-    property Count: Integer read GetValueCount;
-    property SavedCount: Integer read GetValueCount;
-    property DefaultCount: Integer read GetValueCount;
+    property Count: Integer read GetCount;
+    property SavedCount: Integer read GetSavedCount;
+    property DefaultCount: Integer read GetDefaultCount;
+    property ItemSize[Index: Integer]: TMemSize read GetItemSize;
+    property SavedItemSize[Index: Integer]: TMemSize read GetSavedItemSize;
+    property DefaultValueItemSize[Index: Integer]: TMemSize read GetDefaultItemSize;
   end;
 
 implementation
 
-Function TUNSNodePrimitiveArray.GetValueCount: Integer;
+uses
+  UniSettings_Exceptions;
+
+Function TUNSNodePrimitiveArray.ObtainCount(ValueKind: TUNSValueKind): Integer;
 begin
-// this method is only a placeholder!
-Result := 0;
+case ValueKind of
+  vkActual:   Result := GetCount;
+  vkSaved:    Result := GetSavedCount;
+  vkDefault:  Result := GetDefaultCount;
+else
+  raise EUNSInvalidValueKindException.Create(ValueKind,Self,'ObtainCount');
+end;
+end;
+
+//------------------------------------------------------------------------------
+
+Function TUNSNodePrimitiveArray.ObtainItemSize(Index: Integer; ValueKind: TUNSValueKind): TMemSize;
+begin
+case ValueKind of
+  vkActual:   Result := GetItemSize(Index);
+  vkSaved:    Result := GetSavedItemSize(Index);
+  vkDefault:  Result := GetDefaultItemSize(Index);
+else
+  raise EUNSInvalidValueKindException.Create(ValueKind,Self,'ObtainItemSize');
+end;
 end;
 
 //==============================================================================
@@ -77,17 +113,75 @@ end;
 
 destructor TUNSNodePrimitiveArray.Destroy;
 begin
-Clear(True);
-ClearSaved;
-Clear(False);
+Clear(vkActual);
+Clear(vkSaved);
+Clear(vkDefault);
 inherited;
 end;
 
 //------------------------------------------------------------------------------
 
-Function TUNSNodePrimitiveArray.CheckIndex(Index: Integer; AccessDefVal: Boolean = False): Boolean;
+Function TUNSNodePrimitiveArray.ActualFromDefault(Index: Integer): Boolean;
 begin
-Result := (Index >= LowIndex(AccessDefVal)) and (Index <= HighIndex(AccessDefVal));
+ValueKindMove(Index,vkDefault,vkActual);
+end;
+ 
+//------------------------------------------------------------------------------
+
+Function TUNSNodePrimitiveArray.DefaultFromActual(Index: Integer): Boolean;
+begin
+ValueKindMove(Index,vkActual,vkDefault);
+end;
+ 
+//------------------------------------------------------------------------------
+
+Function TUNSNodePrimitiveArray.ExchangeActualAndDefault(Index: Integer): Boolean;
+begin
+ValueKindExchange(Index,vkActual,vkDefault);
+end;
+ 
+//------------------------------------------------------------------------------
+
+Function TUNSNodePrimitiveArray.ActualEqualsDefault(Index: Integer): Boolean;
+begin
+Result := ValueKindCompare(Index,vkActual,vkDefault);
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TUNSNodePrimitiveArray.Save(Index: Integer);
+begin
+ValueKindMove(Index,vkActual,vkSaved);
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TUNSNodePrimitiveArray.Restore(Index: Integer);
+begin
+ValueKindMove(Index,vkSaved,vkActual);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TUNSNodePrimitiveArray.AsStream(Index: Integer; ValueKind: TUNSValueKind = vkActual): TMemoryStream;
+begin
+Result := TMemoryStream.Create;
+ToStream(Index,Result,ValueKind);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TUNSNodePrimitiveArray.AsBuffer(Index: Integer; ValueKind: TUNSValueKind = vkActual): TMemoryBuffer;
+begin
+GetBuffer(Result,ObtainItemSize(Index,ValueKind));
+ToBuffer(Index,Result,ValueKind);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TUNSNodePrimitiveArray.CheckIndex(Index: Integer; ValueKind: TUNSValueKind = vkActual): Boolean;
+begin
+Result := (Index >= LowIndex(ValueKind)) and (Index <= HighIndex(ValueKind));
 end;
 
 end.

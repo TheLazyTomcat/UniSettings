@@ -40,8 +40,6 @@ type
     procedure ValueKindMove(Src,Dest: TUNSValueKind); override;
     procedure ValueKindExchange(ValA,ValB: TUNSValueKind); override;
     Function ValueKindCompare(ValA,ValB: TUNSValueKind): Boolean; override;
-    procedure Save; override;
-    procedure Restore; override;
     property SubNodes[Index: Integer]: TUNSNodeBase read GetSubNode; default;
     property Count: Integer read fCount;
   end;
@@ -350,26 +348,6 @@ For i := LowIndex to HighIndex do
       Result := False;
       Break{For i};
     end;
-end;
-
-//------------------------------------------------------------------------------
-
-procedure TUNSNodeBranch.Save;
-var
-  i:  Integer;
-begin
-For i := LowIndex to HighIndex do
-  fSubNodes[i].Save;
-end;
-
-//------------------------------------------------------------------------------
-
-procedure TUNSNodeBranch.Restore;
-var
-  i:  Integer;
-begin
-For i := LowIndex to HighIndex do
-  fSubNodes[i].Restore;
 end;
 
 end.

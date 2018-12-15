@@ -44,8 +44,8 @@ type
     procedure DefaultFromActual; overload; virtual;
     procedure ExchangeActualAndDefault; overload; virtual;
     Function ActualEqualsDefault: Boolean; overload; virtual;
-    procedure Save; overload; virtual; abstract;
-    procedure Restore; overload; virtual; abstract;
+    procedure Save; overload; virtual;
+    procedure Restore; overload; virtual;
     property NodeClass: TUNSNodeClass read GetNodeClass;
     property ValueType: TUNSValueType read GetValueType;
     property Name: TUNSHashedString read fName write fName;       
@@ -274,6 +274,20 @@ end;
 Function TUNSNodeBase.ActualEqualsDefault: Boolean;
 begin
 Result := ValueKindCompare(vkActual,vkDefault);
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TUNSNodeBase.Save;
+begin
+ValueKindMove(vkActual,vkSaved);
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TUNSNodeBase.Restore;
+begin
+ValueKindMove(vkSaved,vkActual);
 end;
 
 end.

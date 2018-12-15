@@ -58,7 +58,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function TUNSNodeClassType.ConvToStr(Value: TUNSNodeValueType): String;
+Function TUNSNodeClassType.ConvToStr(const Value: TUNSNodeValueType): String;
 begin
 Result := Value;
 end;
