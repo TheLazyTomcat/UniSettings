@@ -3,9 +3,9 @@
     fValue:         TUNSNodeValueType;
     fSavedValue:    TUNSNodeValueType;
     fDefaultValue:  TUNSNodeValueType;
-    procedure SetValue(NewValue: TUNSNodeValueType);
-    procedure SetSavedValue(NewValue: TUNSNodeValueType);
-    procedure SetDefaultValue(NewValue: TUNSNodeValueType);
+    procedure SetValue(const NewValue: TUNSNodeValueType);
+    procedure SetSavedValue(const NewValue: TUNSNodeValueType);
+    procedure SetDefaultValue(const NewValue: TUNSNodeValueType);
   protected
     class Function SameValues(const A,B: TUNSNodeValueType): Boolean; reintroduce;
     class Function GetValueType: TUNSValueType; override;
@@ -13,7 +13,11 @@
     Function GetSavedValueSize: TMemSize; override;
     Function GetDefaultValueSize: TMemSize; override;
     Function ConvToStr(Value: TUNSNodeValueType): String; reintroduce;
+  {$IFDEF UNS_NodeBuffer}
+    procedure ConvFromStr(const Str: String; var Value: TUNSNodeValueType); reintroduce;   
+  {$ELSE}
     Function ConvFromStr(const Str: String): TUNSNodeValueType; reintroduce;
+  {$ENDIF}
   public
     constructor Create(const Name: String; ParentNode: TUNSNodeBase);
     constructor CreateAsCopy(Source: TUNSNodeBase; const Name: String; ParentNode: TUNSNodeBase);
@@ -39,12 +43,90 @@
 
 {$IFDEF UNS_NodeInclude_Implementation}
 
+procedure TUNSNodeClassType.SetValue(const NewValue: TUNSNodeValueType);
+begin
+If not SameValues(NewValue,fValue) then
+  begin
+  {$IFDEF UNS_NodeBuffer}
+    ReallocBuffer(fValue,NewValue.Size);
+    Move(NewValue.Memory^,fValue.Memory^,fValue.Size);
+  {$ELSE}
+    fValue := NewValue;
+  {$ENDIF}
+    DoChange;
+  end;
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TUNSNodeClassType.SetSavedValue(const NewValue: TUNSNodeValueType);
+begin
+If not SameValues(NewValue,fSavedValue) then
+  begin
+  {$IFDEF UNS_NodeBuffer}
+    ReallocBuffer(fSavedValue,NewValue.Size);
+    Move(NewValue.Memory^,fSavedValue.Memory^,fSavedValue.Size);
+  {$ELSE}
+    fSavedValue := NewValue;
+  {$ENDIF}
+    DoChange;
+  end;
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TUNSNodeClassType.SetDefaultValue(const NewValue: TUNSNodeValueType);
+begin
+If not SameValues(NewValue,fDefaultValue) then
+  begin
+  {$IFDEF UNS_NodeBuffer}
+    ReallocBuffer(fDefaultValue,NewValue.Size);
+    Move(NewValue.Memory^,fDefaultValue.Memory^,fDefaultValue.Size);
+  {$ELSE}
+    fDefaultValue := NewValue;
+  {$ENDIF}
+    DoChange;
+  end;
+end;
+
+//==============================================================================
+
 class Function TUNSNodeClassType.SameValues(const A,B: TUNSNodeValueType): Boolean;
+{$IFDEF UNS_NodeBuffer}
+var
+  i:      TMemSize;
+  ABuff:  PByte;
+  BBuff:  PByte;
+{$ENDIF}
 begin
 {$IF Defined(UNS_NodeDate)}
 Result := Int(A) = Int(B);
 {$ELSEIF Defined(UNS_NodeTime)}
-Result := Frac(A) = Frac(B); 
+Result := Frac(A) = Frac(B);
+{$ELSEIF Defined(UNS_NodeText)}
+Result := AnsiSameStr(A,B);
+{$ELSEIF Defined(UNS_NodeBuffer)}
+If A.Size = B.Size then
+  begin
+    ABuff := A.Memory;
+    BBuff := B.Memory;
+    Result := True;
+    If A.Size > 0 then
+      begin
+        For i := 0 to Pred(A.Size) do
+          If ABuff^ = BBuff^ then
+            begin
+              Inc(ABuff);
+              Inc(BBuff);
+            end
+          else
+            begin
+              Result := False;
+              Break{For i};
+            end;
+      end;
+  end
+else Result := False;
 {$ELSE}
 Result := A = B;
 {$IFEND}
@@ -52,56 +134,41 @@ end;
 
 //------------------------------------------------------------------------------
 
-procedure TUNSNodeClassType.SetValue(NewValue: TUNSNodeValueType);
-begin
-If not SameValues(NewValue,fValue) then
-  begin
-    fValue := NewValue;
-    DoChange;
-  end;
-end;
-
-//------------------------------------------------------------------------------
-
-procedure TUNSNodeClassType.SetSavedValue(NewValue: TUNSNodeValueType);
-begin
-If not SameValues(NewValue,fSavedValue) then
-  begin
-    fSavedValue := NewValue;
-    DoChange;
-  end;
-end;
-
-//------------------------------------------------------------------------------
-
-procedure TUNSNodeClassType.SetDefaultValue(NewValue: TUNSNodeValueType);
-begin
-If not SameValues(NewValue,fDefaultValue) then
-  begin
-    fDefaultValue := NewValue;
-    DoChange;
-  end;
-end;
-
-//==============================================================================
-
 Function TUNSNodeClassType.GetValueSize: TMemSize;
 begin
+{$IF Defined(UNS_NodeText)}
+Result := SizeOf(Int32) + Length(StrToUTF8(fValue)) * SizeOf(UTF8Char);
+{$ELSEIF Defined(UNS_NodeBuffer)}
+Result := fValue.Size;
+{$ELSE}
 Result := SizeOf(TUNSNodeValueTypeBin);
+{$IFEND}
 end;
 
 //------------------------------------------------------------------------------
 
 Function TUNSNodeClassType.GetSavedValueSize: TMemSize;
 begin
+{$IF Defined(UNS_NodeText)}
+Result := SizeOf(Int32) + Length(StrToUTF8(fSavedValue)) * SizeOf(UTF8Char);
+{$ELSEIF Defined(UNS_NodeBuffer)}
+Result := fSavedValue.Size;
+{$ELSE}
 Result := SizeOf(TUNSNodeValueTypeBin);
+{$IFEND}
 end;
 
 //------------------------------------------------------------------------------
 
 Function TUNSNodeClassType.GetDefaultValueSize: TMemSize;
 begin
+{$IF Defined(UNS_NodeText)}
+Result := SizeOf(Int32) + Length(StrToUTF8(fDefaultValue)) * SizeOf(UTF8Char);
+{$ELSEIF Defined(UNS_NodeBuffer)}
+Result := fDefaultValue.Size;
+{$ELSE}
 Result := SizeOf(TUNSNodeValueTypeBin);
+{$IFEND}
 end;
 
 //==============================================================================
@@ -109,9 +176,15 @@ end;
 constructor TUNSNodeClassType.CreateAsCopy(Source: TUNSNodeBase; const Name: String; ParentNode: TUNSNodeBase);
 begin
 inherited CreateAsCopy(Source,Name,ParentNode);
+{$IFDEF UNS_NodeBuffer}
+CopyBufferInto(TUNSNodeBuffer(Source).Value,fValue);
+CopyBufferInto(TUNSNodeBuffer(Source).SavedValue,fSavedValue);
+CopyBufferInto(TUNSNodeBuffer(Source).DefaultValue,fDefaultValue);
+{$ELSE}
 fValue := TUNSNodeClassType(Source).Value;
 fSavedValue := TUNSNodeClassType(Source).SavedValue;
 fDefaultValue := TUNSNodeClassType(Source).DefaultValue;
+{$ENDIF}
 end;
 
 //------------------------------------------------------------------------------
@@ -143,7 +216,12 @@ If Src <> Dest then
     DestPtr := Address(Dest);
     If not SameValues(SrcPtr^,DestPtr^) then
       begin
+      {$IFDEF UNS_NodeBuffer}
+        ReallocBuffer(DestPtr^,SrcPtr^.Size);
+        Move(SrcPtr^.Memory^,DestPtr^.Memory^,DestPtr^.Size);
+      {$ELSE}
         DestPtr^ := SrcPtr^;
+      {$ENDIF}
         DoChange;
       end;
   end;
@@ -225,12 +303,21 @@ end;
 procedure TUNSNodeClassType.FromString(const Str: String; ValueKind: TUNSValueKind = vkActual);
 begin
 case ValueKind of
+{$IFDEF UNS_NodeBuffer}
+  vkActual:   ConvFromStr(Str,fValue);
+  vkSaved:    ConvFromStr(Str,fSavedValue);
+  vkDefault:  ConvFromStr(Str,fDefaultValue);
+{$ELSE}
   vkActual:   SetValue(ConvFromStr(Str));
   vkSaved:    SetSavedValue(ConvFromStr(Str));
   vkDefault:  SetDefaultValue(ConvFromStr(Str));
+{$ENDIF}
 else
   raise EUNSInvalidValueKindException.Create(ValueKind,Self,'FromString');
 end;
+{$IFDEF UNS_NodeBuffer}
+DoChange;
+{$ENDIF}
 end;
 
 //------------------------------------------------------------------------------
@@ -238,9 +325,15 @@ end;
 procedure TUNSNodeClassType.ToStream(Stream: TStream; ValueKind: TUNSValueKind = vkActual);
 begin
 case ValueKind of
+{$IFDEF UNS_NodeBuffer}
+  vkActual:   Stream_WriteBuffer(Stream,fValue.Memory^,fValue.Size);
+  vkSaved:    Stream_WriteBuffer(Stream,fSavedValue.Memory^,fSavedValue.Size);
+  vkDefault:  Stream_WriteBuffer(Stream,fDefaultValue.Memory^,fDefaultValue.Size);
+{$ELSE}
   vkActual:   UNS_StreamWriteFunction(Stream,fValue);
   vkSaved:    UNS_StreamWriteFunction(Stream,fSavedValue);
   vkDefault:  UNS_StreamWriteFunction(Stream,fDefaultValue);
+{$ENDIF}
 else
   raise EUNSInvalidValueKindException.Create(ValueKind,Self,'ToStream');
 end;
@@ -251,12 +344,30 @@ end;
 procedure TUNSNodeClassType.FromStream(Stream: TStream; ValueKind: TUNSValueKind = vkActual);
 begin
 case ValueKind of
+{$IFDEF UNS_NodeBuffer}
+  vkActual:   begin
+                ReallocBuffer(fValue,TMemSize(Stream.Size - Stream.Position));
+                Stream_ReadBuffer(Stream,fValue.Memory^,fValue.Size);
+              end;
+  vkSaved:    begin
+                ReallocBuffer(fSavedValue,TMemSize(Stream.Size - Stream.Position));
+                Stream_ReadBuffer(Stream,fSavedValue.Memory^,fSavedValue.Size);
+              end;
+  vkDefault:  begin
+                ReallocBuffer(fDefaultValue,TMemSize(Stream.Size - Stream.Position));
+                Stream_ReadBuffer(Stream,fDefaultValue.Memory^,fDefaultValue.Size);
+              end;
+{$ELSE}
   vkActual:   SetValue(UNS_StreamReadFunction(Stream));
   vkSaved:    SetSavedValue(UNS_StreamReadFunction(Stream));
-  vkDefault:  SetDefaultValue(UNS_StreamReadFunction(Stream))
+  vkDefault:  SetDefaultValue(UNS_StreamReadFunction(Stream));
+{$ENDIF}
 else
   raise EUNSInvalidValueKindException.Create(ValueKind,Self,'FromStream');
 end;
+{$IFDEF UNS_NodeBuffer}
+DoChange;
+{$ENDIF}
 end;
 
 //------------------------------------------------------------------------------
@@ -265,9 +376,15 @@ procedure TUNSNodeClassType.ToBuffer(Buffer: TMemoryBuffer; ValueKind: TUNSValue
 begin
 If Buffer.Size >= ObtainValueSize(ValueKind) then
   case ValueKind of
+  {$IFDEF UNS_NodeBuffer}
+    vkActual:   Ptr_WriteBuffer(Buffer.Memory,fValue.Memory^,fValue.Size);
+    vkSaved:    Ptr_WriteBuffer(Buffer.Memory,fSavedValue.Memory^,fSavedValue.Size);
+    vkDefault:  Ptr_WriteBuffer(Buffer.Memory,fDefaultValue.Memory^,fDefaultValue.Size);
+  {$ELSE}
     vkActual:   UNS_BufferWriteFunction(Buffer.Memory,fValue);
     vkSaved:    UNS_BufferWriteFunction(Buffer.Memory,fSavedValue);
     vkDefault:  UNS_BufferWriteFunction(Buffer.Memory,fDefaultValue);
+  {$ENDIF}
   else
     raise EUNSInvalidValueKindException.Create(ValueKind,Self,'ToBuffer');
   end
@@ -279,12 +396,32 @@ end;
 procedure TUNSNodeClassType.FromBuffer(Buffer: TMemoryBuffer; ValueKind: TUNSValueKind = vkActual);
 begin
 If Buffer.Size >= ObtainValueSize(ValueKind) then
-  case ValueKind of
-    vkActual:   SetValue(UNS_BufferReadFunction(Buffer.Memory));
-    vkSaved:    SetSavedValue(UNS_BufferReadFunction(Buffer.Memory));
-    vkDefault:  SetDefaultValue(UNS_BufferReadFunction(Buffer.Memory));
-  else
-    raise EUNSInvalidValueKindException.Create(ValueKind,Self,'FromBuffer');
+  begin
+    case ValueKind of
+    {$IFDEF UNS_NodeBuffer}
+      vkActual:   begin
+                    ReallocBuffer(fValue,Buffer.Size);
+                    Ptr_ReadBuffer(Buffer.Memory,fValue.Memory^,fValue.Size);
+                  end;
+      vkSaved:   begin
+                    ReallocBuffer(fSavedValue,Buffer.Size);
+                    Ptr_ReadBuffer(Buffer.Memory,fSavedValue.Memory^,fSavedValue.Size);
+                  end;
+      vkDefault:  begin
+                    ReallocBuffer(fDefaultValue,Buffer.Size);
+                    Ptr_ReadBuffer(Buffer.Memory,fDefaultValue.Memory^,fDefaultValue.Size);
+                  end;
+    {$ELSE}
+      vkActual:   SetValue(UNS_BufferReadFunction(Buffer.Memory));
+      vkSaved:    SetSavedValue(UNS_BufferReadFunction(Buffer.Memory));
+      vkDefault:  SetDefaultValue(UNS_BufferReadFunction(Buffer.Memory));
+    {$ENDIF}
+    else
+      raise EUNSInvalidValueKindException.Create(ValueKind,Self,'FromBuffer');
+    end;
+  {$IFDEF UNS_NodeBuffer}
+    DoChange;
+  {$ENDIF}
   end
 else raise EUNSBufferTooSmallException.Create(Buffer,Self,'FromBuffer');
 end;
