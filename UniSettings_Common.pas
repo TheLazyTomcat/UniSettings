@@ -13,8 +13,8 @@ type
     Hash: TCRC32;
   end;
 
-  TDate = type TDateTime;
-  TTime = type TDateTime;
+  TDate = type TDateTime;   PDate = ^TDate;
+  TTime = type TDateTime;   PTime = ^TTime;
 
 //------------------------------------------------------------------------------
 

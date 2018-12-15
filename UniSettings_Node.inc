@@ -7,6 +7,7 @@
     procedure SetSavedValue(NewValue: TUNSNodeValueType);
     procedure SetDefaultValue(NewValue: TUNSNodeValueType);
   protected
+    class Function SameValues(const A,B: TUNSNodeValueType): Boolean; reintroduce;
     class Function GetValueType: TUNSValueType; override;
     Function GetValueSize: TMemSize; override;
     Function GetSavedValueSize: TMemSize; override;
@@ -38,9 +39,22 @@
 
 {$IFDEF UNS_NodeInclude_Implementation}
 
+class Function TUNSNodeClassType.SameValues(const A,B: TUNSNodeValueType): Boolean;
+begin
+{$IF Defined(UNS_NodeDate)}
+Result := Int(A) = Int(B);
+{$ELSEIF Defined(UNS_NodeTime)}
+Result := Frac(A) = Frac(B); 
+{$ELSE}
+Result := A = B;
+{$IFEND}
+end;
+
+//------------------------------------------------------------------------------
+
 procedure TUNSNodeClassType.SetValue(NewValue: TUNSNodeValueType);
 begin
-If NewValue <> fValue then
+If not SameValues(NewValue,fValue) then
   begin
     fValue := NewValue;
     DoChange;
@@ -51,7 +65,7 @@ end;
 
 procedure TUNSNodeClassType.SetSavedValue(NewValue: TUNSNodeValueType);
 begin
-If NewValue <> fSavedValue then
+If not SameValues(NewValue,fSavedValue) then
   begin
     fSavedValue := NewValue;
     DoChange;
@@ -62,7 +76,7 @@ end;
 
 procedure TUNSNodeClassType.SetDefaultValue(NewValue: TUNSNodeValueType);
 begin
-If NewValue <> fDefaultValue then
+If not SameValues(NewValue,fDefaultValue) then
   begin
     fDefaultValue := NewValue;
     DoChange;
@@ -108,11 +122,11 @@ If inherited NodeEquals(Node) then
   begin
     Result := True;
     If vkActual in CompareValueKinds then
-      Result := Result and (fValue = TUNSNodeClassType(Node).Value);
+      Result := Result and SameValues(fValue,TUNSNodeClassType(Node).Value);
     If vkSaved in CompareValueKinds then
-      Result := Result and (fSavedValue = TUNSNodeClassType(Node).SavedValue);
+      Result := Result and SameValues(fSavedValue,TUNSNodeClassType(Node).SavedValue);
     If vkDefault in CompareValueKinds then
-      Result := Result and (fDefaultValue = TUNSNodeClassType(Node).DefaultValue);
+      Result := Result and SameValues(fDefaultValue,TUNSNodeClassType(Node).DefaultValue);
   end
 else Result := False;
 end;
@@ -127,7 +141,7 @@ If Src <> Dest then
   begin
     SrcPtr := Address(Src);
     DestPtr := Address(Dest);
-    If SrcPtr^ <> DestPtr^ then
+    If not SameValues(SrcPtr^,DestPtr^) then
       begin
         DestPtr^ := SrcPtr^;
         DoChange;
@@ -146,7 +160,7 @@ If ValA <> ValB then
   begin
     ValAPtr := Address(ValA);
     ValBPtr := Address(ValB);
-    If ValAPtr^ <> ValBPtr^ then
+    If not SameValues(ValAPtr^,ValBPtr^) then
       begin
         Temp := ValAPtr^;
         ValAPtr^ := ValBPtr^;
@@ -161,7 +175,7 @@ end;
 Function TUNSNodeClassType.ValueKindCompare(ValA,ValB: TUNSValueKind): Boolean;
 begin
 If ValA <> ValB then
-  Result := TUNSNodeValueType(Address(ValA)^) = TUNSNodeValueType(Address(ValB)^)
+  Result := SameValues(TUNSNodeValueType(Address(ValA)^),TUNSNodeValueType(Address(ValB)^))
 else
   Result := True;
 end;

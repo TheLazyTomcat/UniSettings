@@ -12,6 +12,7 @@ uses
 type
   TUNSNodeLeaf = class(TUNSNodeBase)
   protected
+    class Function SameValues(const A,B): Boolean; virtual; abstract;
     class Function GetNodeClass: TUNSNodeClass; override;
     Function GetValueSize: TMemSize; virtual; abstract;
     Function GetSavedValueSize: TMemSize; virtual; abstract;
