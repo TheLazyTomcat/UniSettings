@@ -76,7 +76,7 @@ TempPtr := Value.Memory;
 If TempSize > 0 then
   For i := 0 to Pred(TempSize) do
     begin
-      TempPtr^ := Byte(StrToInt('$' + Copy(Str,(i * 2) + StrOff,2)));
+      TempPtr^ := Byte(StrToInt('$' + Copy(Str,Integer(i * 2) + StrOff,2)));
       Inc(TempPtr);
     end;
 end;
@@ -89,6 +89,16 @@ inherited Create(Name,ParentNode);
 InitBuffer(fValue);
 InitBuffer(fSavedValue);
 InitBuffer(fDefaultValue);
+end;
+
+//------------------------------------------------------------------------------
+
+destructor TUNSNodeClassType.Destroy;
+begin
+FreeBuffer(fDefaultValue);
+FreeBuffer(fSavedValue);
+FreeBuffer(fValue);
+inherited;
 end;
 
 //------------------------------------------------------------------------------

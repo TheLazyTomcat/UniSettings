@@ -21,6 +21,9 @@
   public
     constructor Create(const Name: String; ParentNode: TUNSNodeBase);
     constructor CreateAsCopy(Source: TUNSNodeBase; const Name: String; ParentNode: TUNSNodeBase);
+  {$IFDEF UNS_NodeBuffer}
+    destructor Destroy; override;
+  {$ENDIF}
     Function NodeEquals(Node: TUNSNodeLeaf; CompareValueKinds: TUNSValueKinds = [vkActual]): Boolean; override;
     procedure ValueKindMove(Src,Dest: TUNSValueKind); override;
     procedure ValueKindExchange(ValA,ValB: TUNSValueKind); override;
@@ -46,8 +49,7 @@ begin
 If not SameValues(NewValue,fValue) then
   begin
   {$IFDEF UNS_NodeBuffer}
-    ReallocBuffer(fValue,NewValue.Size);
-    Move(NewValue.Memory^,fValue.Memory^,fValue.Size);
+    CopyBufferInto(NewValue,fValue);
   {$ELSE}
     fValue := NewValue;
   {$ENDIF}
@@ -62,8 +64,7 @@ begin
 If not SameValues(NewValue,fSavedValue) then
   begin
   {$IFDEF UNS_NodeBuffer}
-    ReallocBuffer(fSavedValue,NewValue.Size);
-    Move(NewValue.Memory^,fSavedValue.Memory^,fSavedValue.Size);
+    CopyBufferInto(NewValue,fSavedValue);
   {$ELSE}
     fSavedValue := NewValue;
   {$ENDIF}
@@ -78,8 +79,7 @@ begin
 If not SameValues(NewValue,fDefaultValue) then
   begin
   {$IFDEF UNS_NodeBuffer}
-    ReallocBuffer(fDefaultValue,NewValue.Size);
-    Move(NewValue.Memory^,fDefaultValue.Memory^,fDefaultValue.Size);
+    CopyBufferInto(NewValue,fDefaultValue);
   {$ELSE}
     fDefaultValue := NewValue;
   {$ENDIF}
@@ -216,8 +216,7 @@ If Src <> Dest then
     If not SameValues(SrcPtr^,DestPtr^) then
       begin
       {$IFDEF UNS_NodeBuffer}
-        ReallocBuffer(DestPtr^,SrcPtr^.Size);
-        Move(SrcPtr^.Memory^,DestPtr^.Memory^,DestPtr^.Size);
+        CopyBufferInto(SrcPtr^,DestPtr^);
       {$ELSE}
         DestPtr^ := SrcPtr^;
       {$ENDIF}
@@ -308,27 +307,21 @@ end;
 //------------------------------------------------------------------------------
 
 procedure TUNSNodeClassType.ToStream(Stream: TStream; ValueKind: TUNSValueKind = vkActual);
+
+{$IFDEF UNS_NodeBuffer}
+  procedure UNS_StreamWriteFunction(WriteStream: TStream; const Value: TUNSNodeValueType);
+  begin
+    // buffers are stored with explicit size (UInt64 value)
+    Stream_WriteUInt64(WriteStream,UInt64(Value.Size));
+    Stream_WriteBuffer(WriteStream,Value.Memory^,Value.Size);
+  end;
+{$ENDIF}
+
 begin
 case ValueKind of
-{$IFDEF UNS_NodeBuffer}
-  vkActual:   begin
-                // buffers are stored with explicit size (UInt64 value)
-                Stream_WriteUInt64(Stream,UInt64(fValue.Size));
-                Stream_WriteBuffer(Stream,fValue.Memory^,fValue.Size);
-              end;
-  vkSaved:    begin
-                Stream_WriteUInt64(Stream,UInt64(fSavedValue.Size));
-                Stream_WriteBuffer(Stream,fSavedValue.Memory^,fSavedValue.Size);
-              end;
-  vkDefault:  begin
-                Stream_WriteUInt64(Stream,UInt64(fDefaultValue.Size));
-                Stream_WriteBuffer(Stream,fDefaultValue.Memory^,fDefaultValue.Size);
-              end;
-{$ELSE}
   vkActual:   UNS_StreamWriteFunction(Stream,fValue);
   vkSaved:    UNS_StreamWriteFunction(Stream,fSavedValue);
   vkDefault:  UNS_StreamWriteFunction(Stream,fDefaultValue);
-{$ENDIF}
 else
   raise EUNSInvalidValueKindException.Create(ValueKind,Self,'ToStream');
 end;
@@ -337,21 +330,21 @@ end;
 //------------------------------------------------------------------------------
 
 procedure TUNSNodeClassType.FromStream(Stream: TStream; ValueKind: TUNSValueKind = vkActual);
+
+{$IFDEF UNS_NodeBuffer}
+  procedure UNS_StreamReadFunction(ReadStream: TStream; var Value: TUNSNodeValueType);
+  begin
+    ReallocBuffer(Value,TMemSize(Stream_ReadUInt64(ReadStream)));
+    Stream_ReadBuffer(ReadStream,Value.Memory^,Value.Size);
+  end;
+{$ENDIF}
+
 begin
 case ValueKind of
 {$IFDEF UNS_NodeBuffer}
-  vkActual:   begin
-                ReallocBuffer(fValue,TMemSize(Stream_ReadUInt64(Stream)));
-                Stream_ReadBuffer(Stream,fValue.Memory^,fValue.Size);
-              end;
-  vkSaved:    begin
-                ReallocBuffer(fSavedValue,TMemSize(Stream_ReadUInt64(Stream)));
-                Stream_ReadBuffer(Stream,fSavedValue.Memory^,fSavedValue.Size);
-              end;
-  vkDefault:  begin
-                ReallocBuffer(fDefaultValue,TMemSize(Stream_ReadUInt64(Stream)));
-                Stream_ReadBuffer(Stream,fDefaultValue.Memory^,fDefaultValue.Size);
-              end;
+  vkActual:   UNS_StreamReadFunction(Stream,fValue);
+  vkSaved:    UNS_StreamReadFunction(Stream,fSavedValue);
+  vkDefault:  UNS_StreamReadFunction(Stream,fDefaultValue);
 {$ELSE}
   vkActual:   SetValue(UNS_StreamReadFunction(Stream));
   vkSaved:    SetSavedValue(UNS_StreamReadFunction(Stream));
@@ -368,32 +361,25 @@ end;
 //------------------------------------------------------------------------------
 
 procedure TUNSNodeClassType.ToBuffer(Buffer: TMemoryBuffer; ValueKind: TUNSValueKind = vkActual);
+
+{$IFDEF UNS_NodeBuffer}
+  procedure UNS_BufferWriteFunction(Memory: Pointer; const Value: TUNSNodeValueType);
+  begin
+    {
+      the pointer is advanced in first write, but since the parameter is passed
+      by value, not by reference, the original buffer record will stay unchanged
+    }
+    Ptr_WriteUInt64(Memory,UInt64(Value.Size),True);
+    Ptr_WriteBuffer(Memory,Value.Memory^,Value.Size);
+  end;
+{$ENDIF}
+
 begin
 If Buffer.Size >= ObtainValueSize(ValueKind) then
   case ValueKind of
-  {$IFDEF UNS_NodeBuffer}
-    vkActual:   begin
-                {
-                  the pointer is advanced in first write, but since the buffer
-                  parameter is passed by value, not by reference, the original
-                  buffer record will stay unchanged
-                }
-                  Ptr_WriteUInt64(Buffer.Memory,UInt64(fValue.Size),True);
-                  Ptr_WriteBuffer(Buffer.Memory,fValue.Memory^,fValue.Size);
-                end;
-    vkSaved:    begin
-                  Ptr_WriteUInt64(Buffer.Memory,UInt64(fSavedValue.Size),True);
-                  Ptr_WriteBuffer(Buffer.Memory,fSavedValue.Memory^,fSavedValue.Size);
-                end;
-    vkDefault:  begin
-                  Ptr_WriteUInt64(Buffer.Memory,UInt64(fDefaultValue.Size),True);
-                  Ptr_WriteBuffer(Buffer.Memory,fDefaultValue.Memory^,fDefaultValue.Size);
-                end;  
-  {$ELSE}
     vkActual:   UNS_BufferWriteFunction(Buffer.Memory,fValue);
     vkSaved:    UNS_BufferWriteFunction(Buffer.Memory,fSavedValue);
     vkDefault:  UNS_BufferWriteFunction(Buffer.Memory,fDefaultValue);
-  {$ENDIF}
   else
     raise EUNSInvalidValueKindException.Create(ValueKind,Self,'ToBuffer');
   end
@@ -403,23 +389,23 @@ end;
 //------------------------------------------------------------------------------
 
 procedure TUNSNodeClassType.FromBuffer(Buffer: TMemoryBuffer; ValueKind: TUNSValueKind = vkActual);
+
+{$IFDEF UNS_NodeBuffer}
+  procedure UNS_BufferReadFunction(Memory: Pointer; var Value: TUNSNodeValueType);
+  begin
+    ReallocBuffer(Value,TMemSize(Ptr_ReadUInt64(Memory,True)));
+    Ptr_ReadBuffer(Memory,Value.Memory^,Value.Size);
+  end;
+{$ENDIF}
+
 begin
 If Buffer.Size >= ObtainValueSize(ValueKind) then
   begin
     case ValueKind of
     {$IFDEF UNS_NodeBuffer}
-      vkActual:   begin
-                    ReallocBuffer(fValue,TMemSize(Ptr_ReadUInt64(Buffer.Memory,True)));
-                    Ptr_ReadBuffer(Buffer.Memory,fValue.Memory^,fValue.Size);
-                  end;
-      vkSaved:    begin
-                    ReallocBuffer(fSavedValue,TMemSize(Ptr_ReadUInt64(Buffer.Memory,True)));
-                    Ptr_ReadBuffer(Buffer.Memory,fSavedValue.Memory^,fSavedValue.Size);
-                  end;
-      vkDefault:  begin
-                    ReallocBuffer(fDefaultValue,TMemSize(Ptr_ReadUInt64(Buffer.Memory,True)));
-                    Ptr_ReadBuffer(Buffer.Memory,fDefaultValue.Memory^,fDefaultValue.Size);
-                  end;
+      vkActual:   UNS_BufferReadFunction(Buffer.Memory,fValue);
+      vkSaved:    UNS_BufferReadFunction(Buffer.Memory,fSavedValue);
+      vkDefault:  UNS_BufferReadFunction(Buffer.Memory,fDefaultValue);
     {$ELSE}
       vkActual:   SetValue(UNS_BufferReadFunction(Buffer.Memory));
       vkSaved:    SetSavedValue(UNS_BufferReadFunction(Buffer.Memory));

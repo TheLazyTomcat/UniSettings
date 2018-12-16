@@ -28,7 +28,11 @@
     Function ConvToStr(const Value: TUNSNodeValueType): String; reintroduce;
     procedure ConvFromStr(const Str: String; var Value: TUNSNodeValueType); reintroduce; 
     Function ConvItemToStr(const Value: TUNSNodeValueItemType): String; reintroduce;
+  {$IFDEF UNS_NodeAoBuffer}
+    procedure ConvItemFromStr(const Str: String; out Item: TUNSNodeValueItemType); reintroduce;   
+  {$ELSE}
     Function ConvItemFromStr(const Str: String): TUNSNodeValueItemType; reintroduce;
+  {$ENDIF}  
   public
     constructor Create(const Name: String; ParentNode: TUNSNodeBase);
     constructor CreateAsCopy(Source: TUNSNodeBase; const Name: String; ParentNode: TUNSNodeBase); 
@@ -82,7 +86,11 @@ procedure TUNSNodeClassType.SetValue(NewValue: TUNSNodeValueType);
 begin
 If not SameValues(NewValue,fValue) then
   begin
+  {$IFDEF UNS_NodeAoBuffer}
+    CopyArrayInto(NewValue,fValue);
+  {$ELSE}
     fValue := CDA_Copy(NewValue);
+  {$ENDIF}
     DoChange;
   end;
 end;
@@ -93,7 +101,11 @@ procedure TUNSNodeClassType.SetSavedValue(NewValue: TUNSNodeValueType);
 begin
 If not SameValues(NewValue,fSavedValue) then
   begin
+  {$IFDEF UNS_NodeAoBuffer}
+    CopyArrayInto(NewValue,fSavedValue);
+  {$ELSE}
     fSavedValue := CDA_Copy(NewValue);
+  {$ENDIF}
     DoChange;
   end;
 end;
@@ -104,7 +116,11 @@ procedure TUNSNodeClassType.SetDefaultValue(NewValue: TUNSNodeValueType);
 begin
 If not SameValues(NewValue,fDefaultValue) then
   begin
+  {$IFDEF UNS_NodeAoBuffer}
+    CopyArrayInto(NewValue,fDefaultValue);
+  {$ELSE}
     fDefaultValue := CDA_Copy(NewValue);
+  {$ENDIF}
     DoChange;
   end;
 end;
@@ -147,7 +163,11 @@ If CDA_CheckIndex(fValue,Index) then
   begin
     If not SameItemValues(CDA_GetItem(fValue,Index),NewValue) then
       begin
+      {$IFDEF UNS_NodeAoBuffer}
+        CopyBufferInto(NewValue,fValue.Arr[Index]);
+      {$ELSE}
         CDA_SetItem(fValue,Index,NewValue);
+      {$ENDIF}
         DoChange;
       end;
   end
@@ -162,7 +182,11 @@ If CDA_CheckIndex(fSavedValue,Index) then
   begin
     If not SameItemValues(CDA_GetItem(fSavedValue,Index),NewValue) then
       begin
+      {$IFDEF UNS_NodeAoBuffer}
+        CopyBufferInto(NewValue,fSavedValue.Arr[Index]);
+      {$ELSE}
         CDA_SetItem(fSavedValue,Index,NewValue);
+      {$ENDIF}
         DoChange;
       end;
   end
@@ -177,7 +201,11 @@ If CDA_CheckIndex(fDefaultValue,Index) then
   begin
     If not SameItemValues(CDA_GetItem(fDefaultValue,Index),NewValue) then
       begin
+      {$IFDEF UNS_NodeAoBuffer}
+        CopyBufferInto(NewValue,fDefaultValue.Arr[Index]);
+      {$ELSE}
         CDA_SetItem(fDefaultValue,Index,NewValue);
+      {$ENDIF}
         DoChange;
       end;
   end
@@ -194,6 +222,12 @@ end;
 //------------------------------------------------------------------------------
 
 class Function TUNSNodeClassType.SameItemValues(const A,B: TUNSNodeValueItemType): Boolean;
+{$IFDEF UNS_NodeAoBuffer}
+var
+  i:      TMemSize;
+  ABuff:  PByte;
+  BBuff:  PByte;
+{$ENDIF}
 begin
 {$IF Defined(UNS_NodeAoDate)}
 Result := Int(A) = Int(B);
@@ -201,6 +235,28 @@ Result := Int(A) = Int(B);
 Result := Frac(A) = Frac(B);
 {$ELSEIF Defined(UNS_NodeAoText)}
 Result := AnsiSameStr(A,B);
+{$ELSEIF Defined(UNS_NodeAoBuffer)}
+If A.Size = B.Size then
+  begin
+    ABuff := A.Memory;
+    BBuff := B.Memory;
+    Result := True;
+    If A.Size > 0 then
+      begin
+        For i := 0 to Pred(A.Size) do
+          If ABuff^ = BBuff^ then
+            begin
+              Inc(ABuff);
+              Inc(BBuff);
+            end
+          else
+            begin
+              Result := False;
+              Break{For i};
+            end;
+      end;
+  end
+else Result := False;
 {$ELSE}
 Result := A = B;
 {$IFEND}
@@ -281,7 +337,11 @@ Function TUNSNodeClassType.GetItemSize(Index: Integer): TMemSize;
 begin
 {$IF Defined(UNS_NodeAoText) or Defined(UNS_NodeAoBuffer)}
 If CDA_CheckIndex(fValue,Index) then
+  {$IFDEF UNS_NodeAoBuffer}
+  Result := SizeOf(UInt64) + CDA_GetItem(fValue,Index).Size
+  {$ELSE}
   Result := SizeOf(Int32) + Length(StrToUTF8(CDA_GetItem(fValue,Index))) * SizeOf(UTF8Char)
+  {$ENDIF}
 else
   raise EUNSIndexOutOfBoundsException.Create(Index,Self,'GetItemSize');
 {$ELSE}
@@ -295,7 +355,11 @@ Function TUNSNodeClassType.GetSavedItemSize(Index: Integer): TMemSize;
 begin
 {$IF Defined(UNS_NodeAoText) or Defined(UNS_NodeAoBuffer)}
 If CDA_CheckIndex(fSavedValue,Index) then
+  {$IFDEF UNS_NodeAoBuffer}
+  Result := SizeOf(UInt64) + CDA_GetItem(fSavedValue,Index).Size
+  {$ELSE}
   Result := SizeOf(Int32) + Length(StrToUTF8(CDA_GetItem(fSavedValue,Index))) * SizeOf(UTF8Char)
+  {$ENDIF}
 else
   raise EUNSIndexOutOfBoundsException.Create(Index,Self,'GetSavedItemSize');
 {$ELSE}
@@ -309,7 +373,11 @@ Function TUNSNodeClassType.GetDefaultItemSize(Index: Integer): TMemSize;
 begin
 {$IF Defined(UNS_NodeAoText) or Defined(UNS_NodeAoBuffer)}
 If CDA_CheckIndex(fDefaultValue,Index) then
+  {$IFDEF UNS_NodeAoBuffer}
+  Result := SizeOf(UInt64) + CDA_GetItem(fDefaultValue,Index).Size
+  {$ELSE}
   Result := SizeOf(Int32) + Length(StrToUTF8(CDA_GetItem(fDefaultValue,Index))) * SizeOf(UTF8Char)
+  {$ENDIF}
 else
   raise EUNSIndexOutOfBoundsException.Create(Index,Self,'GetDefaultItemSize');
 {$ELSE}
@@ -344,7 +412,15 @@ procedure TUNSNodeClassType.ConvFromStr(const Str: String; var Value: TUNSNodeVa
 var
   Position:   Integer;
   ItemStart:  Integer;
+{$IFDEF UNS_NodeAoBuffer}
+  i:          Integer;
+  Temp:       TUNSNodeValueItemType;
 begin
+For i := CDA_Low(Value) to CDA_High(Value) do
+  FreeBuffer(Value.Arr[i]);
+{$ELSE}
+begin
+{$ENDIF}
 CDA_Clear(Value);
 ItemStart := 1;
 For Position := 1 to Length(Str) do
@@ -352,12 +428,22 @@ For Position := 1 to Length(Str) do
     If Str[Position] = ' ' then
       begin
         If ItemStart <> Position then
+        {$IFDEF UNS_NodeAoBuffer}
+          ConvItemFromStr(Copy(Str,ItemStart,Position - ItemStart),Temp);
+          CDA_Add(Value,Temp);
+        {$ELSE}
           CDA_Add(Value,ConvItemFromStr(Copy(Str,ItemStart,Position - ItemStart)));
+        {$ENDIF}
         ItemStart := Succ(Position);  
       end;
   end;
 If ItemStart <= Length(Str) then
+{$IFDEF UNS_NodeAoBuffer}
+  ConvItemFromStr(Copy(Str,ItemStart,Length(Str)),Temp);
+  CDA_Add(Value,Temp);
+{$ELSE}
   CDA_Add(Value,ConvItemFromStr(Copy(Str,ItemStart,Length(Str))));
+{$ENDIF}
 end;
 
 //==============================================================================
@@ -375,9 +461,15 @@ end;
 constructor TUNSNodeClassType.CreateAsCopy(Source: TUNSNodeBase; const Name: String; ParentNode: TUNSNodeBase);
 begin
 inherited CreateAsCopy(Source,Name,ParentNode);
+{$IFDEF UNS_NodeAoBuffer}
+CopyArrayInto(TUNSNodeClassType(Source).Value,fValue);
+CopyArrayInto(TUNSNodeClassType(Source).SavedValue,fSavedValue);
+CopyArrayInto(TUNSNodeClassType(Source).DefaultValue,fDefaultValue);
+{$ELSE}
 fValue := CDA_Copy(TUNSNodeClassType(Source).Value);
 fSavedValue := CDA_Copy(TUNSNodeClassType(Source).SavedValue);
 fDefaultValue := CDA_Copy(TUNSNodeClassType(Source).DefaultValue);
+{$ENDIF}
 end;
 
 //------------------------------------------------------------------------------
@@ -409,7 +501,11 @@ If Src <> Dest then
     DestPtr := Address(Dest);
     If not SameValues(SrcPtr^,DestPtr^) then
       begin
+      {$IFDEF UNS_NodeAoBuffer}
+        CopyArrayInto(SrcPtr^,DestPtr^);
+      {$ELSE}
         DestPtr^ := CDA_Copy(SrcPtr^);
+      {$ENDIF}  
         DoChange;
       end;
   end;
@@ -499,9 +595,9 @@ Stream_WriteInt32(Stream,Int32(ObtainCount(ValueKind)));
 case ValueKind of
   vkActual:   For i := CDA_Low(fValue) to CDA_High(fValue) do
                 UNS_StreamWriteFunction(Stream,CDA_GetItem(fValue,i));
-  vkSaved:    For i := CDA_Low(fValue) to CDA_High(fSavedValue) do
+  vkSaved:    For i := CDA_Low(fSavedValue) to CDA_High(fSavedValue) do
                 UNS_StreamWriteFunction(Stream,CDA_GetItem(fSavedValue,i));
-  vkDefault:  For i := CDA_Low(fValue) to CDA_High(fDefaultValue) do
+  vkDefault:  For i := CDA_Low(fDefaultValue) to CDA_High(fDefaultValue) do
                 UNS_StreamWriteFunction(Stream,CDA_GetItem(fDefaultValue,i));
 else
   raise EUNSInvalidValueKindException.Create(ValueKind,Self,'ToStream');
@@ -516,16 +612,28 @@ var
 begin
 case ValueKind of
   vkActual:   begin
+              {$IFDEF UNS_NodeAoBuffer}
+                For i := CDA_Low(fValue) to CDA_High(fValue) do
+                  FreeBuffer(fValue.Arr[i]);
+              {$ENDIF}
                 CDA_Clear(fValue);
                 For i := 0 to Pred(Stream_ReadInt32(Stream)) do
                   CDA_Add(fValue,UNS_StreamReadFunction(Stream));
               end;
   vkSaved:    begin
+              {$IFDEF UNS_NodeAoBuffer}
+                For i := CDA_Low(fSavedValue) to CDA_High(fSavedValue) do
+                  FreeBuffer(fSavedValue.Arr[i]);
+              {$ENDIF}
                 CDA_Clear(fSavedValue);
                 For i := 0 to Pred(Stream_ReadInt32(Stream)) do
                   CDA_Add(fSavedValue,UNS_StreamReadFunction(Stream));
               end;
   vkDefault:  begin
+              {$IFDEF UNS_NodeAoBuffer}
+                For i := CDA_Low(fDefaultValue) to CDA_High(fDefaultValue) do
+                  FreeBuffer(fDefaultValue.Arr[i]);
+              {$ENDIF}
                 CDA_Clear(fDefaultValue);
                 For i := 0 to Pred(Stream_ReadInt32(Stream)) do
                   CDA_Add(fDefaultValue,UNS_StreamReadFunction(Stream));
@@ -569,16 +677,28 @@ If Buffer.Size >= ObtainValueSize(ValueKind) then
   begin
     case ValueKind of
       vkActual:   begin
+                  {$IFDEF UNS_NodeAoBuffer}
+                    For i := CDA_Low(fValue) to CDA_High(fValue) do
+                      FreeBuffer(fValue.Arr[i]);
+                  {$ENDIF}
                     CDA_Clear(fValue);
                     For i := 0 to Pred(Ptr_ReadInt32(Buffer.Memory,True)) do
                       CDA_Add(fValue,UNS_BufferReadFunction(Buffer.Memory,True));
                   end;
       vkSaved:    begin
+                  {$IFDEF UNS_NodeAoBuffer}
+                    For i := CDA_Low(fSavedValue) to CDA_High(fSavedValue) do
+                      FreeBuffer(fSavedValue.Arr[i]);
+                  {$ENDIF}
                     CDA_Clear(fSavedValue);
                     For i := 0 to Pred(Ptr_ReadInt32(Buffer.Memory,True)) do
                       CDA_Add(fSavedValue,UNS_BufferReadFunction(Buffer.Memory,True));
                   end;
       vkDefault:  begin
+                  {$IFDEF UNS_NodeAoBuffer}
+                    For i := CDA_Low(fDefaultValue) to CDA_High(fDefaultValue) do
+                      FreeBuffer(fDefaultValue.Arr[i]);
+                  {$ENDIF}
                     CDA_Clear(fDefaultValue);
                     For i := 0 to Pred(Ptr_ReadInt32(Buffer.Memory,True)) do
                       CDA_Add(fDefaultValue,UNS_BufferReadFunction(Buffer.Memory,True));
@@ -603,7 +723,11 @@ If Src <> Dest then
     DestPtr := Address(Index,Dest);
     If not SameItemValues(SrcPtr^,DestPtr^) then
       begin
+      {$IFDEF UNS_NodeAoBuffer}
+        CopyBufferInto(SrcPtr^,DestPtr^);
+      {$ELSE}
         DestPtr^ := SrcPtr^;
+      {$ENDIF}
         DoChange;
       end;
   end;
@@ -676,12 +800,32 @@ end;
 procedure TUNSNodeClassType.FromString(Index: Integer; const Str: String; ValueKind: TUNSValueKind = vkActual);
 begin
 If CheckIndex(Index,ValueKind) then
-  case ValueKind of
-    vkActual:   SetItem(Index,ConvItemFromStr(Str));
-    vkSaved:    SetSavedItem(Index,ConvItemFromStr(Str));
-    vkDefault:  SetDefaultItem(Index,ConvItemFromStr(Str));
-  else
-    raise EUNSInvalidValueKindException.Create(ValueKind,Self,'FromString');
+  begin
+    case ValueKind of
+    {$IFDEF UNS_NodeAoBuffer}
+      vkActual:   begin
+                    FreeBuffer(fValue.Arr[Index]);
+                    ConvItemFromStr(Str,fValue.Arr[Index]);
+                  end;
+      vkSaved:    begin
+                    FreeBuffer(fSavedValue.Arr[Index]);
+                    ConvItemFromStr(Str,fSavedValue.Arr[Index]);
+                  end;
+      vkDefault:  begin
+                    FreeBuffer(fDefaultValue.Arr[Index]);
+                    ConvItemFromStr(Str,fDefaultValue.Arr[Index]);
+                  end;
+    {$ELSE}
+      vkActual:   SetItem(Index,ConvItemFromStr(Str));
+      vkSaved:    SetSavedItem(Index,ConvItemFromStr(Str));
+      vkDefault:  SetDefaultItem(Index,ConvItemFromStr(Str));
+    {$ENDIF}
+    else
+      raise EUNSInvalidValueKindException.Create(ValueKind,Self,'FromString');
+    end;
+  {$IFDEF UNS_NodeAoBuffer}
+    DoChange;
+  {$ENDIF}
   end
 else raise EUNSIndexOutOfBoundsException.Create(Index,Self,'FromString');
 end;
@@ -706,12 +850,32 @@ end;
 procedure TUNSNodeClassType.FromStream(Index: Integer; Stream: TStream; ValueKind: TUNSValueKind = vkActual);
 begin
 If CheckIndex(Index,ValueKind) then
-  case ValueKind of
-    vkActual:   SetItem(Index,UNS_StreamReadFunction(Stream));
-    vkSaved:    SetSavedItem(Index,UNS_StreamReadFunction(Stream));
-    vkDefault:  SetDefaultItem(Index,UNS_StreamReadFunction(Stream));
-  else
-    raise EUNSInvalidValueKindException.Create(ValueKind,Self,'FromStream');
+  begin
+    case ValueKind of
+    {$IFDEF UNS_NodeAoBuffer}
+      vkActual:   begin
+                    FreeBuffer(fValue.Arr[Index]);
+                    fValue.Arr[Index] := UNS_StreamReadFunction(Stream);
+                  end;
+      vkSaved:    begin
+                    FreeBuffer(fSavedValue.Arr[Index]);
+                    fSavedValue.Arr[Index] := UNS_StreamReadFunction(Stream);
+                  end;
+      vkDefault:  begin
+                    FreeBuffer(fDefaultValue.Arr[Index]);
+                    fDefaultValue.Arr[Index] := UNS_StreamReadFunction(Stream);
+                  end;
+    {$ELSE}
+      vkActual:   SetItem(Index,UNS_StreamReadFunction(Stream));
+      vkSaved:    SetSavedItem(Index,UNS_StreamReadFunction(Stream));
+      vkDefault:  SetDefaultItem(Index,UNS_StreamReadFunction(Stream));
+    {$ENDIF}
+    else
+      raise EUNSInvalidValueKindException.Create(ValueKind,Self,'FromStream');
+    end;
+  {$IFDEF UNS_NodeAoBuffer}
+    DoChange;
+  {$ENDIF}    
   end
 else raise EUNSIndexOutOfBoundsException.Create(Index,Self,'FromStream');
 end;
@@ -736,12 +900,32 @@ end;
 procedure TUNSNodeClassType.FromBuffer(Index: Integer; Buffer: TMemoryBuffer; ValueKind: TUNSValueKind = vkActual);
 begin
 If CheckIndex(Index,ValueKind) then
-  case ValueKind of
-    vkActual:   SetItem(Index,UNS_BufferReadFunction(Buffer.Memory,False));
-    vkSaved:    SetSavedItem(Index,UNS_BufferReadFunction(Buffer.Memory,False));
-    vkDefault:  SetDefaultItem(Index,UNS_BufferReadFunction(Buffer.Memory,False));
-  else
-    raise EUNSInvalidValueKindException.Create(ValueKind,Self,'FromBuffer');
+  begin
+    case ValueKind of
+    {$IFDEF UNS_NodeAoBuffer}
+      vkActual:   begin
+                    FreeBuffer(fValue.Arr[Index]);
+                    fValue.Arr[Index] := UNS_BufferReadFunction(Buffer.Memory,False);;
+                  end;
+      vkSaved:    begin
+                    FreeBuffer(fSavedValue.Arr[Index]);
+                    fSavedValue.Arr[Index] := UNS_BufferReadFunction(Buffer.Memory,False);;
+                  end;
+      vkDefault:  begin
+                    FreeBuffer(fDefaultValue.Arr[Index]);
+                    fDefaultValue.Arr[Index] := UNS_BufferReadFunction(Buffer.Memory,False);
+                  end;
+    {$ELSE}
+      vkActual:   SetItem(Index,UNS_BufferReadFunction(Buffer.Memory,False));
+      vkSaved:    SetSavedItem(Index,UNS_BufferReadFunction(Buffer.Memory,False));
+      vkDefault:  SetDefaultItem(Index,UNS_BufferReadFunction(Buffer.Memory,False));
+    {$ENDIF}
+    else
+      raise EUNSInvalidValueKindException.Create(ValueKind,Self,'FromBuffer');
+    end;
+  {$IFDEF UNS_NodeAoBuffer}
+    DoChange;
+  {$ENDIF}
   end
 else raise EUNSIndexOutOfBoundsException.Create(Index,Self,'FromBuffer');
 end;
@@ -818,11 +1002,18 @@ end;
 //------------------------------------------------------------------------------
 
 Function TUNSNodeClassType.Add(const Item: TUNSNodeValueItemType; ValueKind: TUNSValueKind = vkActual): Integer;
+var
+  Temp: TUNSNodeValueItemType;
 begin
+{$IFDEF UNS_NodeAoBuffer}
+CopyBuffer(Item,Temp);
+{$ELSE}
+Temp := Item;
+{$ENDIF}
 case ValueKind of
-  vkActual:   Result := CDA_Add(fValue,Item);
-  vkSaved:    Result := CDA_Add(fSavedValue,Item);
-  vkDefault:  Result := CDA_Add(fDefaultValue,Item);
+  vkActual:   Result := CDA_Add(fValue,Temp);
+  vkSaved:    Result := CDA_Add(fSavedValue,Temp);
+  vkDefault:  Result := CDA_Add(fDefaultValue,Temp);
 else
   raise EUNSInvalidValueKindException.Create(ValueKind,Self,'Add');
 end;
@@ -833,18 +1024,30 @@ end;
 //------------------------------------------------------------------------------
 
 Function TUNSNodeClassType.Append(const Items: array of TUNSNodeValueItemType; ValueKind: TUNSValueKind = vkActual): Integer;
-var
-  i:  Integer;
+
+  procedure AppendTo(var Value: TUNSNodeValueType);
+  var
+    i:    Integer;
+    Temp: TUNSNodeValueItemType;
+  begin
+    For i := Low(Items) to High(Items) do
+      begin
+      {$IFDEF UNS_NodeAoBuffer}
+        CopyBuffer(Items[i],Temp);
+      {$ELSE}
+        Temp := Items[i];
+      {$ENDIF}
+        CDA_Add(Value,Temp);
+      end;
+  end;
+
 begin
 If Length(Items) > 0 then
   begin
     case ValueKind of
-      vkActual:   For i := Low(Items) to High(Items) do
-                    CDA_Add(fValue,Items[i]);
-      vkSaved:    For i := Low(Items) to High(Items) do
-                    CDA_Add(fSavedValue,Items[i]);
-      vkDefault:  For i := Low(Items) to High(Items) do
-                    CDA_Add(fDefaultValue,Items[i]);
+      vkActual:   AppendTo(fValue);
+      vkSaved:    AppendTo(fSavedValue);
+      vkDefault:  AppendTo(fDefaultValue);
     else
       raise EUNSInvalidValueKindException.Create(ValueKind,Self,'Append');
     end;
@@ -857,11 +1060,18 @@ end;
 //------------------------------------------------------------------------------
 
 procedure TUNSNodeClassType.Insert(Index: Integer; const Item: TUNSNodeValueItemType; ValueKind: TUNSValueKind = vkActual);
+var
+  Temp: TUNSNodeValueItemType;
 begin
+{$IFDEF UNS_NodeAoBuffer}
+CopyBuffer(Item,Temp);
+{$ELSE}
+Temp := Item;
+{$ENDIF}
 case ValueKind of
-  vkActual:   CDA_Insert(fValue,Index,Item);
-  vkSaved:    CDA_Insert(fSavedValue,Index,Item);
-  vkDefault:  CDA_Insert(fDefaultValue,Index,Item);
+  vkActual:   CDA_Insert(fValue,Index,Temp);
+  vkSaved:    CDA_Insert(fSavedValue,Index,Temp);
+  vkDefault:  CDA_Insert(fDefaultValue,Index,Temp);
 else
   raise EUNSInvalidValueKindException.Create(ValueKind,Self,'Insert');
 end;
@@ -913,11 +1123,27 @@ end;
 //------------------------------------------------------------------------------
 
 Function TUNSNodeClassType.Remove(const Item: TUNSNodeValueItemType; ValueKind: TUNSValueKind = vkActual): Integer;
+
+  Function RemoveFrom(var Value: TUNSNodeValueType): Integer;
+  {$IFDEF UNS_NodeAoBuffer}
+  begin
+    Result := CDA_IndexOf(Value,Item);
+    If CDA_CheckIndex(Value,Result) then
+      begin
+        FreeBuffer(Value.Arr[Result]);
+        CDA_Delete(Value,Result);
+      end;
+  {$ELSE}
+  begin
+    Result := CDA_Remove(Value,Item);
+  {$ENDIF}
+  end;
+
 begin
 case ValueKind of
-  vkActual:   CDA_Remove(fValue,Item);
-  vkSaved:    CDA_Remove(fSavedValue,Item);
-  vkDefault:  CDA_Remove(fDefaultValue,Item);
+  vkActual:   Result := RemoveFrom(fValue);
+  vkSaved:    Result := RemoveFrom(fSavedValue);
+  vkDefault:  Result := RemoveFrom(fDefaultValue);
 else
   raise EUNSInvalidValueKindException.Create(ValueKind,Self,'Remove');
 end;
@@ -928,12 +1154,21 @@ end;
 //------------------------------------------------------------------------------
 
 procedure TUNSNodeClassType.Delete(Index: Integer; ValueKind: TUNSValueKind = vkActual);
+
+  procedure DeleteFrom(var Value: TUNSNodeValueType);
+  begin
+  {$IFDEF UNS_NodeAoBuffer}
+    FreeBuffer(Value.Arr[Index]);
+  {$ENDIF}
+    CDA_Delete(Value,Index);
+  end;
+
 begin
 If CheckIndex(Index,ValueKind) then
   case ValueKind of
-    vkActual:   CDA_Delete(fValue,Index);
-    vkSaved:    CDA_Delete(fSavedValue,Index);
-    vkDefault:  CDA_Delete(fDefaultValue,Index);
+    vkActual:   DeleteFrom(fValue);
+    vkSaved:    DeleteFrom(fSavedValue);
+    vkDefault:  DeleteFrom(fDefaultValue);
   else
     raise EUNSInvalidValueKindException.Create(ValueKind,Self,'Delete');
   end
@@ -943,11 +1178,25 @@ end;
 //------------------------------------------------------------------------------
 
 procedure TUNSNodeClassType.Clear(ValueKind: TUNSValueKind = vkActual);
+
+  procedure ClearFrom(var Value: TUNSNodeValueType);
+  {$IFDEF UNS_NodeAoBuffer}
+  var
+    i:  Integer;
+  begin
+    For i := CDA_Low(Value) to CDA_High(Value) do
+      FreeBuffer(Value.Arr[i]);
+  {$ELSE}
+  begin
+  {$ENDIF}
+    CDA_Clear(Value);
+  end;
+
 begin
 case ValueKind of
-  vkActual:   CDA_Clear(fValue);
-  vkSaved:    CDA_Clear(fSavedValue);
-  vkDefault:  CDA_Clear(fDefaultValue);
+  vkActual:   ClearFrom(fValue);
+  vkSaved:    ClearFrom(fSavedValue);
+  vkDefault:  ClearFrom(fDefaultValue);
 else
   raise EUNSInvalidValueKindException.Create(ValueKind,Self,'Clear');
 end;
