@@ -56,7 +56,7 @@ var
 
 class Function TUNSNodeClassType.GetValueType: TUNSValueType;
 begin
-Result := vtAoInt32;
+Result := vtAoBool;
 end;
 
 //------------------------------------------------------------------------------
