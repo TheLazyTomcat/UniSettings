@@ -1,25 +1,25 @@
-unit UniSettings_NodeAoInt32;
+unit UniSettings_NodeAoInt8;
 
 {$INCLUDE '.\UniSettings_defs.inc'}
-{$DEFINE UNS_NodeAoInt32}
+{$DEFINE UNS_NodeAoInt8}
 
 interface
 
 uses
   Classes,
-  AuxTypes, MemoryBuffer, CountedDynArrayInt32,
+  AuxTypes, MemoryBuffer, CountedDynArrayInt8,
   UniSettings_Common, UniSettings_NodeBase, UniSettings_NodeLeaf,
   UniSettings_NodePrimitiveArray;
 
 type
-  TUNSNodeValueItemType    = Int32;
-  TUNSNodeValueItemTypeBin = Int32;
-  TUNSNodeValueItemTypePtr = PInt32;
+  TUNSNodeValueItemType    = Int8;
+  TUNSNodeValueItemTypeBin = Int8;
+  TUNSNodeValueItemTypePtr = PInt8;
 
-  TUNSNodeValueType    = TInt32CountedDynArray;
-  TUNSNodeValueTypePtr = PInt32CountedDynArray;
+  TUNSNodeValueType    = TInt8CountedDynArray;
+  TUNSNodeValueTypePtr = PInt8CountedDynArray;
 
-  TUNSNodeAoInt32 = class(TUNSNodePrimitiveArray)
+  TUNSNodeAoInt8 = class(TUNSNodePrimitiveArray)
   {$DEFINE UNS_NodeInclude_Declaration}
     {$INCLUDE '.\UniSettings_NodeArray.inc'}
   {$UNDEF UNS_NodeInclude_Declaration}
@@ -33,30 +33,30 @@ uses
   UniSettings_Exceptions;
 
 type
-  TUNSNodeClassType = TUNSNodeAoInt32;
+  TUNSNodeClassType = TUNSNodeAoInt8;
 
 var
   UNS_StreamWriteFunction:
-    Function(Stream: TStream; Value: Int32; Advance: Boolean = True): TMemSize
-      = BinaryStreaming.Stream_WriteInt32;
+    Function(Stream: TStream; Value: Int8; Advance: Boolean = True): TMemSize
+      = BinaryStreaming.Stream_WriteInt8;
 
   UNS_StreamReadFunction:
-    Function(Stream: TStream; Advance: Boolean = True): Int32
-      = BinaryStreaming.Stream_ReadInt32;
+    Function(Stream: TStream; Advance: Boolean = True): Int8
+      = BinaryStreaming.Stream_ReadInt8;
 
   UNS_BufferWriteFunction:
-    Function(var Dest: Pointer; Value: Int32; Advance: Boolean): TMemSize
-      = BinaryStreaming.Ptr_WriteInt32;
-
+    Function(var Dest: Pointer; Value: Int8; Advance: Boolean): TMemSize
+      = BinaryStreaming.Ptr_WriteInt8;
+      
   UNS_BufferReadFunction:
-    Function(var Dest: Pointer; Advance: Boolean): Int32
-      = BinaryStreaming.Ptr_ReadInt32;
+    Function(var Dest: Pointer; Advance: Boolean): Int8
+      = BinaryStreaming.Ptr_ReadInt8;
 
 //==============================================================================
 
 class Function TUNSNodeClassType.GetValueType: TUNSValueType;
 begin
-Result := vtAoInt32;
+Result := vtAoInt8;
 end;
 
 //------------------------------------------------------------------------------
@@ -64,7 +64,7 @@ end;
 Function TUNSNodeClassType.ConvItemToStr(const Value: TUNSNodeValueItemType): String;
 begin
 If ValueFormatSettings.HexIntegers then
-  Result := '$' + IntToHex(Value,8)
+  Result := '$' + IntToHex(Value,2)
 else
   Result := IntToStr(Value);
 end;
@@ -80,6 +80,6 @@ end;
 
 {$DEFINE UNS_NodeInclude_Implementation}
   {$INCLUDE '.\UniSettings_NodeArray.inc'}
-{$UNDEF UNS_NodeInclude_Implementation}  
+{$UNDEF UNS_NodeInclude_Implementation}
 
 end.

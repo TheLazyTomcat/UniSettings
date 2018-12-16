@@ -195,28 +195,63 @@ end;
 
 class Function TUNSNodeClassType.SameItemValues(const A,B: TUNSNodeValueItemType): Boolean;
 begin
+{$IF Defined(UNS_NodeAoDate)}
+Result := Int(A) = Int(B);
+{$ELSEIF Defined(UNS_NodeAoTime)}
+Result := Frac(A) = Frac(B);
+{$ELSEIF Defined(UNS_NodeAoText)}
+Result := AnsiSameStr(A,B);
+{$ELSE}
 Result := A = B;
+{$IFEND}
 end;
 
 //------------------------------------------------------------------------------
 
 Function TUNSNodeClassType.GetValueSize: TMemSize;
+{$IF Defined(UNS_NodeAoText) or Defined(UNS_NodeAoBuffer)}
+var
+  i:  Integer;
+begin
+Result := SizeOf(Int32);
+For i := CDA_Low(fValue) to CDA_High(fValue) do
+  Result := Result + GetItemSize(i);
+{$ELSE}
 begin
 Result := SizeOf(Int32) + (TMemSize(CDA_Count(fValue)) * GetItemSize(-1));
+{$IFEND}
 end;
 
 //------------------------------------------------------------------------------
 
 Function TUNSNodeClassType.GetSavedValueSize: TMemSize;
+{$IF Defined(UNS_NodeAoText) or Defined(UNS_NodeAoBuffer)}
+var
+  i:  Integer;
+begin
+Result := SizeOf(Int32);
+For i := CDA_Low(fSavedValue) to CDA_High(fSavedValue) do
+  Result := Result + GetSavedItemSize(i);
+{$ELSE}
 begin
 Result := SizeOf(Int32) + (TMemSize(CDA_Count(fSavedValue)) * GetSavedItemSize(-1));
+{$IFEND}
 end;
 
 //------------------------------------------------------------------------------
 
 Function TUNSNodeClassType.GetDefaultValueSize: TMemSize;
+{$IF Defined(UNS_NodeAoText) or Defined(UNS_NodeAoBuffer)}
+var
+  i:  Integer;
+begin
+Result := SizeOf(Int32);
+For i := CDA_Low(fDefaultValue) to CDA_High(fDefaultValue) do
+  Result := Result + GetDefaultItemSize(i);
+{$ELSE}
 begin
 Result := SizeOf(Int32) + (TMemSize(CDA_Count(fDefaultValue)) * GetDefaultItemSize(-1));
+{$IFEND}
 end;
 
 //------------------------------------------------------------------------------
@@ -244,21 +279,42 @@ end;
 
 Function TUNSNodeClassType.GetItemSize(Index: Integer): TMemSize;
 begin
+{$IF Defined(UNS_NodeAoText) or Defined(UNS_NodeAoBuffer)}
+If CDA_CheckIndex(fValue,Index) then
+  Result := SizeOf(Int32) + Length(StrToUTF8(CDA_GetItem(fValue,Index))) * SizeOf(UTF8Char)
+else
+  raise EUNSIndexOutOfBoundsException.Create(Index,Self,'GetItemSize');
+{$ELSE}
 Result := SizeOf(TUNSNodeValueItemTypeBin);
+{$IFEND}
 end;
 
 //------------------------------------------------------------------------------
 
 Function TUNSNodeClassType.GetSavedItemSize(Index: Integer): TMemSize;
 begin
+{$IF Defined(UNS_NodeAoText) or Defined(UNS_NodeAoBuffer)}
+If CDA_CheckIndex(fSavedValue,Index) then
+  Result := SizeOf(Int32) + Length(StrToUTF8(CDA_GetItem(fSavedValue,Index))) * SizeOf(UTF8Char)
+else
+  raise EUNSIndexOutOfBoundsException.Create(Index,Self,'GetSavedItemSize');
+{$ELSE}
 Result := SizeOf(TUNSNodeValueItemTypeBin);
+{$IFEND}
 end;
 
 //------------------------------------------------------------------------------
 
 Function TUNSNodeClassType.GetDefaultItemSize(Index: Integer): TMemSize;
 begin
+{$IF Defined(UNS_NodeAoText) or Defined(UNS_NodeAoBuffer)}
+If CDA_CheckIndex(fDefaultValue,Index) then
+  Result := SizeOf(Int32) + Length(StrToUTF8(CDA_GetItem(fDefaultValue,Index))) * SizeOf(UTF8Char)
+else
+  raise EUNSIndexOutOfBoundsException.Create(Index,Self,'GetDefaultItemSize');
+{$ELSE}
 Result := SizeOf(TUNSNodeValueItemTypeBin);
+{$IFEND}
 end;
 
 //------------------------------------------------------------------------------
@@ -579,7 +635,8 @@ end;
 Function TUNSNodeClassType.ValueKindCompare(Index: Integer; ValA,ValB: TUNSValueKind): Boolean;
 begin
 If ValA <> ValB then
-  Result := SameItemValues(TUNSNodeValueItemType(Address(Index,ValA)^),TUNSNodeValueItemType(Address(Index,ValB)^))
+  Result := SameItemValues(TUNSNodeValueItemType(Address(Index,ValA)^),
+                           TUNSNodeValueItemType(Address(Index,ValB)^))
 else
   Result := True;
 end;
