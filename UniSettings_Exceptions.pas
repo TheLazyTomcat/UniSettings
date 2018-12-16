@@ -33,6 +33,12 @@ type
     constructor Create(Buffer: TMemoryBuffer; FaultingObject: TObject; const FaultingMethod: String); overload;
   end;
 
+  EUNSInvalidValueKindException = class(EUNSException)
+  public
+    constructor Create(ValueKind: TUNSValueKind; const FaultingFunction: String); overload;
+    constructor Create(ValueKind: TUNSValueKind; FaultingObject: TObject; const FaultingMethod: String); overload;
+  end;
+
   EUNSValueNotFoundException = class(EUNSException)
   public
     constructor Create(const ValueName: String; const FaultingFunction: String); overload;
@@ -117,6 +123,20 @@ end;
 constructor EUNSBufferTooSmallException.Create(Buffer: TMemoryBuffer; FaultingObject: TObject; const FaultingMethod: String);
 begin
 inherited CreateFmt('Provided buffer is too small (%dB).',[Buffer.Size],FaultingObject,FaultingMethod);
+end;
+
+//******************************************************************************
+
+constructor EUNSInvalidValueKindException.Create(ValueKind: TUNSValueKind; const FaultingFunction: String);
+begin
+inherited CreateFmt('Invalid value kind (%d).',[Ord(ValueKind)],FaultingFunction);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+constructor EUNSInvalidValueKindException.Create(ValueKind: TUNSValueKind; FaultingObject: TObject; const FaultingMethod: String);
+begin
+inherited CreateFmt('Invalid value kind (%d).',[Ord(ValueKind)],FaultingObject,FaultingMethod);
 end;
 
 //******************************************************************************

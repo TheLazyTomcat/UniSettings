@@ -2,41 +2,24 @@
 unit UniSettings_NodeUInt16;
 
 {$INCLUDE '.\UniSettings_defs.inc'}
+{$DEFINE UNS_NodeUInt16}
 
 interface
 
 uses
   Classes,
   AuxTypes, MemoryBuffer,
-  UniSettings_Common, UniSettings_NodeLeaf;
+  UniSettings_Common, UniSettings_NodeBase, UniSettings_NodeLeaf;
 
 type
+  TUNSNodeValueType    = UInt16;
+  TUNSNodeValueTypeBin = UInt16;
+  TUNSNodeValueTypePtr = PUInt16;
+
   TUNSNodeUInt16 = class(TUNSNodeLeaf)
-  private
-    fValue:         UInt16;
-    fDefaultValue:  UInt16;
-    procedure SetValue(NewValue: UInt16);
-    procedure SetDefaultValue(NewValue: UInt16);
-  protected
-    class Function GetValueType: TUNSValueType; override;
-    Function GetValueSize: TMemSize; override;
-    Function GetDefaultValueSize: TMemSize; override;
-    Function ConvToStr(Value: UInt16): String; reintroduce;
-    Function ConvFromStr(const Str: String): UInt16; reintroduce;
-  public
-    procedure ActualFromDefault; override;
-    procedure DefaultFromActual; override;
-    procedure ExchangeActualAndDefault; override;
-    Function ActualEqualsDefault: Boolean; override;
-    Function Address(AccessDefVal: Boolean = False): Pointer; override;
-    Function AsString(AccessDefVal: Boolean = False): String; override;
-    procedure FromString(const Str: String; AccessDefVal: Boolean = False); override;
-    procedure ToStream(Stream: TStream; AccessDefVal: Boolean = False); override;
-    procedure FromStream(Stream: TStream; AccessDefVal: Boolean = False); override;
-    procedure ToBuffer(Buffer: TMemoryBuffer; AccessDefVal: Boolean = False); override;
-    procedure FromBuffer(Buffer: TMemoryBuffer; AccessDefVal: Boolean = False); override;
-    property Value: UInt16 read fValue write SetValue;
-    property DefaultValue: UInt16 read fDefaultValue write SetDefaultValue;
+  {$DEFINE UNS_NodeInclude_Declaration}
+    {$INCLUDE '.\UniSettings_Node.inc'}
+  {$UNDEF UNS_NodeInclude_Declaration}
   end;
 
 implementation
@@ -46,50 +29,36 @@ uses
   BinaryStreaming,
   UniSettings_Exceptions;
 
-procedure TUNSNodeUInt16.SetValue(NewValue: UInt16);
-begin
-If NewValue <> fValue then
-  begin
-    fValue := NewValue;
-    DoChange;
-  end;
-end;
+type
+  TUNSNodeClassType = TUNSNodeUInt16;
 
-//------------------------------------------------------------------------------
+var
+  UNS_StreamWriteFunction:
+    Function(Stream: TStream; Value: UInt16; Advance: Boolean = True): TMemSize
+      = BinaryStreaming.Stream_WriteUInt16;
 
-procedure TUNSNodeUInt16.SetDefaultValue(NewValue: UInt16);
-begin
-If NewValue <> fDefaultValue then
-  begin
-    fDefaultValue := NewValue;
-    DoChange;
-  end;
-end;
+  UNS_StreamReadFunction:
+    Function(Stream: TStream; Advance: Boolean = True): UInt16
+      = BinaryStreaming.Stream_ReadUInt16;
+
+  UNS_BufferWriteFunction:
+    Function(Dest: Pointer; Value: UInt16): TMemSize
+      = BinaryStreaming.Ptr_WriteUInt16;
+      
+  UNS_BufferReadFunction:
+    Function(Dest: Pointer): UInt16
+      = BinaryStreaming.Ptr_ReadUInt16;
 
 //==============================================================================
 
-class Function TUNSNodeUInt16.GetValueType: TUNSValueType;
+class Function TUNSNodeClassType.GetValueType: TUNSValueType;
 begin
 Result := vtUInt16;
 end;
 
 //------------------------------------------------------------------------------
 
-Function TUNSNodeUInt16.GetValueSize: TMemSize;
-begin
-Result := SizeOf(UInt16);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TUNSNodeUInt16.GetDefaultValueSize: TMemSize;
-begin
-Result := SizeOf(UInt16);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TUNSNodeUInt16.ConvToStr(Value: UInt16): String;
+Function TUNSNodeClassType.ConvToStr(const Value: TUNSNodeValueType): String;
 begin
 If ValueFormatSettings.HexIntegers then
   Result := '$' + IntToHex(Value,4)
@@ -99,132 +68,26 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function TUNSNodeUInt16.ConvFromStr(const Str: String): UInt16;
+Function TUNSNodeClassType.ConvFromStr(const Str: String): TUNSNodeValueType;
 begin
-Result := UInt16(StrToInt(Str));
+Result := TUNSNodeValueType(StrToInt(Str));
 end;
 
 //==============================================================================
 
-procedure TUNSNodeUInt16.ActualFromDefault;
+constructor TUNSNodeClassType.Create(const Name: String; ParentNode: TUNSNodeBase);
 begin
-If not ActualEqualsDefault then
-  begin
-    fValue := fDefaultValue;
-    DoChange;
-  end;
+inherited Create(Name,ParentNode);
+fValue := 0;
+fSavedValue := 0;
+fDefaultValue := 0;
 end;
 
 //------------------------------------------------------------------------------
 
-procedure TUNSNodeUInt16.DefaultFromActual;
-begin
-If not ActualEqualsDefault then
-  begin
-    fDefaultValue := fValue;
-    DoChange;
-  end;
-end;
-
-//------------------------------------------------------------------------------
-
-procedure TUNSNodeUInt16.ExchangeActualAndDefault;
-var
-  Temp: UInt16;
-begin
-If not ActualEqualsDefault then
-  begin
-    Temp := fDefaultValue;
-    fDefaultValue := fValue;
-    fValue := Temp;
-    DoChange;
-  end;
-end;
-
-//------------------------------------------------------------------------------
-
-Function TUNSNodeUInt16.ActualEqualsDefault: Boolean;
-begin
-Result := fValue = fDefaultValue;
-end;
-
-//------------------------------------------------------------------------------
-
-Function TUNSNodeUInt16.Address(AccessDefVal: Boolean = False): Pointer;
-begin
-If AccessDefVal then
-  Result := Addr(fDefaultValue)
-else
-  Result := Addr(fValue);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TUNSNodeUInt16.AsString(AccessDefVal: Boolean = False): String;
-begin
-If AccessDefVal then
-  Result := ConvToStr(fDefaultValue)
-else
-  Result := ConvToStr(fValue);
-end;
-
-//------------------------------------------------------------------------------
-
-procedure TUNSNodeUInt16.FromString(const Str: String; AccessDefVal: Boolean = False);
-begin
-If AccessDefVal then
-  SetDefaultValue(ConvFromStr(Str))
-else
-  SetValue(ConvFromStr(Str));
-end;
-
-//------------------------------------------------------------------------------
-
-procedure TUNSNodeUInt16.ToStream(Stream: TStream; AccessDefVal: Boolean = False);
-begin
-If AccessDefVal then
-  Stream_WriteUInt16(Stream,fDefaultValue)
-else
-  Stream_WriteUInt16(Stream,fValue);
-end;
-
-//------------------------------------------------------------------------------
-
-procedure TUNSNodeUInt16.FromStream(Stream: TStream; AccessDefVal: Boolean = False);
-begin
-If AccessDefVal then
-  SetDefaultValue(Stream_ReadUInt16(Stream))
-else
-  SetValue(Stream_ReadUInt16(Stream));
-end;
-
-//------------------------------------------------------------------------------
-
-procedure TUNSNodeUInt16.ToBuffer(Buffer: TMemoryBuffer; AccessDefVal: Boolean = False);
-begin
-If Buffer.Size >= ObtainValueSize(AccessDefVal) then
-  begin
-    If AccessDefVal then
-      Ptr_WriteUInt16(Buffer.Memory,fDefaultValue)
-    else
-      Ptr_WriteUInt16(Buffer.Memory,fValue);
-  end
-else raise EUNSBufferTooSmallException.Create(Buffer,Self,'GetValueToBuffer');
-end;
-
-//------------------------------------------------------------------------------
-
-procedure TUNSNodeUInt16.FromBuffer(Buffer: TMemoryBuffer; AccessDefVal: Boolean = False);
-begin
-If Buffer.Size >= ObtainValueSize(AccessDefVal) then
-  begin
-    If AccessDefVal then
-      SetDefaultValue(Ptr_ReadUInt16(Buffer.Memory))
-    else
-      SetValue(Ptr_ReadUInt16(Buffer.Memory));
-  end
-else raise EUNSBufferTooSmallException.Create(Buffer,Self,'SetValueFromBuffer');
-end;
+{$DEFINE UNS_NodeInclude_Implementation}
+  {$INCLUDE '.\UniSettings_Node.inc'}
+{$UNDEF UNS_NodeInclude_Implementation}
 
 {$WARNINGS OFF} // supresses warnings on lines after the final end
 end.

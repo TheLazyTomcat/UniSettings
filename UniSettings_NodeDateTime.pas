@@ -2,41 +2,24 @@
 unit UniSettings_NodeDateTime;
 
 {$INCLUDE '.\UniSettings_defs.inc'}
+{$DEFINE UNS_NodeDateTime}
 
 interface
 
 uses
   Classes,
   AuxTypes, MemoryBuffer,
-  UniSettings_Common, UniSettings_NodeLeaf;
+  UniSettings_Common, UniSettings_NodeBase, UniSettings_NodeLeaf;
 
 type
+  TUNSNodeValueType    = TDateTime;
+  TUNSNodeValueTypeBin = TDateTime;
+  TUNSNodeValueTypePtr = PDateTime;
+
   TUNSNodeDateTime = class(TUNSNodeLeaf)
-  private
-    fValue:         TDateTime;
-    fDefaultValue:  TDateTime;
-    procedure SetValue(NewValue: TDateTime);
-    procedure SetDefaultValue(NewValue: TDateTime);
-  protected
-    class Function GetValueType: TUNSValueType; override;
-    Function GetValueSize: TMemSize; override;
-    Function GetDefaultValueSize: TMemSize; override;
-    Function ConvToStr(Value: TDateTime): String; reintroduce;
-    Function ConvFromStr(const Str: String): TDateTime; reintroduce;
-  public
-    procedure ActualFromDefault; override;
-    procedure DefaultFromActual; override;
-    procedure ExchangeActualAndDefault; override;
-    Function ActualEqualsDefault: Boolean; override;
-    Function Address(AccessDefVal: Boolean = False): Pointer; override;
-    Function AsString(AccessDefVal: Boolean = False): String; override;
-    procedure FromString(const Str: String; AccessDefVal: Boolean = False); override;
-    procedure ToStream(Stream: TStream; AccessDefVal: Boolean = False); override;
-    procedure FromStream(Stream: TStream; AccessDefVal: Boolean = False); override;
-    procedure ToBuffer(Buffer: TMemoryBuffer; AccessDefVal: Boolean = False); override;
-    procedure FromBuffer(Buffer: TMemoryBuffer; AccessDefVal: Boolean = False); override;
-    property Value: TDateTime read fValue write SetValue;
-    property DefaultValue: TDateTime read fDefaultValue write SetDefaultValue;
+  {$DEFINE UNS_NodeInclude_Declaration}
+    {$INCLUDE '.\UniSettings_Node.inc'}
+  {$UNDEF UNS_NodeInclude_Declaration}
   end;
 
 implementation
@@ -46,50 +29,36 @@ uses
   BinaryStreaming, FloatHex,
   UniSettings_Exceptions;
 
-procedure TUNSNodeDateTime.SetValue(NewValue: TDateTime);
-begin
-If NewValue <> fValue then
-  begin
-    fValue := NewValue;
-    DoChange;
-  end;
-end;
+type
+  TUNSNodeClassType = TUNSNodeDateTime;
 
-//------------------------------------------------------------------------------
+var
+  UNS_StreamWriteFunction:
+    Function(Stream: TStream; Value: Float64; Advance: Boolean = True): TMemSize
+      = BinaryStreaming.Stream_WriteFloat64;
 
-procedure TUNSNodeDateTime.SetDefaultValue(NewValue: TDateTime);
-begin
-If NewValue <> fDefaultValue then
-  begin
-    fDefaultValue := NewValue;
-    DoChange;
-  end;
-end;
+  UNS_StreamReadFunction:
+    Function(Stream: TStream; Advance: Boolean = True): Float64
+      = BinaryStreaming.Stream_ReadFloat64;
+
+  UNS_BufferWriteFunction:
+    Function(Dest: Pointer; Value: Float64): TMemSize
+      = BinaryStreaming.Ptr_WriteFloat64;
+      
+  UNS_BufferReadFunction:
+    Function(Dest: Pointer): Float64
+      = BinaryStreaming.Ptr_ReadFloat64;
 
 //==============================================================================
 
-class Function TUNSNodeDateTime.GetValueType: TUNSValueType;
+class Function TUNSNodeClassType.GetValueType: TUNSValueType;
 begin
 Result := vtDateTime;
 end;
 
 //------------------------------------------------------------------------------
 
-Function TUNSNodeDateTime.GetValueSize: TMemSize;
-begin
-Result := SizeOf(TDateTime);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TUNSNodeDateTime.GetDefaultValueSize: TMemSize;
-begin
-Result := SizeOf(TDateTime);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TUNSNodeDateTime.ConvToStr(Value: TDateTime): String;
+Function TUNSNodeClassType.ConvToStr(const Value: TUNSNodeValueType): String;
 begin
 If ValueFormatSettings.HexDateTime then
   Result := '$' + DoubleToHex(Value)
@@ -99,7 +68,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function TUNSNodeDateTime.ConvFromStr(const Str: String): TDateTime;
+Function TUNSNodeClassType.ConvFromStr(const Str: String): TUNSNodeValueType;
 begin
 If Length(Str) > 1 then
   begin
@@ -113,125 +82,19 @@ end;
 
 //==============================================================================
 
-procedure TUNSNodeDateTime.ActualFromDefault;
+constructor TUNSNodeClassType.Create(const Name: String; ParentNode: TUNSNodeBase);
 begin
-If not ActualEqualsDefault then
-  begin
-    fValue := fDefaultValue;
-    DoChange;
-  end;
+inherited Create(Name,ParentNode);
+fValue := Now;
+fSavedValue := fValue;
+fDefaultValue := fValue;
 end;
 
 //------------------------------------------------------------------------------
 
-procedure TUNSNodeDateTime.DefaultFromActual;
-begin
-If not ActualEqualsDefault then
-  begin
-    fDefaultValue := fValue;
-    DoChange;
-  end;
-end;
-
-//------------------------------------------------------------------------------
-
-procedure TUNSNodeDateTime.ExchangeActualAndDefault;
-var
-  Temp: TDateTime;
-begin
-If not ActualEqualsDefault then
-  begin
-    Temp := fDefaultValue;
-    fDefaultValue := fValue;
-    fValue := Temp;
-    DoChange;
-  end;
-end;
-
-//------------------------------------------------------------------------------
-
-Function TUNSNodeDateTime.ActualEqualsDefault: Boolean;
-begin
-Result := fValue = fDefaultValue;
-end;
-
-//------------------------------------------------------------------------------
-
-Function TUNSNodeDateTime.Address(AccessDefVal: Boolean = False): Pointer;
-begin
-If AccessDefVal then
-  Result := Addr(fDefaultValue)
-else
-  Result := Addr(fValue);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TUNSNodeDateTime.AsString(AccessDefVal: Boolean = False): String;
-begin
-If AccessDefVal then
-  Result := ConvToStr(fDefaultValue)
-else
-  Result := ConvToStr(fValue);
-end;
-
-//------------------------------------------------------------------------------
-
-procedure TUNSNodeDateTime.FromString(const Str: String; AccessDefVal: Boolean = False);
-begin
-If AccessDefVal then
-  SetDefaultValue(ConvFromStr(Str))
-else
-  SetValue(ConvFromStr(Str));
-end;
-
-//------------------------------------------------------------------------------
-
-procedure TUNSNodeDateTime.ToStream(Stream: TStream; AccessDefVal: Boolean = False);
-begin
-If AccessDefVal then
-  Stream_WriteFloat64(Stream,fDefaultValue)
-else
-  Stream_WriteFloat64(Stream,fValue);
-end;
-
-//------------------------------------------------------------------------------
-
-procedure TUNSNodeDateTime.FromStream(Stream: TStream; AccessDefVal: Boolean = False);
-begin
-If AccessDefVal then
-  SetDefaultValue(Stream_ReadFloat64(Stream))
-else
-  SetValue(Stream_ReadFloat64(Stream));
-end;
-
-//------------------------------------------------------------------------------
-
-procedure TUNSNodeDateTime.ToBuffer(Buffer: TMemoryBuffer; AccessDefVal: Boolean = False);
-begin
-If Buffer.Size >= ObtainValueSize(AccessDefVal) then
-  begin
-    If AccessDefVal then
-      Ptr_WriteFloat64(Buffer.Memory,fDefaultValue)
-    else
-      Ptr_WriteFloat64(Buffer.Memory,fValue);
-  end
-else raise EUNSBufferTooSmallException.Create(Buffer,Self,'GetValueToBuffer');
-end;
-
-//------------------------------------------------------------------------------
-
-procedure TUNSNodeDateTime.FromBuffer(Buffer: TMemoryBuffer; AccessDefVal: Boolean = False);
-begin
-If Buffer.Size >= ObtainValueSize(AccessDefVal) then
-  begin
-    If AccessDefVal then
-      SetDefaultValue(Ptr_ReadFloat64(Buffer.Memory))
-    else
-      SetValue(Ptr_ReadFloat64(Buffer.Memory));
-  end
-else raise EUNSBufferTooSmallException.Create(Buffer,Self,'SetValueFromBuffer');
-end;
+{$DEFINE UNS_NodeInclude_Implementation}
+  {$INCLUDE '.\UniSettings_Node.inc'}
+{$UNDEF UNS_NodeInclude_Implementation}
 
 {$WARNINGS OFF} // supresses warnings on lines after the final end
 end.

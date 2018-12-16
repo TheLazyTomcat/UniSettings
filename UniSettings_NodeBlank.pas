@@ -1,6 +1,7 @@
 unit UniSettings_NodeBlank;
 
 {$INCLUDE '.\UniSettings_defs.inc'}
+{$DEFINE UNS_NodeBlank}
 
 interface
 
@@ -14,21 +15,21 @@ type
   protected
     class Function GetValueType: TUNSValueType; override;
     Function GetValueSize: TMemSize; override;
+    Function GetSavedValueSize: TMemSize; override;
     Function GetDefaultValueSize: TMemSize; override;
     Function ConvToStr(const Value): String; override;
     Function ConvFromStr(const Str: String): Pointer; override;
   public
-    procedure ActualFromDefault; override;
-    procedure DefaultFromActual; override;
-    procedure ExchangeActualAndDefault; override;
-    Function ActualEqualsDefault: Boolean; override;
-    Function Address(AccessDefVal: Boolean = False): Pointer; override;
-    Function AsString(AccessDefVal: Boolean = False): String; override;
-    procedure FromString(const Str: String; AccessDefVal: Boolean = False); override;
-    procedure ToStream(Stream: TStream; AccessDefVal: Boolean = False); override;
-    procedure FromStream(Stream: TStream; AccessDefVal: Boolean = False); override;
-    procedure ToBuffer(Buffer: TMemoryBuffer; AccessDefVal: Boolean = False); override;
-    procedure FromBuffer(Buffer: TMemoryBuffer; AccessDefVal: Boolean = False); override;
+    procedure ValueKindMove(Src,Dest: TUNSValueKind); override;
+    procedure ValueKindExchange(ValA,ValB: TUNSValueKind); override;
+    Function ValueKindCompare(ValA,ValB: TUNSValueKind): Boolean; override;
+    Function Address(ValueKind: TUNSValueKind = vkActual): Pointer; override;
+    Function AsString(ValueKind: TUNSValueKind = vkActual): String; override;
+    procedure FromString(const Str: String; ValueKind: TUNSValueKind = vkActual); override;
+    procedure ToStream(Stream: TStream; ValueKind: TUNSValueKind = vkActual); override;
+    procedure FromStream(Stream: TStream; ValueKind: TUNSValueKind = vkActual); override;
+    procedure ToBuffer(Buffer: TMemoryBuffer; ValueKind: TUNSValueKind = vkActual); override;
+    procedure FromBuffer(Buffer: TMemoryBuffer; ValueKind: TUNSValueKind = vkActual); override;
   end;
 
 implementation
@@ -41,6 +42,13 @@ end;
 //------------------------------------------------------------------------------
 
 Function TUNSNodeBlank.GetValueSize: TMemSize;
+begin
+Result := 0;
+end;
+
+//------------------------------------------------------------------------------
+
+Function TUNSNodeBlank.GetSavedValueSize: TMemSize;
 begin
 Result := 0;
 end;
@@ -68,77 +76,70 @@ end;
 
 //==============================================================================
 
-procedure TUNSNodeBlank.ActualFromDefault;
+procedure TUNSNodeBlank.ValueKindMove(Src,Dest: TUNSValueKind);
 begin
 // do nothing
 end;
 
 //------------------------------------------------------------------------------
 
-procedure TUNSNodeBlank.DefaultFromActual;
+procedure TUNSNodeBlank.ValueKindExchange(ValA,ValB: TUNSValueKind);
 begin
 // do nothing
 end;
 
 //------------------------------------------------------------------------------
 
-procedure TUNSNodeBlank.ExchangeActualAndDefault;
-begin
-// do nothing
-end;
-
-//------------------------------------------------------------------------------
-
-Function TUNSNodeBlank.ActualEqualsDefault: Boolean;
+Function TUNSNodeBlank.ValueKindCompare(ValA,ValB: TUNSValueKind): Boolean;
 begin
 Result := True;
 end;
 
 //------------------------------------------------------------------------------
 
-Function TUNSNodeBlank.Address(AccessDefVal: Boolean = False): Pointer;
+Function TUNSNodeBlank.Address(ValueKind: TUNSValueKind = vkActual): Pointer;
 begin
 Result := nil;
 end;
 
 //------------------------------------------------------------------------------
 
-Function TUNSNodeBlank.AsString(AccessDefVal: Boolean = False): String;
+Function TUNSNodeBlank.AsString(ValueKind: TUNSValueKind = vkActual): String;
 begin
 Result := '';
 end;
 
 //------------------------------------------------------------------------------
 
-procedure TUNSNodeBlank.FromString(const Str: String; AccessDefVal: Boolean = False);
+procedure TUNSNodeBlank.FromString(const Str: String; ValueKind: TUNSValueKind = vkActual);
 begin
 // do nothing;
 end;
 
 //------------------------------------------------------------------------------
 
-procedure TUNSNodeBlank.ToStream(Stream: TStream; AccessDefVal: Boolean = False);
+procedure TUNSNodeBlank.ToStream(Stream: TStream; ValueKind: TUNSValueKind = vkActual);
 begin
 // do nothing
 end;
 
 //------------------------------------------------------------------------------
 
-procedure TUNSNodeBlank.FromStream(Stream: TStream; AccessDefVal: Boolean = False);
+procedure TUNSNodeBlank.FromStream(Stream: TStream; ValueKind: TUNSValueKind = vkActual);
 begin
 // do nothing
 end;
 
 //------------------------------------------------------------------------------
 
-procedure TUNSNodeBlank.ToBuffer(Buffer: TMemoryBuffer; AccessDefVal: Boolean = False);
+procedure TUNSNodeBlank.ToBuffer(Buffer: TMemoryBuffer; ValueKind: TUNSValueKind = vkActual);
 begin
 // do nothing
 end;
 
 //------------------------------------------------------------------------------
 
-procedure TUNSNodeBlank.FromBuffer(Buffer: TMemoryBuffer; AccessDefVal: Boolean = False);
+procedure TUNSNodeBlank.FromBuffer(Buffer: TMemoryBuffer; ValueKind: TUNSValueKind = vkActual);
 begin
 // do nothing
 end;

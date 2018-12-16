@@ -13,12 +13,16 @@ type
     Hash: TCRC32;
   end;
 
-  TDate = type TDateTime;
-  TTime = type TDateTime;
+  TDate = type TDateTime;   PDate = ^TDate;
+  TTime = type TDateTime;   PTime = ^TTime;
 
 //------------------------------------------------------------------------------
 
   TUNSNodeClass = (ncUndefined,ncBranch,ncArrayItem,ncArray,ncLeaf);
+
+  TUNSValueKind = (vkActual,vkSaved,vkDefault);
+
+  TUNSValueKinds = set of TUNSValueKind;
 
   TUNSValueType = (vtUndefined,   // erroneous value
                    vtBlank,       // node containing no data (usually placeholder)

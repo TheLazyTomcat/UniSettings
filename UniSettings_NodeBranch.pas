@@ -19,6 +19,7 @@ type
     Function GetMaxNodeLevel: Integer; override;
   public
     constructor Create(const Name: String; ParentNode: TUNSNodeBase);
+    constructor CreateAsCopy(Source: TUNSNodeBase; const Name: String; ParentNode: TUNSNodeBase);
     destructor Destroy; override;
     Function LowIndex: Integer; virtual;
     Function HighIndex: Integer; virtual;
@@ -36,10 +37,9 @@ type
     Function FindBranchNode(const Name: String; out Node: TUNSNodeBase; Recursive: Boolean = False): Boolean; overload; virtual;
     Function FindLeafNode(Name: TUNSHashedString; out Node: TUNSNodeBase; Recursive: Boolean = False): Boolean; overload; virtual;
     Function FindLeafNode(const Name: String; out Node: TUNSNodeBase; Recursive: Boolean = False): Boolean; overload; virtual;
-    procedure ActualFromDefault; override;
-    procedure DefaultFromActual; override;
-    procedure ExchangeActualAndDefault; override;
-    Function ActualEqualsDefault: Boolean; override;
+    procedure ValueKindMove(Src,Dest: TUNSValueKind); override;
+    procedure ValueKindExchange(ValA,ValB: TUNSValueKind); override;
+    Function ValueKindCompare(ValA,ValB: TUNSValueKind): Boolean; override;
     property SubNodes[Index: Integer]: TUNSNodeBase read GetSubNode; default;
     property Count: Integer read fCount;
   end;
@@ -101,6 +101,17 @@ begin
 inherited Create(Name,ParentNode);
 SetLength(fSubNodes,0);
 fCount := 0;
+end;
+
+//------------------------------------------------------------------------------
+
+constructor TUNSNodeBranch.CreateAsCopy(Source: TUNSNodeBase; const Name: String; ParentNode: TUNSNodeBase);
+var
+  i:  Integer;
+begin
+inherited CreateAsCopy(Source,Name,ParentNode);
+For i := TUNSNodeBranch(Source).LowIndex to TUNSNodeBranch(Source).HighIndex do
+  Add(TUNSNodeBranch(Source)[i].CreateCopy(TUNSNodeBranch(Source)[i].NameStr,Self));
 end;
 
 //------------------------------------------------------------------------------
@@ -306,43 +317,33 @@ end;
 
 //------------------------------------------------------------------------------
 
-procedure TUNSNodeBranch.ActualFromDefault;
+procedure TUNSNodeBranch.ValueKindMove(Src,Dest: TUNSValueKind);
 var
   i:  Integer;
 begin
 For i := LowIndex to HighIndex do
-  fSubNodes[i].ActualFromDefault;
+  fSubNodes[i].ValueKindMove(Src,Dest);
 end;
 
 //------------------------------------------------------------------------------
 
-procedure TUNSNodeBranch.DefaultFromActual;
+procedure TUNSNodeBranch.ValueKindExchange(ValA,ValB: TUNSValueKind);
 var
   i:  Integer;
 begin
 For i := LowIndex to HighIndex do
-  fSubNodes[i].DefaultFromActual;
+  fSubNodes[i].ValueKindExchange(ValA,ValB);
 end;
 
 //------------------------------------------------------------------------------
 
-procedure TUNSNodeBranch.ExchangeActualAndDefault;
-var
-  i:  Integer;
-begin
-For i := LowIndex to HighIndex do
-  fSubNodes[i].ExchangeActualAndDefault;
-end;
-
-//------------------------------------------------------------------------------
-
-Function TUNSNodeBranch.ActualEqualsDefault: Boolean;
+Function TUNSNodeBranch.ValueKindCompare(ValA,ValB: TUNSValueKind): Boolean;
 var
   i:  Integer;
 begin
 Result := True;
 For i := LowIndex to HighIndex do
-  If not fSubNodes[i].ActualEqualsDefault then
+  If not fSubNodes[i].ValueKindCompare(ValA,ValB) then
     begin
       Result := False;
       Break{For i};
