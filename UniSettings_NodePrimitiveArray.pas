@@ -26,18 +26,15 @@ type
   public
     class Function IsPrimitiveArray: Boolean; override;
     destructor Destroy; override;
-
     procedure ValueKindMove(Index: Integer; Src,Dest: TUNSValueKind); overload; virtual; abstract;
     procedure ValueKindExchange(Index: Integer; ValA,ValB: TUNSValueKind); overload; virtual; abstract;
     Function ValueKindCompare(Index: Integer; ValA,ValB: TUNSValueKind): Boolean; overload; virtual; abstract;
-
     Function ActualFromDefault(Index: Integer): Boolean; overload; virtual;
     Function DefaultFromActual(Index: Integer): Boolean; overload; virtual;
     Function ExchangeActualAndDefault(Index: Integer): Boolean; overload; virtual;
     Function ActualEqualsDefault(Index: Integer): Boolean; overload; virtual;
     procedure Save(Index: Integer); overload; virtual;
-    procedure Restore(Index: Integer); overload; virtual;
-    
+    procedure Restore(Index: Integer); overload; virtual;       
     Function Address(Index: Integer; ValueKind: TUNSValueKind = vkActual): Pointer; overload; virtual; abstract;
     Function AsString(Index: Integer; ValueKind: TUNSValueKind = vkActual): String; overload; virtual; abstract;
     procedure FromString(Index: Integer; const Str: String; ValueKind: TUNSValueKind = vkActual); overload; virtual; abstract;
@@ -47,14 +44,11 @@ type
     procedure ToBuffer(Index: Integer; Buffer: TMemoryBuffer; ValueKind: TUNSValueKind = vkActual); overload; virtual; abstract;
     procedure FromBuffer(Index: Integer; Buffer: TMemoryBuffer; ValueKind: TUNSValueKind = vkActual); overload; virtual; abstract;
     Function AsBuffer(Index: Integer; ValueKind: TUNSValueKind = vkActual): TMemoryBuffer; overload; virtual;
-
     Function LowIndex(ValueKind: TUNSValueKind = vkActual): Integer; virtual; abstract;
     Function HighIndex(ValueKind: TUNSValueKind = vkActual): Integer; virtual; abstract;
     Function CheckIndex(Index: Integer; ValueKind: TUNSValueKind = vkActual): Boolean; virtual;
-
     procedure First(ValueKind: TUNSValueKind = vkActual); virtual; abstract;
     procedure Last(ValueKind: TUNSValueKind = vkActual); virtual; abstract;
-
     Function IndexOf(const Item; ValueKind: TUNSValueKind = vkActual): Integer; virtual; abstract;
     Function Add(const Item; ValueKind: TUNSValueKind = vkActual): Integer; virtual; abstract;
     Function Append(const Items; ValueKind: TUNSValueKind = vkActual): Integer; virtual; abstract;
@@ -64,7 +58,6 @@ type
     Function Remove(const Item; ValueKind: TUNSValueKind = vkActual): Integer; virtual; abstract;
     procedure Delete(Index: Integer; ValueKind: TUNSValueKind = vkActual); virtual; abstract;
     procedure Clear(ValueKind: TUNSValueKind = vkActual); virtual; abstract;
-
     property Count: Integer read GetCount;
     property SavedCount: Integer read GetSavedCount;
     property DefaultCount: Integer read GetDefaultCount;
