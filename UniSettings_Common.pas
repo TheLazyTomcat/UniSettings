@@ -5,7 +5,7 @@ unit UniSettings_Common;
 interface
 
 uses
-  AuxTypes, CRC32;
+  AuxTypes, CRC32, CountedDynArrays;
 
 type
   TUNSHashedString = record
@@ -103,8 +103,8 @@ const
 
 type
   TUNSNamePartType = (nptInvalid,nptIdentifier,nptArrayIdentifier,
-                      nptArrayIndex,nptArrayIndexDef,
-                      nptArrayItem,nptArrayItemDef);
+                      nptArrayIndex,nptArrayIndexSav,nptArrayIndexDef,
+                      nptArrayItem,nptArrayItemSav,nptArrayItemDef);
 
   TUNSNamePart = record
     PartType:   TUNSNamePartType;
@@ -115,25 +115,31 @@ type
   TUNSNameParts = record
     Arr:    array of TUNSNamePart;
     Count:  Integer;
+    Data:   PtrInt;
     Valid:  Boolean;
   end;
+  PUNSNameParts = ^TUNSNameParts;
 
 const
   UNS_NAME_ROOTNODE = 'root';
 
   UNS_NAME_INDEX_DEFAULT = -1;
 
-  UNS_NAME_IDENTIFIER_VALIDCHARS = ['0'..'9','a'..'z','A'..'Z','_'];
+  UNS_NAME_IDENTIFIER_VALIDFIRSTCHARS    = ['a'..'z','A'..'Z','_'];
+  UNS_NAME_IDENTIFIER_VALIDCHARS         = ['0'..'9','a'..'z','A'..'Z','_'];
+  UNS_NAME_IDENTIFIER_ONECHAR_VALIDCHARS = ['a'..'z','A'..'Z'];
 
   UNS_NAME_DELIMITER        = '.';
   UNS_NAME_BRACKET_LEFT     = '[';
   UNS_NAME_BRACKET_RIGHT    = ']';
+  UNS_NAME_BRACKETSAV_LEFT  = '(';
+  UNS_NAME_BRACKETSAV_RIGHT = ')';
   UNS_NAME_BRACKETDEF_LEFT  = '<';
   UNS_NAME_BRACKETDEF_RIGHT = '>';
   UNS_NAME_ARRAYITEM_TAG    = '#';
 
-  UNS_NAME_BRACKETS_LEFT  = [UNS_NAME_BRACKET_LEFT,UNS_NAME_BRACKETDEF_LEFT];
-  UNS_NAME_BRACKETS_RIGHT = [UNS_NAME_BRACKET_RIGHT,UNS_NAME_BRACKETDEF_RIGHT];
+  UNS_NAME_BRACKETS_LEFT  = [UNS_NAME_BRACKET_LEFT,UNS_NAME_BRACKETSAV_LEFT,UNS_NAME_BRACKETDEF_LEFT];
+  UNS_NAME_BRACKETS_RIGHT = [UNS_NAME_BRACKET_RIGHT,UNS_NAME_BRACKETSAV_RIGHT,UNS_NAME_BRACKETDEF_RIGHT];
 
   UNS_NAME_BRACKETS = UNS_NAME_BRACKETS_LEFT + UNS_NAME_BRACKETS_RIGHT;
 
@@ -146,6 +152,29 @@ const
   UNS_NAME_ARRAYITEM_LOW     = 1;
   UNS_NAME_ARRAYITEM_HIGH    = 2;
 
+type
+  TCDABaseType = TUNSNamePart;
+  TCDAArrayType = TUNSNameParts;
+
+{$DEFINE CDA_Interface}
+{$INCLUDE '.\CountedDynArrays.inc'}
+{$UNDEF CDA_Interface}
+
 implementation
+
+uses
+  SysUtils,
+  ListSorters;
+
+Function CDA_CompareFunc(A,B: TCDABaseType): Integer;
+begin
+Result := -AnsiCompareStr(A.PartStr.Str,B.PartStr.Str);
+end;
+
+//------------------------------------------------------------------------------
+
+{$DEFINE CDA_Implementation}
+{$INCLUDE '.\CountedDynArrays.inc'}
+{$UNDEF CDA_Implementation}
 
 end.

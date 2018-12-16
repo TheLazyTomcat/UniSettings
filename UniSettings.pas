@@ -2,7 +2,8 @@
 todo (* = completed):
 
   tree building
-  arrays
+* arrays
+  array nodes: listsorters -> implementation uses
   access to array items trough index in value name
   name parts -> CDA
   TUniSettings copy constructor
@@ -695,10 +696,10 @@ try
             with NameParts.Arr[Pred(NameParts.Count)] do
               begin
                 case NameParts.Arr[Pred(NameParts.Count)].PartType of
-                  nptArrayIndex:
-                    Result := TUNSNodePrimitiveArray(Node).CheckIndex(PartIndex,False);
-                  nptArrayIndexDef:
-                    Result := TUNSNodePrimitiveArray(Node).CheckIndex(PartIndex,True);
+                  //nptArrayIndex:
+                    //Result := TUNSNodePrimitiveArray(Node).CheckIndex(PartIndex,False);
+                  //nptArrayIndexDef:
+                    //Result := TUNSNodePrimitiveArray(Node).CheckIndex(PartIndex,True);
                   nptArrayItem:
                     If PartIndex in [UNS_NAME_ARRAYITEM_LOW,UNS_NAME_ARRAYITEM_HIGH] then
                       Result := TUNSNodePrimitiveArray(Node).Count > 0;

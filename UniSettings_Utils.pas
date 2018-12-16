@@ -45,9 +45,8 @@ uses
 Function UNSIsArrayValueType(ValueType: TUNSValueType): Boolean;
 begin
 Result := ValueType in [vtAoBool,vtAoInt8,vtAoUInt8,vtAoInt16,vtAoUInt16,
-                        vtAoInt32,vtAoUInt32,vtAoInt64,vtAoUInt64,vtAoFloat32,
-                        vtAoFloat64,vtAoDate,vtAoTime,vtAoDateTime,vtAoText,
-                        vtAoBuffer]
+  vtAoInt32,vtAoUInt32,vtAoInt64,vtAoUInt64,vtAoFloat32,vtAoFloat64,vtAoDate,
+  vtAoTime,vtAoDateTime,vtAoText,vtAoBuffer]
 end;
 
 //------------------------------------------------------------------------------
@@ -59,7 +58,7 @@ If Ord(C) > 255 then
   Result := False
 else
 {$IFEND}
-  Result := C in CharSet
+  Result := AnsiChar(C) in CharSet
 end;
 
 //------------------------------------------------------------------------------
@@ -68,17 +67,24 @@ Function UNSIsValidIdentifier(const Identifier: String): Boolean;
 var
   i:  Integer;
 begin
-If Length(Identifier) > 0 then
+If Length(Identifier) > 1 then
   begin
-    Result := True;
-    For i := 1 to Length(Identifier) do
-      If not UNSCharInSet(Identifier[i],UNS_NAME_IDENTIFIER_VALIDCHARS) then
-        begin
-          Result := False;
-          Break{For i};
-        end;
+    If UNSCharInSet(Identifier[1],UNS_NAME_IDENTIFIER_VALIDFIRSTCHARS) then
+      begin
+        Result := True;      
+        For i := 1 to Length(Identifier) do
+          If not UNSCharInSet(Identifier[i],UNS_NAME_IDENTIFIER_VALIDCHARS) then
+            begin
+              Result := False;
+              Break{For i};
+            end;
+      end
+    else Result := False;
   end
-else Result := False;
+else If Length(Identifier) = 1 then
+  Result := UNSCharInSet(Identifier[1],UNS_NAME_IDENTIFIER_ONECHAR_VALIDCHARS)
+else
+  Result := False;
 end;
 
 //------------------------------------------------------------------------------
@@ -126,15 +132,9 @@ end;
 
 Function UNSNameParts(const Name: String; out NameParts: TUNSNameParts): Integer;
 var
-  i:              Integer;
-  Start:          Integer;
+  i,Start:        Integer;
   PrevDelimiter:  Char;
-
-  procedure GrowPartsArray;
-  begin
-    If Length(NameParts.Arr) <= NameParts.Count then
-      SetLength(NameParts.Arr,Length(NameParts.Arr) + 8);
-  end;
+  TempPart:       TUNSNamePart;
 
   Function CheckAndSetIdentifier(const Str: String; out HashedStr: TUNSHashedString): Boolean;
   begin
@@ -147,6 +147,7 @@ var
     // check if brackets match
     case Current of
       UNS_NAME_BRACKET_RIGHT:     Result := Prev = UNS_NAME_BRACKET_LEFT;
+      UNS_NAME_BRACKETSAV_RIGHT:  Result := Prev = UNS_NAME_BRACKETSAV_LEFT;      
       UNS_NAME_BRACKETDEF_RIGHT:  Result := Prev = UNS_NAME_BRACKETDEF_LEFT;
     else
       Result := True;
@@ -154,7 +155,7 @@ var
   end;
 
 begin
-NameParts.Count := 0;
+CDA_Clear(NameParts);
 If Length(Name) > 0 then
   begin
     Start := 1;
@@ -164,119 +165,123 @@ If Length(Name) > 0 then
       begin
 { - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -}
         If UNSCharInSet(Name[i],UNS_NAME_DELIMITERS) then
-          with NameParts do
-            begin
-              // last part was an (array) identifier
-              GrowPartsArray;
-              If CheckAndSetIdentifier(Copy(Name,Start,i - Start),Arr[Count].PartStr) then
-                begin
-                  If Name[i] <> UNS_NAME_DELIMITER then
-                    Arr[Count].PartType := nptArrayIdentifier
-                  else
-                    Arr[Count].PartType := nptIdentifier;
-                end
-              else Arr[Count].PartType := nptInvalid;
-              Arr[Count].PartIndex := UNS_NAME_INDEX_DEFAULT;
-              PrevDelimiter := Name[i];
-              Start := i + 1;
-              Inc(Count);
-            end
+          begin
+            // last part was an (array) identifier
+            If CheckAndSetIdentifier(Copy(Name,Start,i - Start),TempPart.PartStr) then
+              begin
+                If Name[i] <> UNS_NAME_DELIMITER then
+                  TempPart.PartType := nptArrayIdentifier
+                else
+                  TempPart.PartType := nptIdentifier;
+              end
+            else TempPart.PartType := nptInvalid;
+            TempPart.PartIndex := UNS_NAME_INDEX_DEFAULT;
+            CDA_Add(NameParts,TempPart);
+            PrevDelimiter := Name[i];
+            Start := i + 1;
+          end
 { - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -}
         else If UNSCharInSet(Name[i],UNS_NAME_BRACKETS_RIGHT) then
-          with NameParts do
-            begin
-              // last part was in brackets, index or item number
-              GrowPartsArray;
-              If CheckDelimiters(PrevDelimiter,Name[i]) then
-                begin
-                  If Name[Start] = UNS_NAME_ARRAYITEM_TAG then
-                    begin
-                      // there is item number in the brackets
-                      If Name[i] = UNS_NAME_BRACKETDEF_RIGHT then
-                        Arr[Count].PartType := nptArrayItemDef
-                      else
-                        Arr[Count].PartType := nptArrayItem;
-                      // resolve to item number (not index!)
-                      If (i - Start) = 2 then
-                        case Name[Start + 1] of
-                          '0','N','n':  Arr[Count].PartIndex := UNS_NAME_ARRAYITEM_NEW;
-                          '1','L','l':  Arr[Count].PartIndex := UNS_NAME_ARRAYITEM_LOW;
-                          '2','H','h':  Arr[Count].PartIndex := UNS_NAME_ARRAYITEM_HIGH;
-                        else
-                          Arr[Count].PartType := nptInvalid;
-                        end
-                      else Arr[Count].PartType := nptInvalid;
-                    end
-                  else
-                    begin
-                      // there is item index in the brackets
-                      If TryStrToInt(Copy(Name,Start,i - Start),Arr[Count].PartIndex) then
-                        begin
-                          If Name[i] = UNS_NAME_BRACKETDEF_RIGHT then
-                            Arr[Count].PartType := nptArrayIndexDef
-                          else
-                            Arr[Count].PartType := nptArrayIndex;
-                        end
-                      else Arr[Count].PartType := nptInvalid;
+          begin
+            // last part was in brackets, index or item number
+            If CheckDelimiters(PrevDelimiter,Name[i]) then
+              begin
+                // left bracket matches the right one
+                If Name[Start] = UNS_NAME_ARRAYITEM_TAG then
+                  begin
+                    // there is item number in the brackets
+                    case Name[i] of
+                      UNS_NAME_BRACKET_RIGHT:     TempPart.PartType := nptArrayItem;
+                      UNS_NAME_BRACKETSAV_RIGHT:  TempPart.PartType := nptArrayItemSav;
+                      UNS_NAME_BRACKETDEF_RIGHT:  TempPart.PartType := nptArrayItemDef;
+                    else
+                      TempPart.PartType := nptInvalid;
                     end;
-                end
-              else
-                begin
-                  // wrong delimiter
-                  Arr[Count].PartType := nptInvalid;
-                  Arr[Count].PartIndex := UNS_NAME_INDEX_DEFAULT;
-                end;
-              Arr[Count].PartStr := UNSHashedString(Copy(Name,Start,i - Start));
-              PrevDelimiter := Name[i];
-              Start := i + 2; // delimiter is expected after the closing bracket
-              Inc(Count);
-              Inc(i);
-            end;
+                    // resolve to item number (not index!)
+                    If (i - Start) = 2 then
+                      case Name[Start + 1] of
+                        '0','N','n':  TempPart.PartIndex := UNS_NAME_ARRAYITEM_NEW;
+                        '1','L','l':  TempPart.PartIndex := UNS_NAME_ARRAYITEM_LOW;
+                        '2','H','h':  TempPart.PartIndex := UNS_NAME_ARRAYITEM_HIGH;
+                      else
+                        TempPart.PartType := nptInvalid;
+                      end
+                    else TempPart.PartType := nptInvalid;
+                  end
+                else
+                  begin
+                    // there is item index in the brackets
+                    If TryStrToInt(Copy(Name,Start,i - Start),TempPart.PartIndex) then
+                      begin
+                        case Name[i] of
+                          UNS_NAME_BRACKET_RIGHT:     TempPart.PartType := nptArrayIndex;
+                          UNS_NAME_BRACKETSAV_RIGHT:  TempPart.PartType := nptArrayIndexSav;
+                          UNS_NAME_BRACKETDEF_RIGHT:  TempPart.PartType := nptArrayIndexDef;
+                        else
+                          TempPart.PartType := nptInvalid;
+                        end;
+                      end
+                    else TempPart.PartType := nptInvalid;
+                  end;
+              end
+            else
+              begin
+                // wrong delimiter
+                TempPart.PartType := nptInvalid;
+                TempPart.PartIndex := UNS_NAME_INDEX_DEFAULT;
+              end;
+            TempPart.PartStr := UNSHashedString(Copy(Name,Start,i - Start));
+            CDA_Add(NameParts,TempPart);
+            PrevDelimiter := Name[i];
+            Start := i + 2; // delimiter is expected after the closing bracket
+            Inc(i);
+          end;
         Inc(i);
-      end;
+      end{while};
 { - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -}
     // process last part if present (must be identifier, nothing else is allowed)
     If Start <= Length(Name) then
-      with NameParts do
-        begin
-          GrowPartsArray;
-          If CheckAndSetIdentifier(Copy(Name,Start,Length(Name) - Start + 1),Arr[Count].PartStr) then
-            Arr[Count].PartType := nptIdentifier
-          else
-            Arr[Count].PartType := nptInvalid;
-          Arr[Count].PartIndex := UNS_NAME_INDEX_DEFAULT;
-          Inc(Count);
-        end;
+      begin
+        If CheckAndSetIdentifier(Copy(Name,Start,Length(Name) - Start + 1),TempPart.PartStr) then
+          TempPart.PartType := nptIdentifier
+        else
+          TempPart.PartType := nptInvalid;
+        TempPart.PartIndex := UNS_NAME_INDEX_DEFAULT;
+        CDA_Add(NameParts,TempPart);
+      end;
   end;
 { - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -}
 // do sanity checks and set validity flag accordingly 
 NameParts.Valid := True;
-For i := Low(NameParts.Arr) to Pred(NameParts.Count) do
-  begin
-    case NameParts.Arr[i].PartType of
-      nptInvalid:
-        NameParts.Valid := False;
-      nptIdentifier:;       // do nothing
-      nptArrayIdentifier:   // must be followed by index or item number, or must be last
-        If i < Pred(NameParts.Count) then
-          NameParts.Valid := NameParts.Arr[i + 1].PartType in
-            [nptArrayIndex,nptArrayIndexDef,nptArrayItem,nptArrayItemDef];
-      nptArrayIndex,
-      nptArrayIndexDef,
-      nptArrayItem,
-      nptArrayItemDef:      // must be always preceded by an array identifier
-        If i > Low(NameParts.Arr) then
-          NameParts.Valid := NameParts.Arr[i - 1].PartType = nptArrayIdentifier
-        else
+For i := CDA_Low(NameParts) to CDA_High(NameParts) do
+  with CDA_GetItem(NameParts,i) do
+    begin
+      case PartType of
+        nptInvalid:
           NameParts.Valid := False;
-    else
-      raise EUNSException.CreateFmt('Invalid name part type (%d).',[Ord(NameParts.Arr[i].PartType)],'UNSNameParts');
+        nptIdentifier:;       // do nothing
+        nptArrayIdentifier:   // must be followed by index or item number, or must be last
+          If i < CDA_Count(NameParts) then
+            NameParts.Valid := CDA_GetItem(NameParts,i + 1).PartType in
+              [nptArrayIndex,nptArrayIndexSav,nptArrayIndexDef,nptArrayItem,nptArrayItemSav,nptArrayItemDef];
+        nptArrayIndex,
+        nptArrayIndexSav,
+        nptArrayIndexDef,
+        nptArrayItem,
+        nptArrayItemSav,
+        nptArrayItemDef:      // must be always preceded by an array identifier
+          If i > CDA_Low(NameParts) then
+            NameParts.Valid := CDA_GetItem(NameParts,i - 1).PartType = nptArrayIdentifier
+          else
+            NameParts.Valid := False;
+      else
+        raise EUNSException.CreateFmt('Invalid name part type (%d).',[Ord(PartType)],'UNSNameParts');
+      end;
+      If not NameParts.Valid then
+        Break{For i};
     end;
-    If not NameParts.Valid then
-      Break{For i};
-  end;
 If NameParts.Valid then
-  Result := NameParts.Count
+  Result := CDA_Count(NameParts)
 else
   Result := 0;
 end;

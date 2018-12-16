@@ -216,7 +216,7 @@ end;
 
 class Function TUNSNodeClassType.SameValues(const A,B: TUNSNodeValueType): Boolean;
 begin
-Result := CDA_Same(A,B);
+Result := CDA_Same(A,B{$IFDEF UNS_NodeAoText},True{$ENDIF});
 end;
 
 //------------------------------------------------------------------------------

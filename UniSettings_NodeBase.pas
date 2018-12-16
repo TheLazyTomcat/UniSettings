@@ -63,8 +63,8 @@ implementation
 
 uses
   UniSettings_Utils, UniSettings_Exceptions, UniSettings_NodeBranch,
-  UniSettings_NodeArray, UniSettings_NodeArrayItem;
-  //UniSettings;
+  UniSettings_NodeArray, UniSettings_NodeArrayItem,
+  UniSettings;
 
 class Function TUNSNodeBase.GetNodeClass: TUNSNodeClass;
 begin
@@ -166,9 +166,8 @@ end;
 
 Function TUNSNodeBase.ValueFormatSettings: TUNSValueFormatSettings;
 begin
-If Assigned(fMaster) then
-  //Result := TUniSettings(fMaster).ValueFormatSettings
-  {$message 'activate'}
+If fMaster is TUniSettings then
+  Result := TUniSettings(fMaster).ValueFormatSettings
 else
   Result := UNS_VALUEFORMATSETTINGS_DEFAULT;
 end;
