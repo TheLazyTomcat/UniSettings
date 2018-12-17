@@ -83,6 +83,7 @@ end;
 procedure TUNSNodeBase.SetNodeNameStr(const Value: String);
 begin
 fName.Str := Value;
+UniqueString(fName.Str);
 UNSHashString(fName);
 end;
 
@@ -186,7 +187,9 @@ end;
 constructor TUNSNodeBase.Create(const Name: String; ParentNode: TUNSNodeBase);
 begin
 inherited Create;
-fName := UNSHashedString(Name);
+fName.Str := Name;
+UniqueString(fName.Str);
+UNSHashString(fName);
 fParentNode := ParentNode;
 fMaster := nil;
 fFlags := [];

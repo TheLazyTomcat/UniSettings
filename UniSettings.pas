@@ -3,7 +3,7 @@ todo (* = completed):
 
   tree building
 * arrays
-  array nodes: listsorters -> implementation uses
+* array nodes: listsorters -> implementation uses
   access to array items trough index in value name
 * name parts -> CDA
   TUniSettings copy constructor
@@ -56,10 +56,10 @@ type
     procedure SetWorkingBranch(const Branch: String);
   protected
     Function CreateLeafNode(ValueType: TUNSValueType; const NodeName: String; ParentNode: TUNSNodeBranch): TUNSNodeLeaf; virtual;
-    Function GetSubNode(NodeNamePart: TUNSNamePart; Branch: TUNSNodeBranch; out Node: TUNSNode; CanCreate: Boolean): Boolean; virtual;
+    Function GetSubNode(NodeNamePart: TUNSNamePart; Branch: TUNSNodeBranch; out Node: TUNSNode; CanCreateArrayItem: Boolean): Boolean; virtual;
     Function ConstructBranch(NodeNameParts: TUNSNameParts): TUNSNodeBranch; virtual;
-    Function FindNode(NodeNameParts: TUNSNameParts): TUNSNode; virtual;
     Function AddNode(const NodeName: String; ValueType: TUNSValueType; out Node: TUNSNodeLeaf): Boolean; virtual;
+    Function FindNode(NodeNameParts: TUNSNameParts): TUNSNode; virtual;    
     Function FindLeafNode(const NodeName: String; out Node: TUNSNodeLeaf): Boolean; overload; virtual;
     Function FindLeafNode(const NodeName: String; ValueType: TUNSValueType; out Node: TUNSNodeLeaf): Boolean; overload; virtual;
     Function CheckedLeafNodeAccess(const NodeName, Caller: String): TUNSNodeLeaf; virtual;
@@ -94,19 +94,36 @@ type
     *)
     //--- Common value access --------------------------------------------------
     (*
-    procedure ActualFromDefault; virtual;
-    procedure DefaultFromActual; virtual;
-    procedure ExchangeActualAndDefault; virtual;
-    Function ActualEqualsDefault: Boolean; virtual;
-    procedure ValueActualFromDefault(const ValueName: String; Index: Integer = 0); virtual;
-    procedure ValueDefaultFromActual(const ValueName: String; Index: Integer = 0); virtual;
-    procedure ValueExchangeActualAndDefault(const ValueName: String; Index: Integer = 0); virtual;
-    Function ValueActualEqualsDefault(const ValueName: String; Index: Integer = 0): Boolean; virtual;
     Function ValueFullName(const ValueName: String): String; virtual;
     Function ValueType(const ValueName: String): TUNSValueType; virtual;
     Function ValueSize(const ValueName: String; AccessDefVal: Boolean = False): TMemSize; virtual;
     Function ValueCount(const ValueName: String; AccessDefVal: Boolean = False): Integer; virtual;
     Function ValueItemSize(const ValueName: String): TMemSize; virtual;
+
+    procedure ValueKindMove(Src,Dest: TUNSValueKind); virtual;
+    procedure ValueKindExchange(ValA,ValB: TUNSValueKind); virtual;
+    Function ValueKindCompare(ValA,ValB: TUNSValueKind): Boolean; virtual;
+
+    procedure ActualFromDefault; overload; virtual;
+    procedure DefaultFromActual; overload; virtual;
+    procedure ExchangeActualAndDefault; overload; virtual;
+    Function ActualEqualsDefault: Boolean; overload; virtual;
+
+    procedure Save; overload; virtual;
+    procedure Restore; overload; virtual;
+
+    procedure ValueValueKindMove(const ValueName: String; Src,Dest: TUNSValueKind); overload; virtual;
+    procedure ValueValueKindExchange(const ValueName: String; ValA,ValB: TUNSValueKind); overload; virtual;
+    Function ValueValueKindCompare(const ValueName: String; ValA,ValB: TUNSValueKind): Boolean; overload; virtual;
+
+    procedure ValueActualFromDefault(const ValueName: String); virtual;
+    procedure ValueDefaultFromActual(const ValueName: String); virtual;
+    procedure ValueExchangeActualAndDefault(const ValueName: String); virtual;
+    Function ValueActualEqualsDefault(const ValueName: String): Boolean; virtual;
+
+    procedure ValueSave(const ValueName: String); virtual;
+    procedure ValueRestore(const ValueName: String); virtual;
+
     Function ValueAddress(const ValueName: String; AccessDefVal: Boolean = False): Pointer; virtual;
     Function ValueAsString(const ValueName: String; AccessDefVal: Boolean = False): String; virtual;
     procedure ValueFromString(const ValueName: String; const Str: String; AccessDefVal: Boolean = False); virtual;
@@ -116,6 +133,7 @@ type
     procedure ValueToBuffer(const ValueName: String; Buffer: TMemoryBuffer; AccessDefVal: Boolean = False); virtual;
     procedure ValueFromBuffer(const ValueName: String; Buffer: TMemoryBuffer; AccessDefVal: Boolean = False); virtual;
     Function ValueAsBuffer(const ValueName: String; AccessDefVal: Boolean = False): TMemoryBuffer; virtual;
+
     Function ValueItemAddress(const ValueName: String; Index: Integer; AccessDefVal: Boolean = False): Pointer; virtual;
     Function ValueItemAsString(const ValueName: String; Index: Integer; AccessDefVal: Boolean = False): String; virtual;
     procedure ValueItemFromString(const ValueName: String; Index: Integer; const Str: String; AccessDefVal: Boolean = False); virtual;
@@ -187,7 +205,22 @@ uses
   UniSettings_NodeText,
   UniSettings_NodeBuffer,
   // leaf array nodes
-
+  UniSettings_NodeAoBool,
+  UniSettings_NodeAoInt8,
+  UniSettings_NodeAoUInt8,
+  UniSettings_NodeAoInt16,
+  UniSettings_NodeAoUInt16,
+  UniSettings_NodeAoInt32,
+  UniSettings_NodeAoUInt32,
+  UniSettings_NodeAoInt64,
+  UniSettings_NodeAoUInt64,
+  UniSettings_NodeAoFloat32,
+  UniSettings_NodeAoFloat64,
+  UniSettings_NodeAoDateTime,
+  UniSettings_NodeAoDate,
+  UniSettings_NodeAoTime,
+  UniSettings_NodeAoText,
+  UniSettings_NodeAoBuffer,
   // branch nodes
   UniSettings_NodeArray,
   UniSettings_NodeArrayItem;
@@ -272,7 +305,7 @@ try
       Node := FindNode(NameParts);
       If Node is TUNSNodeBranch then
         begin
-          fWorkingBranch := Branch;
+          fWorkingBranch := Node.ReconstructFullName(False);
           fWorkingNode := TUNSNodeBranch(Node);
         end;
     end;
@@ -286,6 +319,7 @@ end;
 Function TUniSettings.CreateLeafNode(ValueType: TUNSValueType; const NodeName: String; ParentNode: TUNSNodeBranch): TUNSNodeLeaf;
 begin
 case ValueType of
+  // simple values
   vtBlank:       Result := TUNSNodeBlank.Create(NodeName,ParentNode);
   vtBool:        Result := TUNSNodeBool.Create(NodeName,ParentNode);
   vtInt8:        Result := TUNSNodeInt8.Create(NodeName,ParentNode);
@@ -303,24 +337,23 @@ case ValueType of
   vtDateTime:    Result := TUNSNodeDateTime.Create(NodeName,ParentNode);
   vtText:        Result := TUNSNodeText.Create(NodeName,ParentNode);
   vtBuffer:      Result := TUNSNodeBuffer.Create(NodeName,ParentNode);
-(*
-  vtAoBool,
-  vtAoInt8,
-  vtAoUInt8,
-  vtAoInt16,
-  vtAoUInt16,
-  vtAoInt32,
-  vtAoUInt32,
-  vtAoInt64,
-  vtAoUInt64,
-  vtAoFloat32,
-  vtAoFloat64,
-  vtAoDate,
-  vtAoTime,
-  vtAoDateTime,
-  vtAoText,
-  vtAoBuffer:;
-*)
+  // array values
+  vtAoBool:      Result := TUNSNodeAoBool.Create(NodeName,ParentNode);
+  vtAoInt8:      Result := TUNSNodeAoInt8.Create(NodeName,ParentNode);
+  vtAoUInt8:     Result := TUNSNodeAoUInt8.Create(NodeName,ParentNode);
+  vtAoInt16:     Result := TUNSNodeAoInt16.Create(NodeName,ParentNode);
+  vtAoUInt16:    Result := TUNSNodeAoUInt16.Create(NodeName,ParentNode);
+  vtAoInt32:     Result := TUNSNodeAoInt32.Create(NodeName,ParentNode);
+  vtAoUInt32:    Result := TUNSNodeAoUInt32.Create(NodeName,ParentNode);
+  vtAoInt64:     Result := TUNSNodeAoInt64.Create(NodeName,ParentNode);
+  vtAoUInt64:    Result := TUNSNodeAoUInt64.Create(NodeName,ParentNode);
+  vtAoFloat32:   Result := TUNSNodeAoFloat32.Create(NodeName,ParentNode);
+  vtAoFloat64:   Result := TUNSNodeAoFloat64.Create(NodeName,ParentNode);
+  vtAoDate:      Result := TUNSNodeAoDate.Create(NodeName,ParentNode);
+  vtAoTime:      Result := TUNSNodeAoTime.Create(NodeName,ParentNode);
+  vtAoDateTime:  Result := TUNSNodeAoDateTime.Create(NodeName,ParentNode);
+  vtAoText:      Result := TUNSNodeAoText.Create(NodeName,ParentNode);
+  vtAoBuffer:    Result := TUNSNodeAoBuffer.Create(NodeName,ParentNode);
 else
  {vtUndefined}
   raise EUNSException.CreateFmt('Invalid node value type (%d).',[Ord(ValueType)],Self,'CreateLeafNode');
@@ -329,7 +362,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function TUniSettings.GetSubNode(NodeNamePart: TUNSNamePart; Branch: TUNSNodeBranch; out Node: TUNSNode; CanCreate: Boolean): Boolean;
+Function TUniSettings.GetSubNode(NodeNamePart: TUNSNamePart; Branch: TUNSNodeBranch; out Node: TUNSNode; CanCreateArrayItem: Boolean): Boolean;
 begin
 Node := nil;
 case NodeNamePart.PartType of
@@ -341,6 +374,7 @@ case NodeNamePart.PartType of
     end;
 {- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - }
   nptArrayIndex,
+  nptArrayIndexSav,
   nptArrayIndexDef:
     If Branch is TUNSNodeArray then
       begin
@@ -351,12 +385,13 @@ case NodeNamePart.PartType of
                  [Ord(NodeNamePart.PartType),Branch.ClassName],Self,'GetSubNode');
 {- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - }
   nptArrayItem,
+  nptArrayItemSav,
   nptArrayItemDef:
     begin
       If Branch is TUNSNodeArray then
         case NodeNamePart.PartIndex of
           UNS_NAME_ARRAYITEM_NEW:
-            If CanCreate then
+            If CanCreateArrayItem then
               begin
                 Node := TUNSNodeArrayItem.Create('',Branch);
                 Branch.Add(Node);
@@ -393,9 +428,9 @@ If NodeNameParts.Count > 0 then
     If NodeNameParts.Valid then
       begin
         CurrentBranch := fWorkingNode;
-        For i := Low(NodeNameParts.Arr) to Pred(NodeNameParts.Count) do
+        For i := CDA_Low(NodeNameParts) to CDA_High(NodeNameParts) do
           begin
-            NodeFound := GetSubNode(NodeNameParts.Arr[i],CurrentBranch,NextNode,True);
+            NodeFound := GetSubNode(CDA_GetItem(NodeNameParts,i),CurrentBranch,NextNode,True);
             If NextNode is TUNSNodeBlank then
               begin
                 CurrentBranch.Remove(NextNode);
@@ -415,19 +450,21 @@ If NodeNameParts.Count > 0 then
             else
               begin
                 // node was NOT found, create it
-                case NodeNameParts.Arr[i].PartType of
+                case CDA_GetItem(NodeNameParts,i).PartType of
                   nptIdentifier:
-                    NextNode := TUNSNodeBranch.Create(NodeNameParts.Arr[i].PartStr.Str,CurrentBranch);
+                    NextNode := TUNSNodeBranch.Create(CDA_GetItem(NodeNameParts,i).PartStr.Str,CurrentBranch);
                   nptArrayIdentifier:
-                    NextNode := TUNSNodeArray.Create(NodeNameParts.Arr[i].PartStr.Str,CurrentBranch);
+                    NextNode := TUNSNodeArray.Create(CDA_GetItem(NodeNameParts,i).PartStr.Str,CurrentBranch);
                   nptArrayIndex,
+                  nptArrayIndexSav,
                   nptArrayIndexDef,
                   nptArrayItem,
+                  nptArrayItemSav,
                   nptArrayItemDef:
                     Exit; // array items can only be created in GetSubNode trough the use of [#N] (new array item), return nil
                 else
                   raise EUNSException.CreateFmt('Invalid name part type (%d).',
-                    [Ord(NodeNameParts.Arr[i].PartType)],Self,'ConstructBranch');
+                    [Ord(CDA_GetItem(NodeNameParts,i).PartType)],Self,'ConstructBranch');
                 end;
                 CurrentBranch.Add(NextNode);
                 CurrentBranch := TUNSNodeBranch(NextNode);
@@ -437,31 +474,7 @@ If NodeNameParts.Count > 0 then
       end
     else raise EUNSException.Create('Invalid name.',Self,'ConstructBranch');
   end
-else Result := fRootNode;
-end;
-
-//------------------------------------------------------------------------------
-
-Function TUniSettings.FindNode(NodeNameParts: TUNSNameParts): TUNSNode;
-var
-  CurrentNode:  TUNSNode;
-  i:            Integer;
-begin
-Result := nil;
-If NodeNameParts.Valid and (NodeNameParts.Count > 0) then
-  begin
-    CurrentNode := fWorkingNode;
-    For i := Low(NodeNameParts.Arr) to Pred(NodeNameParts.Count) do
-      begin
-        If CurrentNode is TUNSNodeBranch then
-          begin
-            If not GetSubNode(NodeNameParts.Arr[i],TUNSNodeBranch(CurrentNode),CurrentNode,False) then
-              Exit;
-          end
-        else Exit;
-      end;
-    Result := CurrentNode;
-  end;
+else Result := fWorkingNode;
 end;
 
 //------------------------------------------------------------------------------
@@ -472,38 +485,62 @@ var
   BranchNode: TUNSNodeBranch;
   Index:      Integer;
 begin
-  Node := nil;
-  Result := False;
-  If UNSNameParts(NodeName,NameParts) > 0 then
-    // must not end with index or array item
-    If not(NameParts.Arr[Pred(NameParts.Count)].PartType in
-      [nptArrayIndex,nptArrayIndexDef,nptArrayItem,nptArrayItemDef]) then
-      begin
-        Dec(NameParts.Count);
-        try
-          BranchNode := ConstructBranch(NameParts);
-        finally
-          Inc(NameParts.Count);
-        end;
-        If Assigned(BranchNode) then
-          begin
-            Index := BranchNode.IndexOf(NameParts.Arr[Pred(NameParts.Count)].PartStr);
-            If BranchNode.CheckIndex(Index) then
-              If BranchNode[Index] is TUNSNodeBlank then
-                begin
-                  BranchNode.Delete(Index);
-                  Index := -1;
-                end;
-            If not BranchNode.CheckIndex(Index) then
-              begin
-                Node := CreateLeafNode(ValueType,NameParts.Arr[Pred(NameParts.Count)].PartStr.Str,BranchNode);
-                If BranchNode.CheckIndex(BranchNode.Add(Node)) then
-                  Result := True
-                else
-                  FreeAndNil(Node);
-              end;
-          end;
+Node := nil;
+Result := False;
+If UNSNameParts(NodeName,NameParts) > 0 then
+  // must not end with array index or array item
+  If not(CDA_Last(NameParts).PartType in [nptArrayIndex,nptArrayIndexSav,
+    nptArrayIndexDef,nptArrayItem,nptArrayItemSav,nptArrayItemDef]) then
+    begin
+      Dec(NameParts.Count);
+      try
+        BranchNode := ConstructBranch(NameParts);
+      finally
+        Inc(NameParts.Count);
       end;
+      If Assigned(BranchNode) then
+        begin
+          Index := BranchNode.IndexOf(CDA_Last(NameParts).PartStr);
+          If BranchNode.CheckIndex(Index) then
+            If BranchNode[Index] is TUNSNodeBlank then
+              begin
+                BranchNode.Delete(Index);
+                Index := -1;
+              end;
+          If not BranchNode.CheckIndex(Index) then
+            begin
+              Node := CreateLeafNode(ValueType,CDA_Last(NameParts).PartStr.Str,BranchNode);
+              If BranchNode.CheckIndex(BranchNode.Add(Node)) then
+                Result := True
+              else
+                FreeAndNil(Node);
+            end;
+        end;
+    end;
+end;
+
+//------------------------------------------------------------------------------
+
+Function TUniSettings.FindNode(NodeNameParts: TUNSNameParts): TUNSNode;
+var
+  CurrentNode:  TUNSNode;
+  i:            Integer;
+begin
+Result := nil;
+If NodeNameParts.Valid and (CDA_Count(NodeNameParts) > 0) then
+  begin
+    CurrentNode := fWorkingNode;
+    For i := CDA_Low(NodeNameParts) to CDA_High(NodeNameParts) do
+      begin
+        If CurrentNode is TUNSNodeBranch then
+          begin
+            If not GetSubNode(CDA_GetItem(NodeNameParts,i),TUNSNodeBranch(CurrentNode),CurrentNode,False) then
+              Exit;
+          end
+        else Exit;
+      end;
+    Result := CurrentNode;
+  end;
 end;
 
 //------------------------------------------------------------------------------
@@ -683,8 +720,8 @@ ReadLock;
 try
   If UNSNameParts(ValueName,NameParts) > 0 then
     begin
-      If NameParts.Arr[Pred(NameParts.Count)].PartType in
-        [nptArrayIndex,nptArrayIndexDef,nptArrayItem,nptArrayItemDef] then
+      If CDA_Last(NameParts).PartType in [nptArrayIndex,nptArrayIndexSav,
+        nptArrayIndexDef,nptArrayItem,nptArrayItemSav,nptArrayItemDef] then
         begin
           // last name part is an index
           Dec(NameParts.Count);
@@ -694,20 +731,22 @@ try
             Inc(NameParts.Count);
           end;
           If Node is TUNSNodePrimitiveArray then
-            with NameParts.Arr[Pred(NameParts.Count)] do
-              begin
-                case NameParts.Arr[Pred(NameParts.Count)].PartType of
-                  //nptArrayIndex:
-                    //Result := TUNSNodePrimitiveArray(Node).CheckIndex(PartIndex,False);
-                  //nptArrayIndexDef:
-                    //Result := TUNSNodePrimitiveArray(Node).CheckIndex(PartIndex,True);
-                  nptArrayItem:
-                    If PartIndex in [UNS_NAME_ARRAYITEM_LOW,UNS_NAME_ARRAYITEM_HIGH] then
-                      Result := TUNSNodePrimitiveArray(Node).Count > 0;
-                  nptArrayItemDef:
-                    If PartIndex in [UNS_NAME_ARRAYITEM_LOW,UNS_NAME_ARRAYITEM_HIGH] then
-                      Result := TUNSNodePrimitiveArray(Node).DefaultCount > 0;
-                end;
+            case CDA_Last(NameParts).PartType of
+              nptArrayIndex:
+                Result := TUNSNodePrimitiveArray(Node).CheckIndex(CDA_Last(NameParts).PartIndex,vkActual);
+              nptArrayIndexSav:
+                Result := TUNSNodePrimitiveArray(Node).CheckIndex(CDA_Last(NameParts).PartIndex,vkSaved);
+              nptArrayIndexDef:
+                Result := TUNSNodePrimitiveArray(Node).CheckIndex(CDA_Last(NameParts).PartIndex,vkDefault);
+              nptArrayItem:
+                If CDA_Last(NameParts).PartIndex in [UNS_NAME_ARRAYITEM_LOW,UNS_NAME_ARRAYITEM_HIGH] then
+                  Result := TUNSNodePrimitiveArray(Node).Count > 0;
+              nptArrayItemSav:
+                If CDA_Last(NameParts).PartIndex in [UNS_NAME_ARRAYITEM_LOW,UNS_NAME_ARRAYITEM_HIGH] then
+                  Result := TUNSNodePrimitiveArray(Node).SavedCount > 0;
+              nptArrayItemDef:
+                If CDA_Last(NameParts).PartIndex in [UNS_NAME_ARRAYITEM_LOW,UNS_NAME_ARRAYITEM_HIGH] then
+                  Result := TUNSNodePrimitiveArray(Node).DefaultCount > 0;
             end;
         end
       else
@@ -746,9 +785,9 @@ WriteLock;
 try
   Result := False;
   If UNSNameParts(ValueName,NameParts) > 0 then
-    // must not end with index or array item
-    If not(NameParts.Arr[Pred(NameParts.Count)].PartType in
-      [nptArrayIndex,nptArrayIndexDef,nptArrayItem,nptArrayItemDef]) then
+    // must not end with array index or array item
+    If not(CDA_Last(NameParts).PartType in [nptArrayIndex,nptArrayIndexSav,
+      nptArrayIndexDef,nptArrayItem,nptArrayItemSav,nptArrayItemDef]) then
       begin
         Node := FindNode(NameParts);
         If Node.ParentNode is TUNSNodeBranch then
@@ -767,12 +806,10 @@ WriteLock;
 try
   ChangingStart;
   try
-    fRootNode.Clear;
+    fWorkingNode.Clear;
   finally
     ChangingEnd;
   end;
-  fWorkingBranch := '';
-  fWorkingNode := fRootNode;
 finally
   WriteUnlock;
 end;

@@ -16,16 +16,16 @@ type
     Function GetCount: Integer; virtual; abstract;
     Function GetSavedCount: Integer; virtual; abstract;
     Function GetDefaultCount: Integer; virtual; abstract;
-    Function ObtainCount(ValueKind: TUNSValueKind): Integer; virtual;
     Function GetItemSize(Index: Integer): TMemSize; virtual; abstract;
     Function GetSavedItemSize(Index: Integer): TMemSize; virtual; abstract;
-    Function GetDefaultItemSize(Index: Integer): TMemSize; virtual; abstract;
-    Function ObtainItemSize(Index: Integer; ValueKind: TUNSValueKind): TMemSize; virtual;
+    Function GetDefaultItemSize(Index: Integer): TMemSize; virtual; abstract; 
     Function ConvItemToStr(const Value): String; virtual; abstract;
     Function ConvItemFromStr(const Str: String): Pointer; virtual; abstract;
   public
     class Function IsPrimitiveArray: Boolean; override;
     destructor Destroy; override;
+    Function ObtainCount(ValueKind: TUNSValueKind): Integer; virtual;
+    Function ObtainItemSize(Index: Integer; ValueKind: TUNSValueKind): TMemSize; virtual;
     procedure ValueKindMove(Index: Integer; Src,Dest: TUNSValueKind); overload; virtual; abstract;
     procedure ValueKindExchange(Index: Integer; ValA,ValB: TUNSValueKind); overload; virtual; abstract;
     Function ValueKindCompare(Index: Integer; ValA,ValB: TUNSValueKind): Boolean; overload; virtual; abstract;
