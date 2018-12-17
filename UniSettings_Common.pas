@@ -113,10 +113,11 @@ type
   end;
 
   TUNSNameParts = record
-    Arr:    array of TUNSNamePart;
-    Count:  Integer;
-    Data:   PtrInt;
-    Valid:  Boolean;
+    Arr:            array of TUNSNamePart;
+    Count:          Integer;
+    Data:           PtrInt;
+    EndsWithIndex:  Boolean;
+    Valid:          Boolean;
   end;
   PUNSNameParts = ^TUNSNameParts;
 
@@ -160,6 +161,9 @@ type
 {$INCLUDE '.\CountedDynArrays.inc'}
 {$UNDEF CDA_Interface}
 
+Function NamePartsHideLast(var NameParts: TUNSNameParts): Boolean;
+procedure NamePartsShowLast(var NameParts: TUNSNameParts);
+
 implementation
 
 uses
@@ -176,5 +180,25 @@ end;
 {$DEFINE CDA_Implementation}
 {$INCLUDE '.\CountedDynArrays.inc'}
 {$UNDEF CDA_Implementation}
+
+//------------------------------------------------------------------------------
+
+Function NamePartsHideLast(var NameParts: TUNSNameParts): Boolean;
+begin
+If CDA_Count(NameParts) > 0 then
+  begin
+    Dec(NameParts.Count);
+    Result := True;
+  end
+else Result := False;
+end;
+
+//------------------------------------------------------------------------------
+
+procedure NamePartsShowLast(var NameParts: TUNSNameParts);
+begin
+If CDA_Capacity(NameParts) > CDA_Count(NameParts) then
+  Inc(NameParts.Count);
+end;
 
 end.

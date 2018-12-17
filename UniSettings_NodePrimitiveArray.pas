@@ -29,9 +29,9 @@ type
     procedure ValueKindMove(Index: Integer; Src,Dest: TUNSValueKind); overload; virtual; abstract;
     procedure ValueKindExchange(Index: Integer; ValA,ValB: TUNSValueKind); overload; virtual; abstract;
     Function ValueKindCompare(Index: Integer; ValA,ValB: TUNSValueKind): Boolean; overload; virtual; abstract;
-    Function ActualFromDefault(Index: Integer): Boolean; overload; virtual;
-    Function DefaultFromActual(Index: Integer): Boolean; overload; virtual;
-    Function ExchangeActualAndDefault(Index: Integer): Boolean; overload; virtual;
+    procedure ActualFromDefault(Index: Integer); overload; virtual;
+    procedure DefaultFromActual(Index: Integer); overload; virtual;
+    procedure ExchangeActualAndDefault(Index: Integer); overload; virtual;
     Function ActualEqualsDefault(Index: Integer): Boolean; overload; virtual;
     procedure Save(Index: Integer); overload; virtual;
     procedure Restore(Index: Integer); overload; virtual;       
@@ -114,21 +114,21 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function TUNSNodePrimitiveArray.ActualFromDefault(Index: Integer): Boolean;
+procedure TUNSNodePrimitiveArray.ActualFromDefault(Index: Integer);
 begin
 ValueKindMove(Index,vkDefault,vkActual);
 end;
  
 //------------------------------------------------------------------------------
 
-Function TUNSNodePrimitiveArray.DefaultFromActual(Index: Integer): Boolean;
+procedure TUNSNodePrimitiveArray.DefaultFromActual(Index: Integer);
 begin
 ValueKindMove(Index,vkActual,vkDefault);
 end;
  
 //------------------------------------------------------------------------------
 
-Function TUNSNodePrimitiveArray.ExchangeActualAndDefault(Index: Integer): Boolean;
+procedure TUNSNodePrimitiveArray.ExchangeActualAndDefault(Index: Integer);
 begin
 ValueKindExchange(Index,vkActual,vkDefault);
 end;

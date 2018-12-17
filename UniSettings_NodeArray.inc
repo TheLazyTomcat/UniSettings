@@ -1189,6 +1189,7 @@ If CheckIndex(Index,ValueKind) then
     raise EUNSInvalidValueKindException.Create(ValueKind,Self,'Delete');
   end
 else EUNSIndexOutOfBoundsException.Create(Index,Self,'Delete');
+DoChange;
 end;
 
 //------------------------------------------------------------------------------

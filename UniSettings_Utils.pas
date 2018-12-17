@@ -280,6 +280,11 @@ For i := CDA_Low(NameParts) to CDA_High(NameParts) do
       If not NameParts.Valid then
         Break{For i};
     end;
+If CDA_Count(NameParts) > 0 then
+  NameParts.EndsWithIndex := CDA_Last(NameParts).PartType in [nptArrayIndex,
+    nptArrayIndexSav,nptArrayIndexDef,nptArrayItem,nptArrayItemSav,nptArrayItemDef]
+else
+  NameParts.EndsWithIndex := False;
 If NameParts.Valid then
   Result := CDA_Count(NameParts)
 else

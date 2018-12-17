@@ -17,11 +17,11 @@ type
     Function GetValueSize: TMemSize; virtual; abstract;
     Function GetSavedValueSize: TMemSize; virtual; abstract;
     Function GetDefaultValueSize: TMemSize; virtual; abstract;
-    Function ObtainValueSize(ValueKind: TUNSValueKind): TMemSize; virtual;
     Function ConvToStr(const Value): String; virtual; abstract;
-    Function ConvFromStr(const Str: String): Pointer; virtual; abstract;    
+    Function ConvFromStr(const Str: String): Pointer; virtual; abstract;
   public
     class Function IsPrimitiveArray: Boolean; virtual;
+    Function ObtainValueSize(ValueKind: TUNSValueKind): TMemSize; virtual;
     Function NodeEquals(Node: TUNSNodeLeaf; CompareValueKinds: TUNSValueKinds = [vkActual]): Boolean; virtual;
     Function Address(ValueKind: TUNSValueKind = vkActual): Pointer; overload; virtual; abstract;
     Function AsString(ValueKind: TUNSValueKind = vkActual): String; overload; virtual; abstract;

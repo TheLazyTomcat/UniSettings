@@ -92,25 +92,22 @@ type
     SaveToRegistry
     LoadFromRegistry
     *)
-    //--- Common value access --------------------------------------------------
-    (*
-    Function ValueFullName(const ValueName: String): String; virtual;
-    Function ValueType(const ValueName: String): TUNSValueType; virtual;
-    Function ValueSize(const ValueName: String; AccessDefVal: Boolean = False): TMemSize; virtual;
-    Function ValueCount(const ValueName: String; AccessDefVal: Boolean = False): Integer; virtual;
-    Function ValueItemSize(const ValueName: String): TMemSize; virtual;
-
+    //--- General value access -------------------------------------------------
     procedure ValueKindMove(Src,Dest: TUNSValueKind); virtual;
     procedure ValueKindExchange(ValA,ValB: TUNSValueKind); virtual;
     Function ValueKindCompare(ValA,ValB: TUNSValueKind): Boolean; virtual;
 
-    procedure ActualFromDefault; overload; virtual;
-    procedure DefaultFromActual; overload; virtual;
-    procedure ExchangeActualAndDefault; overload; virtual;
-    Function ActualEqualsDefault: Boolean; overload; virtual;
+    procedure ActualFromDefault; virtual;
+    procedure DefaultFromActual; virtual;
+    procedure ExchangeActualAndDefault; virtual;
+    Function ActualEqualsDefault: Boolean; virtual;
 
-    procedure Save; overload; virtual;
-    procedure Restore; overload; virtual;
+    procedure Save; virtual;
+    procedure Restore; virtual;
+    (*
+    Function ValueFullName(const ValueName: String): String; virtual;
+    Function ValueType(const ValueName: String): TUNSValueType; virtual;
+    Function ValueSize(const ValueName: String; AccessDefVal: Boolean = False): TMemSize; virtual;
 
     procedure ValueValueKindMove(const ValueName: String; Src,Dest: TUNSValueKind); overload; virtual;
     procedure ValueValueKindExchange(const ValueName: String; ValA,ValB: TUNSValueKind); overload; virtual;
@@ -124,33 +121,50 @@ type
     procedure ValueSave(const ValueName: String); virtual;
     procedure ValueRestore(const ValueName: String); virtual;
 
-    Function ValueAddress(const ValueName: String; AccessDefVal: Boolean = False): Pointer; virtual;
-    Function ValueAsString(const ValueName: String; AccessDefVal: Boolean = False): String; virtual;
-    procedure ValueFromString(const ValueName: String; const Str: String; AccessDefVal: Boolean = False); virtual;
-    procedure ValueToStream(const ValueName: String; Stream: TStream; AccessDefVal: Boolean = False); virtual;
-    procedure ValueFromStream(const ValueName: String; Stream: TStream; AccessDefVal: Boolean = False); virtual;
-    Function ValueAsStream(const ValueName: String; AccessDefVal: Boolean = False): TMemoryStream; virtual;
-    procedure ValueToBuffer(const ValueName: String; Buffer: TMemoryBuffer; AccessDefVal: Boolean = False); virtual;
-    procedure ValueFromBuffer(const ValueName: String; Buffer: TMemoryBuffer; AccessDefVal: Boolean = False); virtual;
-    Function ValueAsBuffer(const ValueName: String; AccessDefVal: Boolean = False): TMemoryBuffer; virtual;
+    Function ValueAddress(const ValueName: String; ValueKind: TUNSValueKind = vkActual): Pointer; virtual;
+    Function ValueAsString(const ValueName: String; ValueKind: TUNSValueKind = vkActual): String; virtual;
+    procedure ValueFromString(const ValueName: String; const Str: String; ValueKind: TUNSValueKind = vkActual); virtual;
+    procedure ValueToStream(const ValueName: String; Stream: TStream; ValueKind: TUNSValueKind = vkActual); virtual;
+    procedure ValueFromStream(const ValueName: String; Stream: TStream; ValueKind: TUNSValueKind = vkActual); virtual;
+    Function ValueAsStream(const ValueName: String; ValueKind: TUNSValueKind = vkActual): TMemoryStream; virtual;
+    procedure ValueToBuffer(const ValueName: String; Buffer: TMemoryBuffer; ValueKind: TUNSValueKind = vkActual); virtual;
+    procedure ValueFromBuffer(const ValueName: String; Buffer: TMemoryBuffer; ValueKind: TUNSValueKind = vkActual); virtual;
+    Function ValueAsBuffer(const ValueName: String; ValueKind: TUNSValueKind = vkActual): TMemoryBuffer; virtual;
 
-    Function ValueItemAddress(const ValueName: String; Index: Integer; AccessDefVal: Boolean = False): Pointer; virtual;
-    Function ValueItemAsString(const ValueName: String; Index: Integer; AccessDefVal: Boolean = False): String; virtual;
-    procedure ValueItemFromString(const ValueName: String; Index: Integer; const Str: String; AccessDefVal: Boolean = False); virtual;
-    procedure ValueItemToStream(const ValueName: String; Index: Integer; Stream: TStream; AccessDefVal: Boolean = False); virtual;
-    procedure ValueItemFromStream(const ValueName: String; Index: Integer; Stream: TStream; AccessDefVal: Boolean = False); virtual;
-    Function ValueItemAsStream(const ValueName: String; Index: Integer; AccessDefVal: Boolean = False): TMemoryStream; virtual;
-    procedure ValueItemToBuffer(const ValueName: String; Index: Integer; Buffer: TMemoryBuffer; AccessDefVal: Boolean = False); virtual;
-    procedure ValueItemFromBuffer(const ValueName: String; Index: Integer; Buffer: TMemoryBuffer; AccessDefVal: Boolean = False); virtual;
-    Function ValueItemAsBuffer(const ValueName: String; Index: Integer; AccessDefVal: Boolean = False): TMemoryBuffer; virtual;
-    Function ValueLowIndex(const ValueName: String; AccessDefVal: Boolean = False): Integer; virtual;
-    Function ValueHighIndex(const ValueName: String; AccessDefVal: Boolean = False): Integer; virtual;
-    Function ValueCheckIndex(const ValueName: String; Index: Integer; AccessDefVal: Boolean = False): Boolean; virtual;
-    procedure ValueExchange(const ValueName: String; Index1,Index2: Integer; AccessDefVal: Boolean = False); virtual;
-    procedure ValueMove(const ValueName: String; SrcIndex,DstIndex: Integer; AccessDefVal: Boolean = False); virtual;
-    procedure ValueDelete(const ValueName: String; Index: Integer; AccessDefVal: Boolean = False); virtual;
-    procedure ValueClear(const ValueName: String; AccessDefVal: Boolean = False); virtual;
-    //--- Inidividual value types access ---------------------------------------
+    Function ValueCount(const ValueName: String; AccessDefVal: Boolean = False): Integer; virtual;
+    Function ValueItemSize(const ValueName: String; Index: Integer): TMemSize; virtual;
+
+    procedure ValueValueKindMove(const ValueName: String; Index: Integer; Src,Dest: TUNSValueKind); overload; virtual;
+    procedure ValueValueKindExchange(const ValueName: String; Index: Integer; ValA,ValB: TUNSValueKind); overload; virtual;
+    Function ValueValueKindCompare(const ValueName: String; Index: Integer; ValA,ValB: TUNSValueKind): Boolean; overload; virtual;
+
+    procedure ValueActualFromDefault(const ValueName: String; Index: Integer); virtual;
+    procedure ValueDefaultFromActual(const ValueName: String; Index: Integer); virtual;
+    procedure ValueExchangeActualAndDefault(const ValueName: String; Index: Integer); virtual;
+    Function ValueActualEqualsDefault(const ValueName: String; Index: Integer): Boolean; virtual;
+
+    procedure ValueSave(const ValueName: String; Index: Integer); virtual;
+    procedure ValueRestore(const ValueName: String; Index: Integer); virtual;
+
+    Function ValueItemAddress(const ValueName: String; Index: Integer; ValueKind: TUNSValueKind = vkActual): Pointer; virtual;
+    Function ValueItemAsString(const ValueName: String; Index: Integer; ValueKind: TUNSValueKind = vkActual): String; virtual;
+    procedure ValueItemFromString(const ValueName: String; Index: Integer; const Str: String; ValueKind: TUNSValueKind = vkActual); virtual;
+    procedure ValueItemToStream(const ValueName: String; Index: Integer; Stream: TStream; ValueKind: TUNSValueKind = vkActual); virtual;
+    procedure ValueItemFromStream(const ValueName: String; Index: Integer; Stream: TStream; ValueKind: TUNSValueKind = vkActual); virtual;
+    Function ValueItemAsStream(const ValueName: String; Index: Integer; ValueKind: TUNSValueKind = vkActual): TMemoryStream; virtual;
+    procedure ValueItemToBuffer(const ValueName: String; Index: Integer; Buffer: TMemoryBuffer; ValueKind: TUNSValueKind = vkActual); virtual;
+    procedure ValueItemFromBuffer(const ValueName: String; Index: Integer; Buffer: TMemoryBuffer; ValueKind: TUNSValueKind = vkActual); virtual;
+    Function ValueItemAsBuffer(const ValueName: String; Index: Integer; ValueKind: TUNSValueKind = vkActual): TMemoryBuffer; virtual;
+
+    Function ValueLowIndex(const ValueName: String; ValueKind: TUNSValueKind = vkActual): Integer; virtual;
+    Function ValueHighIndex(const ValueName: String; ValueKind: TUNSValueKind = vkActual): Integer; virtual;
+    Function ValueCheckIndex(const ValueName: String; Index: Integer; ValueKind: TUNSValueKind = vkActual): Boolean; virtual;
+
+    procedure ValueExchange(const ValueName: String; Index1,Index2: Integer; ValueKind: TUNSValueKind = vkActual); virtual;
+    procedure ValueMove(const ValueName: String; SrcIndex,DstIndex: Integer; ValueKind: TUNSValueKind = vkActual); virtual;
+    procedure ValueDelete(const ValueName: String; Index: Integer; ValueKind: TUNSValueKind = vkActual); virtual;
+    procedure ValueClear(const ValueName: String; ValueKind: TUNSValueKind = vkActual); virtual;
+    //--- Specific value types access ------------------------------------------
   {$DEFINE Included}{$DEFINE Included_Declaration}
     {$INCLUDE '.\UniSettings_NodeBool.pas'}
     {$INCLUDE '.\UniSettings_NodeInt8.pas'}
@@ -174,10 +188,14 @@ type
     property WorkingBranch: String read GetWorkingBranch write SetWorkingBranch;
     //--- Format settings properties -------------------------------------------
     property ValueFormatSettings: TUNSValueFormatSettings read GetValueFormatSettings;
-    property NumericBools: Boolean index UNS_VALUEFORMATSETTING_INDEX_NUMBOOL read GetValueFormatSettingBool write SetValueFormatSettingBool;
-    property HexIntegers: Boolean index UNS_VALUEFORMATSETTING_INDEX_HEXINTS read GetValueFormatSettingBool write SetValueFormatSettingBool;
-    property HexFloats: Boolean index UNS_VALUEFORMATSETTING_INDEX_HEXFLTS read GetValueFormatSettingBool write SetValueFormatSettingBool;
-    property HexDateTime: Boolean index UNS_VALUEFORMATSETTING_INDEX_HEXDTTM read GetValueFormatSettingBool write SetValueFormatSettingBool;
+    property NumericBools: Boolean index UNS_VALUEFORMATSETTING_INDEX_NUMBOOL
+      read GetValueFormatSettingBool write SetValueFormatSettingBool;
+    property HexIntegers: Boolean index UNS_VALUEFORMATSETTING_INDEX_HEXINTS
+      read GetValueFormatSettingBool write SetValueFormatSettingBool;
+    property HexFloats: Boolean index UNS_VALUEFORMATSETTING_INDEX_HEXFLTS
+      read GetValueFormatSettingBool write SetValueFormatSettingBool;
+    property HexDateTime: Boolean index UNS_VALUEFORMATSETTING_INDEX_HEXDTTM
+      read GetValueFormatSettingBool write SetValueFormatSettingBool;
     //--- Events ---------------------------------------------------------------
     property OnChange: TNotifyEvent read fOnChange write fOnChange;
   end;
@@ -423,7 +441,7 @@ var
   NodeFound:      Boolean;
 begin
 Result := nil;
-If NodeNameParts.Count > 0 then
+If CDA_Count(NodeNameParts) > 0 then
   begin
     If NodeNameParts.Valid then
       begin
@@ -455,13 +473,9 @@ If NodeNameParts.Count > 0 then
                     NextNode := TUNSNodeBranch.Create(CDA_GetItem(NodeNameParts,i).PartStr.Str,CurrentBranch);
                   nptArrayIdentifier:
                     NextNode := TUNSNodeArray.Create(CDA_GetItem(NodeNameParts,i).PartStr.Str,CurrentBranch);
-                  nptArrayIndex,
-                  nptArrayIndexSav,
-                  nptArrayIndexDef,
-                  nptArrayItem,
-                  nptArrayItemSav,
-                  nptArrayItemDef:
-                    Exit; // array items can only be created in GetSubNode trough the use of [#N] (new array item), return nil
+                  nptArrayIndex,nptArrayIndexSav,nptArrayIndexDef,
+                  nptArrayItem,nptArrayItemSav,nptArrayItemDef:
+                    Exit; // array items can only be created in GetSubNode trough the use of [#N] (new array item), so return nil
                 else
                   raise EUNSException.CreateFmt('Invalid name part type (%d).',
                     [Ord(CDA_GetItem(NodeNameParts,i).PartType)],Self,'ConstructBranch');
@@ -492,12 +506,13 @@ If UNSNameParts(NodeName,NameParts) > 0 then
   If not(CDA_Last(NameParts).PartType in [nptArrayIndex,nptArrayIndexSav,
     nptArrayIndexDef,nptArrayItem,nptArrayItemSav,nptArrayItemDef]) then
     begin
-      Dec(NameParts.Count);
-      try
-        BranchNode := ConstructBranch(NameParts);
-      finally
-        Inc(NameParts.Count);
-      end;
+      If NamePartsHideLast(NameParts) then
+        try
+          BranchNode := ConstructBranch(NameParts);
+        finally
+          NamePartsShowLast(NameParts);
+        end
+      else BranchNode := nil;
       If Assigned(BranchNode) then
         begin
           Index := BranchNode.IndexOf(CDA_Last(NameParts).PartStr);
@@ -720,16 +735,16 @@ ReadLock;
 try
   If UNSNameParts(ValueName,NameParts) > 0 then
     begin
-      If CDA_Last(NameParts).PartType in [nptArrayIndex,nptArrayIndexSav,
-        nptArrayIndexDef,nptArrayItem,nptArrayItemSav,nptArrayItemDef] then
+      If NameParts.EndsWithIndex then
         begin
-          // last name part is an index
-          Dec(NameParts.Count);
-          try
-            Node := FindNode(NameParts);
-          finally
-            Inc(NameParts.Count);
-          end;
+          // last name part is an index or item
+          If NamePartsHideLast(NameParts) then
+            try
+              Node := FindNode(NameParts);
+            finally
+              NamePartsShowLast(NameParts);
+            end
+          else Node := nil;
           If Node is TUNSNodePrimitiveArray then
             case CDA_Last(NameParts).PartType of
               nptArrayIndex:
@@ -768,7 +783,12 @@ var
 begin
 WriteLock;
 try
-  Result := AddNode(ValueName,ValueType,NewNode);
+  ChangingStart;
+  try
+    Result := AddNode(ValueName,ValueType,NewNode);
+  finally
+    ChangingEnd;
+  end;
 finally
   WriteUnlock;
 end;
@@ -780,19 +800,68 @@ Function TUniSettings.Remove(const ValueName: String): Boolean;
 var
   NameParts:  TUNSNameParts;
   Node:       TUNSNode;
+
+  Function ArrayItemRemove(ArrayNode: TUNSNodePrimitiveArray; PartIndex: Integer; ValueKind: TUNSValueKind): Boolean;
+  begin
+    Result := True;
+    case PartIndex of
+      UNS_NAME_ARRAYITEM_LOW:
+        ArrayNode.Delete(ArrayNode.LowIndex(ValueKind),ValueKind);
+      UNS_NAME_ARRAYITEM_HIGH:
+        ArrayNode.Delete(ArrayNode.HighIndex(ValueKind),ValueKind);
+    else
+      Result := False;
+    end;
+  end;
+
 begin
 WriteLock;
 try
   Result := False;
   If UNSNameParts(ValueName,NameParts) > 0 then
-    // must not end with array index or array item
-    If not(CDA_Last(NameParts).PartType in [nptArrayIndex,nptArrayIndexSav,
-      nptArrayIndexDef,nptArrayItem,nptArrayItemSav,nptArrayItemDef]) then
-      begin
-        Node := FindNode(NameParts);
-        If Node.ParentNode is TUNSNodeBranch then
-          Result := TUNSNodeBranch(Node.ParentNode).Remove(Node) >= 0;
+    begin
+      ChangingStart;
+      try
+        If NameParts.EndsWithIndex then
+          begin
+            // last name part is an index or item
+            If NamePartsHideLast(NameParts) then
+              try
+                Node := FindNode(NameParts);
+              finally
+                NamePartsShowLast(NameParts);
+              end
+            else Node := nil;
+            Result := True;
+            If Node is TUNSNodePrimitiveArray then
+              case CDA_Last(NameParts).PartType of
+                nptArrayIndex:
+                  TUNSNodePrimitiveArray(Node).Delete(CDA_Last(NameParts).PartIndex,vkActual);
+                nptArrayIndexSav:
+                  TUNSNodePrimitiveArray(Node).Delete(CDA_Last(NameParts).PartIndex,vkSaved);
+                nptArrayIndexDef:
+                  TUNSNodePrimitiveArray(Node).Delete(CDA_Last(NameParts).PartIndex,vkDefault);
+                nptArrayItem:
+                  Result := ArrayItemRemove(TUNSNodePrimitiveArray(Node),CDA_Last(NameParts).PartIndex,vkActual);
+                nptArrayItemSav:
+                  Result := ArrayItemRemove(TUNSNodePrimitiveArray(Node),CDA_Last(NameParts).PartIndex,vkSaved);
+                nptArrayItemDef:
+                  Result := ArrayItemRemove(TUNSNodePrimitiveArray(Node),CDA_Last(NameParts).PartIndex,vkDefault);
+              else
+                Result := False;
+              end
+            else Result := False;
+          end
+        else
+          begin
+            Node := FindNode(NameParts);
+            If Node.ParentNode is TUNSNodeBranch then
+              Result := TUNSNodeBranch(Node.ParentNode).Remove(Node) >= 0;
+          end;
+      finally
+        ChangingEnd;
       end;
+    end;
 finally
   WriteUnlock;
 end;
@@ -838,7 +907,53 @@ Result := Strings.Count;
 end;
 
 //------------------------------------------------------------------------------
-(*
+
+procedure TUniSettings.ValueKindMove(Src,Dest: TUNSValueKind);
+begin
+WriteLock;
+try
+  ChangingStart;
+  try
+    fWorkingNode.ValueKindMove(Src,Dest);
+  finally
+    ChangingEnd;
+  end;
+finally
+  WriteUnlock;
+end;
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TUniSettings.ValueKindExchange(ValA,ValB: TUNSValueKind);
+begin
+WriteLock;
+try
+  ChangingStart;
+  try
+    fWorkingNode.ValueKindExchange(ValA,ValB);
+  finally
+    ChangingEnd;
+  end;
+finally
+  WriteUnlock;
+end;
+end;
+
+//------------------------------------------------------------------------------
+
+Function TUniSettings.ValueKindCompare(ValA,ValB: TUNSValueKind): Boolean;
+begin
+WriteLock;
+try
+  Result := fWorkingNode.ValueKindCompare(ValA,ValB);
+finally
+  WriteUnlock;
+end;
+end;
+
+//------------------------------------------------------------------------------
+
 procedure TUniSettings.ActualFromDefault;
 begin
 WriteLock;
@@ -892,14 +1007,50 @@ end;
 
 Function TUniSettings.ActualEqualsDefault: Boolean;
 begin
-ReadLock;
+WriteLock;
 try
   Result := fWorkingNode.ActualEqualsDefault;
 finally
-  ReadUnlock;
+  WriteUnlock;
 end;
 end;
 
+//------------------------------------------------------------------------------
+
+procedure TUniSettings.Save;
+begin
+WriteLock;
+try
+  ChangingStart;
+  try
+    fWorkingNode.Save;
+  finally
+    ChangingEnd;
+  end;
+finally
+  WriteUnlock;
+end;
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TUniSettings.Restore; 
+begin
+WriteLock;
+try
+  ChangingStart;
+  try
+    fWorkingNode.Restore;
+  finally
+    ChangingEnd;
+  end;
+finally
+  WriteUnlock;
+end;
+end;
+
+//------------------------------------------------------------------------------
+(*
 //------------------------------------------------------------------------------
 
 procedure TUniSettings.ValueActualFromDefault(const ValueName: String; Index: Integer = 0);
@@ -1011,7 +1162,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function TUniSettings.ValueSize(const ValueName: String; AccessDefVal: Boolean = False): TMemSize;
+Function TUniSettings.ValueSize(const ValueName: String; ValueKind: TUNSValueKind = vkActual): TMemSize;
 begin
 ReadLock;
 try
@@ -1027,7 +1178,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function TUniSettings.ValueCount(const ValueName: String; AccessDefVal: Boolean = False): Integer;
+Function TUniSettings.ValueCount(const ValueName: String; ValueKind: TUNSValueKind = vkActual): Integer;
 begin
 ReadLock;
 try
@@ -1055,7 +1206,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function TUniSettings.ValueAddress(const ValueName: String; AccessDefVal: Boolean = False): Pointer;
+Function TUniSettings.ValueAddress(const ValueName: String; ValueKind: TUNSValueKind = vkActual): Pointer;
 begin
 ReadLock;
 try
@@ -1067,7 +1218,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function TUniSettings.ValueAsString(const ValueName: String; AccessDefVal: Boolean = False): String;
+Function TUniSettings.ValueAsString(const ValueName: String; ValueKind: TUNSValueKind = vkActual): String;
 begin
 ReadLock;
 try
@@ -1079,7 +1230,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-procedure TUniSettings.ValueFromString(const ValueName: String; const Str: String; AccessDefVal: Boolean = False);
+procedure TUniSettings.ValueFromString(const ValueName: String; const Str: String; ValueKind: TUNSValueKind = vkActual);
 begin
 WriteLock;
 try
@@ -1091,7 +1242,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-procedure TUniSettings.ValueToStream(const ValueName: String; Stream: TStream; AccessDefVal: Boolean = False);
+procedure TUniSettings.ValueToStream(const ValueName: String; Stream: TStream; ValueKind: TUNSValueKind = vkActual);
 begin
 ReadLock;
 try
@@ -1103,7 +1254,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-procedure TUniSettings.ValueFromStream(const ValueName: String; Stream: TStream; AccessDefVal: Boolean = False);
+procedure TUniSettings.ValueFromStream(const ValueName: String; Stream: TStream; ValueKind: TUNSValueKind = vkActual);
 begin
 WriteLock;
 try
@@ -1115,7 +1266,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function TUniSettings.ValueAsStream(const ValueName: String; AccessDefVal: Boolean = False): TMemoryStream;
+Function TUniSettings.ValueAsStream(const ValueName: String; ValueKind: TUNSValueKind = vkActual): TMemoryStream;
 begin
 ReadLock;
 try
@@ -1127,7 +1278,7 @@ end;
  
 //------------------------------------------------------------------------------
 
-procedure TUniSettings.ValueToBuffer(const ValueName: String; Buffer: TMemoryBuffer; AccessDefVal: Boolean = False);
+procedure TUniSettings.ValueToBuffer(const ValueName: String; Buffer: TMemoryBuffer; ValueKind: TUNSValueKind = vkActual);
 begin
 ReadLock;
 try
@@ -1139,7 +1290,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-procedure TUniSettings.ValueFromBuffer(const ValueName: String; Buffer: TMemoryBuffer; AccessDefVal: Boolean = False);
+procedure TUniSettings.ValueFromBuffer(const ValueName: String; Buffer: TMemoryBuffer; ValueKind: TUNSValueKind = vkActual);
 begin
 WriteLock;
 try
@@ -1151,7 +1302,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function TUniSettings.ValueAsBuffer(const ValueName: String; AccessDefVal: Boolean = False): TMemoryBuffer;
+Function TUniSettings.ValueAsBuffer(const ValueName: String; ValueKind: TUNSValueKind = vkActual): TMemoryBuffer;
 begin
 ReadLock;
 try
@@ -1163,7 +1314,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function TUniSettings.ValueItemAddress(const ValueName: String; Index: Integer; AccessDefVal: Boolean = False): Pointer;
+Function TUniSettings.ValueItemAddress(const ValueName: String; Index: Integer; ValueKind: TUNSValueKind = vkActual): Pointer;
 begin
 ReadLock;
 try
@@ -1175,7 +1326,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function TUniSettings.ValueItemAsString(const ValueName: String; Index: Integer; AccessDefVal: Boolean = False): String;
+Function TUniSettings.ValueItemAsString(const ValueName: String; Index: Integer; ValueKind: TUNSValueKind = vkActual): String;
 begin
 ReadLock;
 try
@@ -1187,7 +1338,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-procedure TUniSettings.ValueItemFromString(const ValueName: String; Index: Integer; const Str: String; AccessDefVal: Boolean = False);
+procedure TUniSettings.ValueItemFromString(const ValueName: String; Index: Integer; const Str: String; ValueKind: TUNSValueKind = vkActual);
 begin
 WriteLock;
 try
@@ -1199,7 +1350,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-procedure TUniSettings.ValueItemToStream(const ValueName: String; Index: Integer; Stream: TStream; AccessDefVal: Boolean = False);
+procedure TUniSettings.ValueItemToStream(const ValueName: String; Index: Integer; Stream: TStream; ValueKind: TUNSValueKind = vkActual);
 begin
 ReadLock;
 try
@@ -1211,7 +1362,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-procedure TUniSettings.ValueItemFromStream(const ValueName: String; Index: Integer; Stream: TStream; AccessDefVal: Boolean = False);
+procedure TUniSettings.ValueItemFromStream(const ValueName: String; Index: Integer; Stream: TStream; ValueKind: TUNSValueKind = vkActual);
 begin
 WriteLock;
 try
@@ -1223,7 +1374,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function TUniSettings.ValueItemAsStream(const ValueName: String; Index: Integer; AccessDefVal: Boolean = False): TMemoryStream;
+Function TUniSettings.ValueItemAsStream(const ValueName: String; Index: Integer; ValueKind: TUNSValueKind = vkActual): TMemoryStream;
 begin
 ReadLock;
 try
@@ -1235,7 +1386,7 @@ end;
  
 //------------------------------------------------------------------------------
 
-procedure TUniSettings.ValueItemToBuffer(const ValueName: String; Index: Integer; Buffer: TMemoryBuffer; AccessDefVal: Boolean = False);
+procedure TUniSettings.ValueItemToBuffer(const ValueName: String; Index: Integer; Buffer: TMemoryBuffer; ValueKind: TUNSValueKind = vkActual);
 begin
 ReadLock;
 try
@@ -1247,7 +1398,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-procedure TUniSettings.ValueItemFromBuffer(const ValueName: String; Index: Integer; Buffer: TMemoryBuffer; AccessDefVal: Boolean = False);
+procedure TUniSettings.ValueItemFromBuffer(const ValueName: String; Index: Integer; Buffer: TMemoryBuffer; ValueKind: TUNSValueKind = vkActual);
 begin
 WriteLock;
 try
@@ -1259,7 +1410,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function TUniSettings.ValueItemAsBuffer(const ValueName: String; Index: Integer; AccessDefVal: Boolean = False): TMemoryBuffer;
+Function TUniSettings.ValueItemAsBuffer(const ValueName: String; Index: Integer; ValueKind: TUNSValueKind = vkActual): TMemoryBuffer;
 begin
 ReadLock;
 try
@@ -1271,7 +1422,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function TUniSettings.ValueLowIndex(const ValueName: String; AccessDefVal: Boolean = False): Integer;
+Function TUniSettings.ValueLowIndex(const ValueName: String; ValueKind: TUNSValueKind = vkActual): Integer;
 begin
 ReadLock;
 try
@@ -1283,7 +1434,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function TUniSettings.ValueHighIndex(const ValueName: String; AccessDefVal: Boolean = False): Integer;
+Function TUniSettings.ValueHighIndex(const ValueName: String; ValueKind: TUNSValueKind = vkActual): Integer;
 begin
 ReadLock;
 try
@@ -1295,7 +1446,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function TUniSettings.ValueCheckIndex(const ValueName: String; Index: Integer; AccessDefVal: Boolean = False): Boolean;
+Function TUniSettings.ValueCheckIndex(const ValueName: String; Index: Integer; ValueKind: TUNSValueKind = vkActual): Boolean;
 begin
 ReadLock;
 try
@@ -1307,7 +1458,7 @@ end;
  
 //------------------------------------------------------------------------------
 
-procedure TUniSettings.ValueExchange(const ValueName: String; Index1,Index2: Integer; AccessDefVal: Boolean = False);
+procedure TUniSettings.ValueExchange(const ValueName: String; Index1,Index2: Integer; ValueKind: TUNSValueKind = vkActual);
 begin
 WriteLock;
 try
@@ -1319,7 +1470,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-procedure TUniSettings.ValueMove(const ValueName: String; SrcIndex,DstIndex: Integer; AccessDefVal: Boolean = False);
+procedure TUniSettings.ValueMove(const ValueName: String; SrcIndex,DstIndex: Integer; ValueKind: TUNSValueKind = vkActual);
 begin
 WriteLock;
 try
@@ -1331,7 +1482,7 @@ end;
  
 //------------------------------------------------------------------------------
 
-procedure TUniSettings.ValueDelete(const ValueName: String; Index: Integer; AccessDefVal: Boolean = False);
+procedure TUniSettings.ValueDelete(const ValueName: String; Index: Integer; ValueKind: TUNSValueKind = vkActual);
 begin
 WriteLock;
 try
@@ -1343,7 +1494,7 @@ end;
   
 //------------------------------------------------------------------------------
 
-procedure TUniSettings.ValueClear(const ValueName: String; AccessDefVal: Boolean = False);
+procedure TUniSettings.ValueClear(const ValueName: String; ValueKind: TUNSValueKind = vkActual);
 begin
 WriteLock;
 try
