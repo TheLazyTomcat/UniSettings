@@ -5,15 +5,16 @@ todo (* = completed):
 * arrays
   array nodes: listsorters -> implementation uses
   access to array items trough index in value name
-  name parts -> CDA
+* name parts -> CDA
   TUniSettings copy constructor
+* make copies thread safe
 
-  nodes
+* nodes
 
-    Move(Src, Dest);
-    Exchange(A,B);
-    Compare(A,B): Boolean;
-    Equals(Node; ValType): Boolean;
+*   Move(Src, Dest);
+*   Exchange(A,B);
+*   Compare(A,B): Boolean;
+*   Equals(Node; ValType): Boolean;
 
 * copy constructor(s)
 * value save-restore system (saved value read only)

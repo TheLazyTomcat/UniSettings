@@ -7,7 +7,7 @@ interface
 
 uses
   Classes,
-  AuxTypes, MemoryBuffer, CountedDynArrays, ListSorters,
+  AuxTypes, MemoryBuffer, CountedDynArrays,
   UniSettings_Common, UniSettings_NodeBase, UniSettings_NodeLeaf,
   UniSettings_NodePrimitiveArray;
 
@@ -46,7 +46,7 @@ implementation
 
 uses
   SysUtils,
-  BinaryStreaming, FloatHex,
+  BinaryStreaming, FloatHex, ListSorters,
   UniSettings_Exceptions;
 
 Function CDA_CompareFunc(A,B: TCDABaseType): Integer;

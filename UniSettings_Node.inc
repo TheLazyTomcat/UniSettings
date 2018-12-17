@@ -183,6 +183,11 @@ CopyBufferInto(TUNSNodeBuffer(Source).DefaultValue,fDefaultValue);
 fValue := TUNSNodeClassType(Source).Value;
 fSavedValue := TUNSNodeClassType(Source).SavedValue;
 fDefaultValue := TUNSNodeClassType(Source).DefaultValue;
+{$IFDEF UNS_NodeText}
+UniqueString(fValue);
+UniqueString(fSavedValue);
+UniqueString(fDefaultValue);
+{$ENDIF}
 {$ENDIF}
 end;
 

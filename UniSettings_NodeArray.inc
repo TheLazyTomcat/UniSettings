@@ -459,6 +459,17 @@ end;
 //------------------------------------------------------------------------------
 
 constructor TUNSNodeClassType.CreateAsCopy(Source: TUNSNodeBase; const Name: String; ParentNode: TUNSNodeBase);
+
+{$IFDEF UNS_NodeAoText}
+  procedure MakeValueThreadSafe(var Value: TUNSNodeValueType);
+  var
+    i:  Integer;
+  begin
+    For i := CDA_Low(Value) to CDA_High(Value) do
+      UniqueString(Value.Arr[i]);
+  end;
+{$ENDIF}
+
 begin
 inherited CreateAsCopy(Source,Name,ParentNode);
 {$IFDEF UNS_NodeAoBuffer}
@@ -469,6 +480,11 @@ CopyArrayInto(TUNSNodeClassType(Source).DefaultValue,fDefaultValue);
 fValue := CDA_Copy(TUNSNodeClassType(Source).Value);
 fSavedValue := CDA_Copy(TUNSNodeClassType(Source).SavedValue);
 fDefaultValue := CDA_Copy(TUNSNodeClassType(Source).DefaultValue);
+{$IFDEF UNS_NodeAoText}
+MakeValueThreadSafe(fValue);
+MakeValueThreadSafe(fSavedValue);
+MakeValueThreadSafe(fDefaultValue);
+{$ENDIF}
 {$ENDIF}
 end;
 
