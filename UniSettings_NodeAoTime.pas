@@ -93,6 +93,13 @@ end;
 
 //------------------------------------------------------------------------------
 
+class Function TUNSNodeClassType.GetItemValueType: TUNSValueType;
+begin
+Result := vtTime;
+end;
+
+//------------------------------------------------------------------------------
+
 Function TUNSNodeClassType.ConvItemToStr(const Value: TUNSNodeValueItemType): String;
 begin
 If ValueFormatSettings.HexDateTime then

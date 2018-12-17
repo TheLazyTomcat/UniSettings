@@ -12,6 +12,7 @@ uses
 type
   TUNSNodeLeaf = class(TUNSNodeBase)
   protected
+    class Function GetValueType: TUNSValueType; virtual;
     class Function SameValues(const A,B): Boolean; virtual; abstract;
     class Function GetNodeClass: TUNSNodeClass; override;
     Function GetValueSize: TMemSize; virtual; abstract;
@@ -32,6 +33,7 @@ type
     procedure ToBuffer(Buffer: TMemoryBuffer; ValueKind: TUNSValueKind = vkActual); overload; virtual; abstract;
     procedure FromBuffer(Buffer: TMemoryBuffer; ValueKind: TUNSValueKind = vkActual); overload; virtual; abstract;
     Function AsBuffer(ValueKind: TUNSValueKind = vkActual): TMemoryBuffer; overload; virtual;
+    property ValueType: TUNSValueType read GetValueType;
     property ValueSize: TMemSize read GetValueSize;
     property SsvedValueSize: TMemSize read GetSavedValueSize;
     property DefaultValueSize: TMemSize read GetDefaultValueSize;
@@ -41,6 +43,13 @@ implementation
 
 uses
   UniSettings_Exceptions;
+
+class Function TUNSNodeLeaf.GetValueType: TUNSValueType;
+begin
+Result := vtUndefined;
+end;
+
+//------------------------------------------------------------------------------
 
 class Function TUNSNodeLeaf.GetNodeClass: TUNSNodeClass;
 begin

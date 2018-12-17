@@ -61,6 +61,13 @@ end;
 
 //------------------------------------------------------------------------------
 
+class Function TUNSNodeClassType.GetItemValueType: TUNSValueType;
+begin
+Result := vtText;
+end;
+
+//------------------------------------------------------------------------------
+
 Function TUNSNodeClassType.ConvItemToStr(const Value: TUNSNodeValueItemType): String;
 begin
 Result := Value;

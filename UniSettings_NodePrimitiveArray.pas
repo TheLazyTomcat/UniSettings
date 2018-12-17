@@ -12,6 +12,7 @@ uses
 type
   TUNSNodePrimitiveArray = class(TUNSNodeLeaf)
   protected
+    class Function GetItemValueType: TUNSValueType; virtual;
     class Function SameItemValues(const A,B): Boolean; virtual; abstract;
     Function GetCount: Integer; virtual; abstract;
     Function GetSavedCount: Integer; virtual; abstract;
@@ -58,6 +59,7 @@ type
     Function Remove(const Item; ValueKind: TUNSValueKind = vkActual): Integer; virtual; abstract;
     procedure Delete(Index: Integer; ValueKind: TUNSValueKind = vkActual); virtual; abstract;
     procedure Clear(ValueKind: TUNSValueKind = vkActual); virtual; abstract;
+    property ItemValueType: TUNSValueType read GetItemValueType;
     property Count: Integer read GetCount;
     property SavedCount: Integer read GetSavedCount;
     property DefaultCount: Integer read GetDefaultCount;
@@ -70,6 +72,13 @@ implementation
 
 uses
   UniSettings_Exceptions;
+
+class Function TUNSNodePrimitiveArray.GetItemValueType: TUNSValueType;
+begin
+Result := vtUndefined;
+end;
+
+//==============================================================================
 
 Function TUNSNodePrimitiveArray.ObtainCount(ValueKind: TUNSValueKind): Integer;
 begin

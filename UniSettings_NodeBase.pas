@@ -20,7 +20,6 @@ type
     fChanged:       Boolean;
     fOnChange:      TNotifyEvent;
     class Function GetNodeClass: TUNSNodeClass; virtual;
-    class Function GetValueType: TUNSValueType; virtual;
     procedure SetNodeNameStr(const Value: String); virtual;
     procedure SetMaster(Value: TObject); virtual;
     Function GetNodeLevel: Integer; virtual;
@@ -47,7 +46,6 @@ type
     procedure Save; overload; virtual;
     procedure Restore; overload; virtual;
     property NodeClass: TUNSNodeClass read GetNodeClass;
-    property ValueType: TUNSValueType read GetValueType;
     property Name: TUNSHashedString read fName write fName;       
     property NameStr: String read fName.Str write SetNodeNameStr;
     property ParentNode: TUNSNodeBase read fParentNode;
@@ -69,13 +67,6 @@ uses
 class Function TUNSNodeBase.GetNodeClass: TUNSNodeClass;
 begin
 Result := ncUndefined;
-end;
-
-//------------------------------------------------------------------------------
-
-class Function TUNSNodeBase.GetValueType: TUNSValueType;
-begin
-Result := vtUndefined;
 end;
 
 //------------------------------------------------------------------------------

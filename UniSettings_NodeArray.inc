@@ -14,6 +14,7 @@
     procedure SetDefaultItem(Index: Integer; NewValue: TUNSNodeValueItemType);
   protected
     class Function GetValueType: TUNSValueType; override;
+    class Function GetItemValueType: TUNSValueType; override;
     class Function SameValues(const A,B: TUNSNodeValueType): Boolean; reintroduce;
     class Function SameItemValues(const A,B: TUNSNodeValueItemType): Boolean; reintroduce;
     Function GetValueSize: TMemSize; override;
