@@ -1,4 +1,4 @@
-{$IFNDEF Included}
+{$IFNDEF UNS_Included}
 unit UniSettings_NodeUInt64;
 
 {$INCLUDE '.\UniSettings_defs.inc'}
@@ -92,28 +92,79 @@ end;
 {$WARNINGS OFF} // supresses warnings on lines after the final end
 end.
 
-{$ELSE Included}
+{$ELSE UNS_Included}
 
 {$WARNINGS ON}
 
-{$IFDEF Included_Declaration}
-    Function UInt64ValueGet(const ValueName: String; AccessDefVal: Boolean = False): UInt64; virtual;
-    procedure UInt64ValueSet(const ValueName: String; NewValue: UInt64; AccessDefVal: Boolean = False); virtual;
-{$ENDIF}
+{$IFDEF UNS_Include_Declaration}
+    Function UInt64ValueGetNoLock(const ValueName: String; ValueKind: TUNSValueKind = vkActual): UInt64; virtual;
+    procedure UInt64ValueSetNoLock(const ValueName: String; NewValue: UInt64; ValueKind: TUNSValueKind = vkActual); virtual;
+
+    Function UInt64ValueGet(const ValueName: String; ValueKind: TUNSValueKind = vkActual): UInt64; virtual;
+    procedure UInt64ValueSet(const ValueName: String; NewValue: UInt64; ValueKind: TUNSValueKind = vkActual); virtual;
+{$ENDIF UNS_Include_Declaration}
 
 //==============================================================================
 
-{$IFDEF Included_Implementation}
+{$IFDEF UNS_Include_Implementation}
 
-Function TUniSettings.UInt64ValueGet(const ValueName: String; AccessDefVal: Boolean = False): UInt64;
+Function TUniSettings.UInt64ValueGetNoLock(const ValueName: String; ValueKind: TUNSValueKind = vkActual): UInt64;
+var
+  TempNode:       TUNSNodeLeaf;
+  TempValueKind:  TUNSValueKind;
+  TempIndex:      Integer;
+begin
+If CheckedLeafNodeTypeAccessIsArray(ValueName,vtUInt64,'UInt64ValueGetNoLock',TempNode,TempValueKind,TempIndex) then
+  case TempValueKind of
+    vkActual:   Result := TUNSNodeAoUInt64(TempNode).Items[TempIndex];
+    vkSaved:    Result := TUNSNodeAoUInt64(TempNode).SavedItems[TempIndex];
+    vkDefault:  Result := TUNSNodeAoUInt64(TempNode).DefaultItems[TempIndex];
+  else
+    raise EUNSInvalidValueKindException.Create(TempValueKind,Self,'UInt64ValueGetNoLock');
+  end
+else
+  case ValueKind of
+    vkActual:   Result := TUNSNodeUInt64(TempNode).Value;
+    vkSaved:    Result := TUNSNodeUInt64(TempNode).SavedValue;
+    vkDefault:  Result := TUNSNodeUInt64(TempNode).DefaultValue;
+  else
+    raise EUNSInvalidValueKindException.Create(TempValueKind,Self,'UInt64ValueGetNoLock');
+  end;
+end;
+ 
+//------------------------------------------------------------------------------
+
+procedure TUniSettings.UInt64ValueSetNoLock(const ValueName: String; NewValue: UInt64; ValueKind: TUNSValueKind = vkActual);
+var
+  TempNode:       TUNSNodeLeaf;
+  TempValueKind:  TUNSValueKind;
+  TempIndex:      Integer;
+begin
+If CheckedLeafNodeTypeAccessIsArray(ValueName,vtBool,'UInt64ValueSetNoLock',TempNode,TempValueKind,TempIndex) then
+  case TempValueKind of
+    vkActual:   TUNSNodeAoUInt64(TempNode).Items[TempIndex] := NewValue;
+    vkSaved:    TUNSNodeAoUInt64(TempNode).SavedItems[TempIndex] := NewValue;
+    vkDefault:  TUNSNodeAoUInt64(TempNode).DefaultItems[TempIndex] := NewValue;
+  else
+    raise EUNSInvalidValueKindException.Create(TempValueKind,Self,'UInt64ValueSetNoLock');
+  end
+else
+  case ValueKind of
+    vkActual:   TUNSNodeUInt64(TempNode).Value := NewValue;
+    vkSaved:    TUNSNodeUInt64(TempNode).SavedValue := NewValue;
+    vkDefault:  TUNSNodeUInt64(TempNode).DefaultValue := NewValue;
+  else
+    raise EUNSInvalidValueKindException.Create(ValueKind,Self,'UInt64ValueSetNoLock');
+  end;
+end;
+
+//------------------------------------------------------------------------------
+
+Function TUniSettings.UInt64ValueGet(const ValueName: String; ValueKind: TUNSValueKind = vkActual): UInt64;
 begin
 ReadLock;
 try
-  with TUNSNodeUInt64(CheckedLeafNodeTypeAccess(ValueName,vtUInt64,'UInt64ValueGet')) do
-    If AccessDefVal then
-      Result := Value
-    else
-      Result := DefaultValue;
+  Result := UInt64ValueGetNoLock(ValueName,ValueKind);
 finally
   ReadUnlock;
 end;
@@ -121,20 +172,16 @@ end;
 
 //------------------------------------------------------------------------------
 
-procedure TUniSettings.UInt64ValueSet(const ValueName: String; NewValue: UInt64; AccessDefVal: Boolean = False);
+procedure TUniSettings.UInt64ValueSet(const ValueName: String; NewValue: UInt64; ValueKind: TUNSValueKind = vkActual);
 begin
 WriteLock;
 try
-  with TUNSNodeUInt64(CheckedLeafNodeTypeAccess(ValueName,vtUInt64,'UInt64ValueSet')) do
-    If AccessDefVal then
-      Value := NewValue
-    else
-      DefaultValue := NewValue;
+  UInt64ValueSetNoLock(ValueName,NewValue,ValueKind);
 finally
   WriteUnlock;
 end;
 end;
 
-{$ENDIF}
+{$ENDIF UNS_Include_Implementation}
 
-{$ENDIF Included}
+{$ENDIF UNS_Included}

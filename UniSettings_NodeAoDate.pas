@@ -1,3 +1,4 @@
+{$IFNDEF UNS_Included}
 unit UniSettings_NodeAoDate;
 
 {$INCLUDE '.\UniSettings_defs.inc'}
@@ -128,4 +129,224 @@ end;
   {$INCLUDE '.\UniSettings_NodeArray.inc'}
 {$UNDEF UNS_NodeInclude_Implementation}
 
+{$WARNINGS OFF} // supresses warnings on lines after the final end
 end.
+
+{$ELSE UNS_Included}
+
+{$WARNINGS ON}  
+
+{$IFDEF UNS_Include_Declaration}
+    Function DateValueFirstNoLock(const ValueName: String; ValueKind: TUNSValueKind = vkActual): TDate; virtual;
+    Function DateValueLastNoLock(const ValueName: String; ValueKind: TUNSValueKind = vkActual): TDate; virtual;
+    Function DateValueIndexOfNoLock(const ValueName: String; const Value: TDate; ValueKind: TUNSValueKind = vkActual): Integer; virtual;
+    Function DateValueAddNoLock(const ValueName: String; const Value: TDate; ValueKind: TUNSValueKind = vkActual): Integer; virtual;
+    Function DateValueAppendNoLock(const ValueName: String; const Values: array of TDate; ValueKind: TUNSValueKind = vkActual): Integer; virtual;
+    procedure DateValueInsertNoLock(const ValueName: String; Index: Integer; const Value: TDate; ValueKind: TUNSValueKind = vkActual); virtual;
+    Function DateValueRemoveNoLock(const ValueName: String; const Value: TDate; ValueKind: TUNSValueKind = vkActual): Integer; virtual;
+
+    Function DateValueFirst(const ValueName: String; ValueKind: TUNSValueKind = vkActual): TDate; virtual;
+    Function DateValueLast(const ValueName: String; ValueKind: TUNSValueKind = vkActual): TDate; virtual;
+    Function DateValueIndexOf(const ValueName: String; const Value: TDate; ValueKind: TUNSValueKind = vkActual): Integer; virtual;
+    Function DateValueAdd(const ValueName: String; const Value: TDate; ValueKind: TUNSValueKind = vkActual): Integer; virtual;
+    Function DateValueAppend(const ValueName: String; const Values: array of TDate; ValueKind: TUNSValueKind = vkActual): Integer; virtual;
+    procedure DateValueInsert(const ValueName: String; Index: Integer; const Value: TDate; ValueKind: TUNSValueKind = vkActual); virtual;
+    Function DateValueRemove(const ValueName: String; const Value: TDate; ValueKind: TUNSValueKind = vkActual): Integer; virtual;
+
+    Function DateValueItemGetNoLock(const ValueName: String; Index: Integer; ValueKind: TUNSValueKind = vkActual): TDate; virtual;
+    procedure DateValueItemSetNoLock(const ValueName: String; Index: Integer; const NewValue: TDate; ValueKind: TUNSValueKind = vkActual); virtual;
+
+    Function DateValueItemGet(const ValueName: String; Index: Integer; ValueKind: TUNSValueKind = vkActual): TDate; virtual;
+    procedure DateValueItemSet(const ValueName: String; Index: Integer; const NewValue: TDate; ValueKind: TUNSValueKind = vkActual); virtual;
+{$ENDIF UNS_Include_Declaration}
+
+//==============================================================================
+
+{$IFDEF UNS_Include_Implementation}
+
+Function TUniSettings.DateValueFirstNoLock(const ValueName: String; ValueKind: TUNSValueKind = vkActual): TDate;
+begin
+Result := TUNSNodeAoDate(CheckedLeafNodeTypeAccess(ValueName,vtAoDate,'DateValueFirstNoLock')).First(ValueKind);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TUniSettings.DateValueLastNoLock(const ValueName: String; ValueKind: TUNSValueKind = vkActual): TDate;
+begin
+Result := TUNSNodeAoDate(CheckedLeafNodeTypeAccess(ValueName,vtAoDate,'DateValueLastNoLock')).Last(ValueKind);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TUniSettings.DateValueIndexOfNoLock(const ValueName: String; const Value: TDate; ValueKind: TUNSValueKind = vkActual): Integer;
+begin
+Result := TUNSNodeAoDate(CheckedLeafNodeTypeAccess(ValueName,vtAoDate,'DateValueIndexOfNoLock')).IndexOf(Value,ValueKind);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TUniSettings.DateValueAddNoLock(const ValueName: String; const Value: TDate; ValueKind: TUNSValueKind = vkActual): Integer;
+begin
+Result := TUNSNodeAoDate(CheckedLeafNodeTypeAccess(ValueName,vtAoDate,'DateValueAddNoLock')).Add(Value,ValueKind);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TUniSettings.DateValueAppendNoLock(const ValueName: String; const Values: array of TDate; ValueKind: TUNSValueKind = vkActual): Integer;
+begin
+Result := TUNSNodeAoDate(CheckedLeafNodeTypeAccess(ValueName,vtAoDate,'DateValueAppendNoLock')).Append(Values,ValueKind);
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TUniSettings.DateValueInsertNoLock(const ValueName: String; Index: Integer; const Value: TDate; ValueKind: TUNSValueKind = vkActual);
+begin
+TUNSNodeAoDate(CheckedLeafNodeTypeAccess(ValueName,vtAoDate,'DateValueInsertNoLock')).Insert(Index,Value,ValueKind);
+end;
+ 
+//------------------------------------------------------------------------------
+
+Function TUniSettings.DateValueRemoveNoLock(const ValueName: String; const Value: TDate; ValueKind: TUNSValueKind = vkActual): Integer;
+begin
+Result := TUNSNodeAoDate(CheckedLeafNodeTypeAccess(ValueName,vtAoDate,'DateValueRemoveNoLock')).Remove(Value,ValueKind);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TUniSettings.DateValueFirst(const ValueName: String; ValueKind: TUNSValueKind = vkActual): TDate;
+begin
+ReadLock;
+try
+  Result := DateValueFirstNoLock(ValueName,ValueKind);
+finally
+  ReadUnlock;
+end;
+end;
+
+//------------------------------------------------------------------------------
+
+Function TUniSettings.DateValueLast(const ValueName: String; ValueKind: TUNSValueKind = vkActual): TDate;
+begin
+ReadLock;
+try
+  Result := DateValueLastNoLock(ValueName,ValueKind);
+finally
+  ReadUnlock;
+end;
+end;
+
+//------------------------------------------------------------------------------
+
+Function TUniSettings.DateValueIndexOf(const ValueName: String; const Value: TDate; ValueKind: TUNSValueKind = vkActual): Integer;
+begin
+ReadLock;
+try
+  Result := DateValueIndexOfNoLock(ValueName,Value,ValueKind);
+finally
+  ReadUnlock;
+end;
+end;
+
+//------------------------------------------------------------------------------
+
+Function TUniSettings.DateValueAdd(const ValueName: String; const Value: TDate; ValueKind: TUNSValueKind = vkActual): Integer;
+begin
+WriteLock;
+try
+  Result := DateValueAddNoLock(ValueName,Value,ValueKind);
+finally
+  WriteUnlock;
+end;
+end;
+
+//------------------------------------------------------------------------------
+
+Function TUniSettings.DateValueAppend(const ValueName: String; const Values: array of TDate; ValueKind: TUNSValueKind = vkActual): Integer;
+begin
+WriteLock;
+try
+  Result := DateValueAppendNoLock(ValueName,Values,ValueKind);
+finally
+  WriteUnlock;
+end;
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TUniSettings.DateValueInsert(const ValueName: String; Index: Integer; const Value: TDate; ValueKind: TUNSValueKind = vkActual);
+begin
+WriteLock;
+try
+  DateValueInsertNoLock(ValueName,Index,Value,ValueKind);
+finally
+  WriteUnlock;
+end;
+end;
+
+//------------------------------------------------------------------------------
+
+Function TUniSettings.DateValueRemove(const ValueName: String; const Value: TDate; ValueKind: TUNSValueKind = vkActual): Integer;
+begin
+WriteLock;
+try
+  Result := DateValueRemoveNoLock(ValueName,Value,ValueKind);
+finally
+  WriteUnlock;
+end;
+end;
+
+//------------------------------------------------------------------------------
+
+Function TUniSettings.DateValueItemGetNoLock(const ValueName: String; Index: Integer; ValueKind: TUNSValueKind = vkActual): TDate;
+begin
+with TUNSNodeAoDate(CheckedLeafNodeTypeAccess(ValueName,vtAoDate,'DateValueItemGetNoLock')) do
+  case ValueKind of
+    vkActual:   Result := Items[Index];
+    vkSaved:    Result := SavedItems[Index];
+    vkDefault:  Result := DefaultItems[Index];
+  else
+    raise EUNSInvalidValueKindException.Create(ValueKind,Self,'DateValueItemGetNoLock');
+  end;
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TUniSettings.DateValueItemSetNoLock(const ValueName: String; Index: Integer; const NewValue: TDate; ValueKind: TUNSValueKind = vkActual);
+begin
+with TUNSNodeAoDate(CheckedLeafNodeTypeAccess(ValueName,vtAoDate,'DateValueItemSetNoLock')) do
+  case ValueKind of
+    vkActual:   Items[Index] := NewValue;
+    vkSaved:    SavedItems[Index] := NewValue;
+    vkDefault:  DefaultItems[Index] := NewValue;
+  else
+    raise EUNSInvalidValueKindException.Create(ValueKind,Self,'DateValueItemSetNoLock');
+  end;
+end;
+
+//------------------------------------------------------------------------------
+
+Function TUniSettings.DateValueItemGet(const ValueName: String; Index: Integer; ValueKind: TUNSValueKind = vkActual): TDate;
+begin
+ReadLock;
+try
+  Result := DateValueItemGetNoLock(ValueName,Index,ValueKind);
+finally
+  ReadUnlock;
+end;
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TUniSettings.DateValueItemSet(const ValueName: String; Index: Integer; const NewValue: TDate; ValueKind: TUNSValueKind = vkActual);
+begin
+WriteLock;
+try
+  DateValueItemSetNoLock(ValueName,Index,NewValue,ValueKind);
+finally
+  WriteUnlock;
+end;
+end;
+
+{$ENDIF UNS_Include_Implementation}
+
+{$ENDIF UNS_Included}

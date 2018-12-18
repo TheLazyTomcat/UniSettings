@@ -1,4 +1,4 @@
-{$IFNDEF Included}
+{$IFNDEF UNS_Included}
 unit UniSettings_NodeUInt8;
 
 {$INCLUDE '.\UniSettings_defs.inc'}
@@ -92,28 +92,79 @@ end;
 {$WARNINGS OFF} // supresses warnings on lines after the final end
 end.
 
-{$ELSE Included}
+{$ELSE UNS_Included}
 
 {$WARNINGS ON}
 
-{$IFDEF Included_Declaration}
+{$IFDEF UNS_Include_Declaration}
+    Function UInt8ValueGetNoLock(const ValueName: String; ValueKind: TUNSValueKind = vkActual): UInt8; virtual;
+    procedure UInt8ValueSetNoLock(const ValueName: String; NewValue: UInt8; ValueKind: TUNSValueKind = vkActual); virtual;
+
     Function UInt8ValueGet(const ValueName: String; ValueKind: TUNSValueKind = vkActual): UInt8; virtual;
     procedure UInt8ValueSet(const ValueName: String; NewValue: UInt8; ValueKind: TUNSValueKind = vkActual); virtual;
-{$ENDIF}
+{$ENDIF UNS_Include_Declaration}
 
 //==============================================================================
 
-{$IFDEF Included_Implementation}
+{$IFDEF UNS_Include_Implementation}
+
+Function TUniSettings.UInt8ValueGetNoLock(const ValueName: String; ValueKind: TUNSValueKind = vkActual): UInt8;
+var
+  TempNode:       TUNSNodeLeaf;
+  TempValueKind:  TUNSValueKind;
+  TempIndex:      Integer;
+begin
+If CheckedLeafNodeTypeAccessIsArray(ValueName,vtUInt8,'UInt8ValueGetNoLock',TempNode,TempValueKind,TempIndex) then
+  case TempValueKind of
+    vkActual:   Result := TUNSNodeAoUInt8(TempNode).Items[TempIndex];
+    vkSaved:    Result := TUNSNodeAoUInt8(TempNode).SavedItems[TempIndex];
+    vkDefault:  Result := TUNSNodeAoUInt8(TempNode).DefaultItems[TempIndex];
+  else
+    raise EUNSInvalidValueKindException.Create(TempValueKind,Self,'UInt8ValueGetNoLock');
+  end
+else
+  case ValueKind of
+    vkActual:   Result := TUNSNodeUInt8(TempNode).Value;
+    vkSaved:    Result := TUNSNodeUInt8(TempNode).SavedValue;
+    vkDefault:  Result := TUNSNodeUInt8(TempNode).DefaultValue;
+  else
+    raise EUNSInvalidValueKindException.Create(TempValueKind,Self,'UInt8ValueGetNoLock');
+  end;
+end;
+ 
+//------------------------------------------------------------------------------
+
+procedure TUniSettings.UInt8ValueSetNoLock(const ValueName: String; NewValue: UInt8; ValueKind: TUNSValueKind = vkActual);
+var
+  TempNode:       TUNSNodeLeaf;
+  TempValueKind:  TUNSValueKind;
+  TempIndex:      Integer;
+begin
+If CheckedLeafNodeTypeAccessIsArray(ValueName,vtBool,'UInt8ValueSetNoLock',TempNode,TempValueKind,TempIndex) then
+  case TempValueKind of
+    vkActual:   TUNSNodeAoUInt8(TempNode).Items[TempIndex] := NewValue;
+    vkSaved:    TUNSNodeAoUInt8(TempNode).SavedItems[TempIndex] := NewValue;
+    vkDefault:  TUNSNodeAoUInt8(TempNode).DefaultItems[TempIndex] := NewValue;
+  else
+    raise EUNSInvalidValueKindException.Create(TempValueKind,Self,'UInt8ValueSetNoLock');
+  end
+else
+  case ValueKind of
+    vkActual:   TUNSNodeUInt8(TempNode).Value := NewValue;
+    vkSaved:    TUNSNodeUInt8(TempNode).SavedValue := NewValue;
+    vkDefault:  TUNSNodeUInt8(TempNode).DefaultValue := NewValue;
+  else
+    raise EUNSInvalidValueKindException.Create(ValueKind,Self,'UInt8ValueSetNoLock');
+  end;
+end;
+
+//------------------------------------------------------------------------------
 
 Function TUniSettings.UInt8ValueGet(const ValueName: String; ValueKind: TUNSValueKind = vkActual): UInt8;
 begin
 ReadLock;
 try
-  with TUNSNodeUInt8(CheckedLeafNodeTypeAccess(ValueName,vtUInt8,'UInt8ValueGet')) do
-    If AccessDefVal then
-      Result := Value
-    else
-      Result := DefaultValue;
+  Result := UInt8ValueGetNoLock(ValueName,ValueKind);
 finally
   ReadUnlock;
 end;
@@ -125,16 +176,12 @@ procedure TUniSettings.UInt8ValueSet(const ValueName: String; NewValue: UInt8; V
 begin
 WriteLock;
 try
-  with TUNSNodeUInt8(CheckedLeafNodeTypeAccess(ValueName,vtUInt8,'UInt8ValueSet')) do
-    If AccessDefVal then
-      Value := NewValue
-    else
-      DefaultValue := NewValue;
+  UInt8ValueSetNoLock(ValueName,NewValue,ValueKind);
 finally
   WriteUnlock;
 end;
 end;
 
-{$ENDIF}
+{$ENDIF UNS_Include_Implementation}
 
-{$ENDIF Included}
+{$ENDIF UNS_Included}

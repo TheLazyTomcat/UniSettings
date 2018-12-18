@@ -1,4 +1,4 @@
-{$IFNDEF Included}
+{$IFNDEF UNS_Included}
 unit UniSettings_NodeDate;
 
 {$INCLUDE '.\UniSettings_defs.inc'}
@@ -99,28 +99,79 @@ end;
 {$WARNINGS OFF} // supresses warnings on lines after the final end
 end.
 
-{$ELSE Included}
+{$ELSE UNS_Included}
 
 {$WARNINGS ON}
 
-{$IFDEF Included_Declaration}
-    Function DateValueGet(const ValueName: String; AccessDefVal: Boolean = False): TDate; virtual;
-    procedure DateValueSet(const ValueName: String; NewValue: TDate; AccessDefVal: Boolean = False); virtual;
-{$ENDIF}
+{$IFDEF UNS_Include_Declaration}
+    Function DateValueGetNoLock(const ValueName: String; ValueKind: TUNSValueKind = vkActual): TDate; virtual;
+    procedure DateValueSetNoLock(const ValueName: String; NewValue: TDate; ValueKind: TUNSValueKind = vkActual); virtual;
+
+    Function DateValueGet(const ValueName: String; ValueKind: TUNSValueKind = vkActual): TDate; virtual;
+    procedure DateValueSet(const ValueName: String; NewValue: TDate; ValueKind: TUNSValueKind = vkActual); virtual;
+{$ENDIF UNS_Include_Declaration}
 
 //==============================================================================
 
-{$IFDEF Included_Implementation}
+{$IFDEF UNS_Include_Implementation}
 
-Function TUniSettings.DateValueGet(const ValueName: String; AccessDefVal: Boolean = False): TDate;
+Function TUniSettings.DateValueGetNoLock(const ValueName: String; ValueKind: TUNSValueKind = vkActual): TDate;
+var
+  TempNode:       TUNSNodeLeaf;
+  TempValueKind:  TUNSValueKind;
+  TempIndex:      Integer;
+begin
+If CheckedLeafNodeTypeAccessIsArray(ValueName,vtDate,'DateValueGetNoLock',TempNode,TempValueKind,TempIndex) then
+  case TempValueKind of
+    vkActual:   Result := TUNSNodeAoDate(TempNode).Items[TempIndex];
+    vkSaved:    Result := TUNSNodeAoDate(TempNode).SavedItems[TempIndex];
+    vkDefault:  Result := TUNSNodeAoDate(TempNode).DefaultItems[TempIndex];
+  else
+    raise EUNSInvalidValueKindException.Create(TempValueKind,Self,'DateValueGetNoLock');
+  end
+else
+  case ValueKind of
+    vkActual:   Result := TUNSNodeDate(TempNode).Value;
+    vkSaved:    Result := TUNSNodeDate(TempNode).SavedValue;
+    vkDefault:  Result := TUNSNodeDate(TempNode).DefaultValue;
+  else
+    raise EUNSInvalidValueKindException.Create(TempValueKind,Self,'DateValueGetNoLock');
+  end;
+end;
+ 
+//------------------------------------------------------------------------------
+
+procedure TUniSettings.DateValueSetNoLock(const ValueName: String; NewValue: TDate; ValueKind: TUNSValueKind = vkActual);
+var
+  TempNode:       TUNSNodeLeaf;
+  TempValueKind:  TUNSValueKind;
+  TempIndex:      Integer;
+begin
+If CheckedLeafNodeTypeAccessIsArray(ValueName,vtBool,'DateValueSetNoLock',TempNode,TempValueKind,TempIndex) then
+  case TempValueKind of
+    vkActual:   TUNSNodeAoDate(TempNode).Items[TempIndex] := NewValue;
+    vkSaved:    TUNSNodeAoDate(TempNode).SavedItems[TempIndex] := NewValue;
+    vkDefault:  TUNSNodeAoDate(TempNode).DefaultItems[TempIndex] := NewValue;
+  else
+    raise EUNSInvalidValueKindException.Create(TempValueKind,Self,'DateValueSetNoLock');
+  end
+else
+  case ValueKind of
+    vkActual:   TUNSNodeDate(TempNode).Value := NewValue;
+    vkSaved:    TUNSNodeDate(TempNode).SavedValue := NewValue;
+    vkDefault:  TUNSNodeDate(TempNode).DefaultValue := NewValue;
+  else
+    raise EUNSInvalidValueKindException.Create(ValueKind,Self,'DateValueSetNoLock');
+  end;
+end;
+
+//------------------------------------------------------------------------------
+
+Function TUniSettings.DateValueGet(const ValueName: String; ValueKind: TUNSValueKind = vkActual): TDate;
 begin
 ReadLock;
 try
-  with TUNSNodeDate(CheckedLeafNodeTypeAccess(ValueName,vtDate,'DateValueGet')) do
-    If AccessDefVal then
-      Result := Value
-    else
-      Result := DefaultValue;
+  Result := DateValueGetNoLock(ValueName,ValueKind);
 finally
   ReadUnlock;
 end;
@@ -128,20 +179,16 @@ end;
 
 //------------------------------------------------------------------------------
 
-procedure TUniSettings.DateValueSet(const ValueName: String; NewValue: TDate; AccessDefVal: Boolean = False);
+procedure TUniSettings.DateValueSet(const ValueName: String; NewValue: TDate; ValueKind: TUNSValueKind = vkActual);
 begin
 WriteLock;
 try
-  with TUNSNodeDate(CheckedLeafNodeTypeAccess(ValueName,vtDate,'DateValueSet')) do
-    If AccessDefVal then
-      Value := NewValue
-    else
-      DefaultValue := NewValue;
+  DateValueSetNoLock(ValueName,NewValue,ValueKind);
 finally
   WriteUnlock;
 end;
 end;
 
-{$ENDIF}
+{$ENDIF UNS_Include_Implementation}
 
-{$ENDIF Included}
+{$ENDIF UNS_Included}

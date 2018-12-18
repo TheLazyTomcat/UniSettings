@@ -1,4 +1,4 @@
-{$IFNDEF Included}
+{$IFNDEF UNS_Included}
 unit UniSettings_NodeUInt32;
 
 {$INCLUDE '.\UniSettings_defs.inc'}
@@ -92,28 +92,79 @@ end;
 {$WARNINGS OFF} // supresses warnings on lines after the final end
 end.
 
-{$ELSE Included}
+{$ELSE UNS_Included}
 
 {$WARNINGS ON}
 
-{$IFDEF Included_Declaration}
-    Function UInt32ValueGet(const ValueName: String; AccessDefVal: Boolean = False): UInt32; virtual;
-    procedure UInt32ValueSet(const ValueName: String; NewValue: UInt32; AccessDefVal: Boolean = False); virtual;
-{$ENDIF}
+{$IFDEF UNS_Include_Declaration}
+    Function UInt32ValueGetNoLock(const ValueName: String; ValueKind: TUNSValueKind = vkActual): UInt32; virtual;
+    procedure UInt32ValueSetNoLock(const ValueName: String; NewValue: UInt32; ValueKind: TUNSValueKind = vkActual); virtual;
+
+    Function UInt32ValueGet(const ValueName: String; ValueKind: TUNSValueKind = vkActual): UInt32; virtual;
+    procedure UInt32ValueSet(const ValueName: String; NewValue: UInt32; ValueKind: TUNSValueKind = vkActual); virtual;
+{$ENDIF UNS_Include_Declaration}
 
 //==============================================================================
 
-{$IFDEF Included_Implementation}
+{$IFDEF UNS_Include_Implementation}
 
-Function TUniSettings.UInt32ValueGet(const ValueName: String; AccessDefVal: Boolean = False): UInt32;
+Function TUniSettings.UInt32ValueGetNoLock(const ValueName: String; ValueKind: TUNSValueKind = vkActual): UInt32;
+var
+  TempNode:       TUNSNodeLeaf;
+  TempValueKind:  TUNSValueKind;
+  TempIndex:      Integer;
+begin
+If CheckedLeafNodeTypeAccessIsArray(ValueName,vtUInt32,'UInt32ValueGetNoLock',TempNode,TempValueKind,TempIndex) then
+  case TempValueKind of
+    vkActual:   Result := TUNSNodeAoUInt32(TempNode).Items[TempIndex];
+    vkSaved:    Result := TUNSNodeAoUInt32(TempNode).SavedItems[TempIndex];
+    vkDefault:  Result := TUNSNodeAoUInt32(TempNode).DefaultItems[TempIndex];
+  else
+    raise EUNSInvalidValueKindException.Create(TempValueKind,Self,'UInt32ValueGetNoLock');
+  end
+else
+  case ValueKind of
+    vkActual:   Result := TUNSNodeUInt32(TempNode).Value;
+    vkSaved:    Result := TUNSNodeUInt32(TempNode).SavedValue;
+    vkDefault:  Result := TUNSNodeUInt32(TempNode).DefaultValue;
+  else
+    raise EUNSInvalidValueKindException.Create(TempValueKind,Self,'UInt32ValueGetNoLock');
+  end;
+end;
+ 
+//------------------------------------------------------------------------------
+
+procedure TUniSettings.UInt32ValueSetNoLock(const ValueName: String; NewValue: UInt32; ValueKind: TUNSValueKind = vkActual);
+var
+  TempNode:       TUNSNodeLeaf;
+  TempValueKind:  TUNSValueKind;
+  TempIndex:      Integer;
+begin
+If CheckedLeafNodeTypeAccessIsArray(ValueName,vtBool,'UInt32ValueSetNoLock',TempNode,TempValueKind,TempIndex) then
+  case TempValueKind of
+    vkActual:   TUNSNodeAoUInt32(TempNode).Items[TempIndex] := NewValue;
+    vkSaved:    TUNSNodeAoUInt32(TempNode).SavedItems[TempIndex] := NewValue;
+    vkDefault:  TUNSNodeAoUInt32(TempNode).DefaultItems[TempIndex] := NewValue;
+  else
+    raise EUNSInvalidValueKindException.Create(TempValueKind,Self,'UInt32ValueSetNoLock');
+  end
+else
+  case ValueKind of
+    vkActual:   TUNSNodeUInt32(TempNode).Value := NewValue;
+    vkSaved:    TUNSNodeUInt32(TempNode).SavedValue := NewValue;
+    vkDefault:  TUNSNodeUInt32(TempNode).DefaultValue := NewValue;
+  else
+    raise EUNSInvalidValueKindException.Create(ValueKind,Self,'UInt32ValueSetNoLock');
+  end;
+end;
+
+//------------------------------------------------------------------------------
+
+Function TUniSettings.UInt32ValueGet(const ValueName: String; ValueKind: TUNSValueKind = vkActual): UInt32;
 begin
 ReadLock;
 try
-  with TUNSNodeUInt32(CheckedLeafNodeTypeAccess(ValueName,vtUInt32,'UInt32ValueGet')) do
-    If AccessDefVal then
-      Result := Value
-    else
-      Result := DefaultValue;
+  Result := UInt32ValueGetNoLock(ValueName,ValueKind);
 finally
   ReadUnlock;
 end;
@@ -121,20 +172,16 @@ end;
 
 //------------------------------------------------------------------------------
 
-procedure TUniSettings.UInt32ValueSet(const ValueName: String; NewValue: UInt32; AccessDefVal: Boolean = False);
+procedure TUniSettings.UInt32ValueSet(const ValueName: String; NewValue: UInt32; ValueKind: TUNSValueKind = vkActual);
 begin
 WriteLock;
 try
-  with TUNSNodeUInt32(CheckedLeafNodeTypeAccess(ValueName,vtUInt32,'UInt32ValueSet')) do
-    If AccessDefVal then
-      Value := NewValue
-    else
-      DefaultValue := NewValue;
+  UInt32ValueSetNoLock(ValueName,NewValue,ValueKind);
 finally
   WriteUnlock;
 end;
 end;
 
-{$ENDIF}
+{$ENDIF UNS_Include_Implementation}
 
-{$ENDIF Included}
+{$ENDIF UNS_Included}

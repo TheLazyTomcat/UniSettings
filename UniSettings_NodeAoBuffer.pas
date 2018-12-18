@@ -1,3 +1,4 @@
+{$IFNDEF UNS_Included}
 unit UniSettings_NodeAoBuffer;
 
 {$INCLUDE '.\UniSettings_defs.inc'}
@@ -202,4 +203,242 @@ end;
   {$INCLUDE '.\UniSettings_NodeArray.inc'}
 {$UNDEF UNS_NodeInclude_Implementation}
 
+{$WARNINGS OFF} // supresses warnings on lines after the final end
 end.
+
+{$ELSE UNS_Included}
+
+{$WARNINGS ON}
+
+{$IFDEF UNS_Include_Declaration}
+    Function BufferValueFirstNoLock(const ValueName: String; ValueKind: TUNSValueKind = vkActual; CreateCopy: Boolean = True): TMemoryBuffer; virtual;
+    Function BufferValueLastNoLock(const ValueName: String; ValueKind: TUNSValueKind = vkActual; CreateCopy: Boolean = True): TMemoryBuffer; virtual;
+    Function BufferValueIndexOfNoLock(const ValueName: String; const Value: TMemoryBuffer; ValueKind: TUNSValueKind = vkActual): Integer; virtual;
+    Function BufferValueAddNoLock(const ValueName: String; const Value: TMemoryBuffer; ValueKind: TUNSValueKind = vkActual): Integer; virtual;
+    Function BufferValueAppendNoLock(const ValueName: String; const Values: array of TMemoryBuffer; ValueKind: TUNSValueKind = vkActual): Integer; virtual;
+    procedure BufferValueInsertNoLock(const ValueName: String; Index: Integer; const Value: TMemoryBuffer; ValueKind: TUNSValueKind = vkActual); virtual;
+    Function BufferValueRemoveNoLock(const ValueName: String; const Value: TMemoryBuffer; ValueKind: TUNSValueKind = vkActual): Integer; virtual;
+
+    Function BufferValueFirst(const ValueName: String; ValueKind: TUNSValueKind = vkActual; CreateCopy: Boolean = True): TMemoryBuffer; virtual;
+    Function BufferValueLast(const ValueName: String; ValueKind: TUNSValueKind = vkActual; CreateCopy: Boolean = True): TMemoryBuffer; virtual;
+    Function BufferValueIndexOf(const ValueName: String; const Value: TMemoryBuffer; ValueKind: TUNSValueKind = vkActual): Integer; virtual;
+    Function BufferValueAdd(const ValueName: String; const Value: TMemoryBuffer; ValueKind: TUNSValueKind = vkActual): Integer; virtual;
+    Function BufferValueAppend(const ValueName: String; const Values: array of TMemoryBuffer; ValueKind: TUNSValueKind = vkActual): Integer; virtual;
+    procedure BufferValueInsert(const ValueName: String; Index: Integer; const Value: TMemoryBuffer; ValueKind: TUNSValueKind = vkActual); virtual;
+    Function BufferValueRemove(const ValueName: String; const Value: TMemoryBuffer; ValueKind: TUNSValueKind = vkActual): Integer; virtual;
+
+    Function BufferValueItemGetNoLock(const ValueName: String; Index: Integer; ValueKind: TUNSValueKind = vkActual; CreateCopy: Boolean = True): TMemoryBuffer; virtual;
+    procedure BufferValueItemSetNoLock(const ValueName: String; Index: Integer; const NewValue: TMemoryBuffer; ValueKind: TUNSValueKind = vkActual); virtual;
+
+    Function BufferValueItemGet(const ValueName: String; Index: Integer; ValueKind: TUNSValueKind = vkActual; CreateCopy: Boolean = True): TMemoryBuffer; virtual;
+    procedure BufferValueItemSet(const ValueName: String; Index: Integer; const NewValue: TMemoryBuffer; ValueKind: TUNSValueKind = vkActual); virtual;
+{$ENDIF UNS_Include_Declaration}
+
+//==============================================================================
+
+{$IFDEF UNS_Include_Implementation}
+
+Function TUniSettings.BufferValueFirstNoLock(const ValueName: String; ValueKind: TUNSValueKind = vkActual; CreateCopy: Boolean = True): TMemoryBuffer;
+var
+  TempBuffer: TMemoryBuffer;
+begin
+TempBuffer := TUNSNodeAoBuffer(CheckedLeafNodeTypeAccess(ValueName,vtAoBuffer,'BufferValueFirstNoLock')).First(ValueKind);
+If CreateCopy then
+  CopyBuffer(TempBuffer,Result)
+else
+  Result := TempBuffer;
+end;
+
+//------------------------------------------------------------------------------
+
+Function TUniSettings.BufferValueLastNoLock(const ValueName: String; ValueKind: TUNSValueKind = vkActual; CreateCopy: Boolean = True): TMemoryBuffer;
+var
+  TempBuffer: TMemoryBuffer;
+begin
+TempBuffer := TUNSNodeAoBuffer(CheckedLeafNodeTypeAccess(ValueName,vtAoBuffer,'BufferValueLastNoLock')).Last(ValueKind);
+If CreateCopy then
+  CopyBuffer(TempBuffer,Result)
+else
+  Result := TempBuffer;
+end;
+
+//------------------------------------------------------------------------------
+
+Function TUniSettings.BufferValueIndexOfNoLock(const ValueName: String; const Value: TMemoryBuffer; ValueKind: TUNSValueKind = vkActual): Integer;
+begin
+Result := TUNSNodeAoBuffer(CheckedLeafNodeTypeAccess(ValueName,vtAoBuffer,'BufferValueIndexOfNoLock')).IndexOf(Value,ValueKind);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TUniSettings.BufferValueAddNoLock(const ValueName: String; const Value: TMemoryBuffer; ValueKind: TUNSValueKind = vkActual): Integer;
+begin
+Result := TUNSNodeAoBuffer(CheckedLeafNodeTypeAccess(ValueName,vtAoBuffer,'BufferValueAddNoLock')).Add(Value,ValueKind);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TUniSettings.BufferValueAppendNoLock(const ValueName: String; const Values: array of TMemoryBuffer; ValueKind: TUNSValueKind = vkActual): Integer;
+begin
+Result := TUNSNodeAoBuffer(CheckedLeafNodeTypeAccess(ValueName,vtAoBuffer,'BufferValueAppendNoLock')).Append(Values,ValueKind);
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TUniSettings.BufferValueInsertNoLock(const ValueName: String; Index: Integer; const Value: TMemoryBuffer; ValueKind: TUNSValueKind = vkActual);
+begin
+TUNSNodeAoBuffer(CheckedLeafNodeTypeAccess(ValueName,vtAoBuffer,'BufferValueInsertNoLock')).Insert(Index,Value,ValueKind);
+end;
+ 
+//------------------------------------------------------------------------------
+
+Function TUniSettings.BufferValueRemoveNoLock(const ValueName: String; const Value: TMemoryBuffer; ValueKind: TUNSValueKind = vkActual): Integer;
+begin
+Result := TUNSNodeAoBuffer(CheckedLeafNodeTypeAccess(ValueName,vtAoBuffer,'BufferValueRemoveNoLock')).Remove(Value,ValueKind);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TUniSettings.BufferValueFirst(const ValueName: String; ValueKind: TUNSValueKind = vkActual; CreateCopy: Boolean = True): TMemoryBuffer;
+begin
+ReadLock;
+try
+  Result := BufferValueFirstNoLock(ValueName,ValueKind,CreateCopy);
+finally
+  ReadUnlock;
+end;
+end;
+
+//------------------------------------------------------------------------------
+
+Function TUniSettings.BufferValueLast(const ValueName: String; ValueKind: TUNSValueKind = vkActual; CreateCopy: Boolean = True): TMemoryBuffer;
+begin
+ReadLock;
+try
+  Result := BufferValueLastNoLock(ValueName,ValueKind,CreateCopy);
+finally
+  ReadUnlock;
+end;
+end;
+
+//------------------------------------------------------------------------------
+
+Function TUniSettings.BufferValueIndexOf(const ValueName: String; const Value: TMemoryBuffer; ValueKind: TUNSValueKind = vkActual): Integer;
+begin
+ReadLock;
+try
+  Result := BufferValueIndexOfNoLock(ValueName,Value,ValueKind);
+finally
+  ReadUnlock;
+end;
+end;
+
+//------------------------------------------------------------------------------
+
+Function TUniSettings.BufferValueAdd(const ValueName: String; const Value: TMemoryBuffer; ValueKind: TUNSValueKind = vkActual): Integer;
+begin
+WriteLock;
+try
+  Result := BufferValueAddNoLock(ValueName,Value,ValueKind);
+finally
+  WriteUnlock;
+end;
+end;
+
+//------------------------------------------------------------------------------
+
+Function TUniSettings.BufferValueAppend(const ValueName: String; const Values: array of TMemoryBuffer; ValueKind: TUNSValueKind = vkActual): Integer;
+begin
+WriteLock;
+try
+  Result := BufferValueAppendNoLock(ValueName,Values,ValueKind);
+finally
+  WriteUnlock;
+end;
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TUniSettings.BufferValueInsert(const ValueName: String; Index: Integer; const Value: TMemoryBuffer; ValueKind: TUNSValueKind = vkActual);
+begin
+WriteLock;
+try
+  BufferValueInsertNoLock(ValueName,Index,Value,ValueKind);
+finally
+  WriteUnlock;
+end;
+end;
+
+//------------------------------------------------------------------------------
+
+Function TUniSettings.BufferValueRemove(const ValueName: String; const Value: TMemoryBuffer; ValueKind: TUNSValueKind = vkActual): Integer;
+begin
+WriteLock;
+try
+  Result := BufferValueRemoveNoLock(ValueName,Value,ValueKind);
+finally
+  WriteUnlock;
+end;
+end;
+
+//------------------------------------------------------------------------------
+
+Function TUniSettings.BufferValueItemGetNoLock(const ValueName: String; Index: Integer; ValueKind: TUNSValueKind = vkActual; CreateCopy: Boolean = True): TMemoryBuffer;
+var
+  TempBuffer: TMemoryBuffer;
+begin
+with TUNSNodeAoBuffer(CheckedLeafNodeTypeAccess(ValueName,vtAoBuffer,'BufferValueItemGetNoLock')) do
+  case ValueKind of
+    vkActual:   TempBuffer := Items[Index];
+    vkSaved:    TempBuffer := SavedItems[Index];
+    vkDefault:  TempBuffer := DefaultItems[Index];
+  else
+    raise EUNSInvalidValueKindException.Create(ValueKind,Self,'BufferValueItemGetNoLock');
+  end;
+If CreateCopy then
+  CopyBuffer(TempBuffer,Result)
+else
+  Result := TempBuffer;
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TUniSettings.BufferValueItemSetNoLock(const ValueName: String; Index: Integer; const NewValue: TMemoryBuffer; ValueKind: TUNSValueKind = vkActual);
+begin
+with TUNSNodeAoBuffer(CheckedLeafNodeTypeAccess(ValueName,vtAoBuffer,'BufferValueItemSetNoLock')) do
+  case ValueKind of
+    vkActual:   Items[Index] := NewValue;
+    vkSaved:    SavedItems[Index] := NewValue;
+    vkDefault:  DefaultItems[Index] := NewValue;
+  else
+    raise EUNSInvalidValueKindException.Create(ValueKind,Self,'BufferValueItemSetNoLock');
+  end;
+end;
+
+//------------------------------------------------------------------------------
+
+Function TUniSettings.BufferValueItemGet(const ValueName: String; Index: Integer; ValueKind: TUNSValueKind = vkActual; CreateCopy: Boolean = True): TMemoryBuffer;
+begin
+ReadLock;
+try
+  Result := BufferValueItemGetNoLock(ValueName,Index,ValueKind,CreateCopy);
+finally
+  ReadUnlock;
+end;
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TUniSettings.BufferValueItemSet(const ValueName: String; Index: Integer; const NewValue: TMemoryBuffer; ValueKind: TUNSValueKind = vkActual);
+begin
+WriteLock;
+try
+  BufferValueItemSetNoLock(ValueName,Index,NewValue,ValueKind);
+finally
+  WriteUnlock;
+end;
+end;
+
+{$ENDIF UNS_Include_Implementation}
+
+{$ENDIF UNS_Included}

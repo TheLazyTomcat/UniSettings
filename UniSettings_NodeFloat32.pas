@@ -1,4 +1,4 @@
-{$IFNDEF Included}
+{$IFNDEF UNS_Included}
 unit UniSettings_NodeFloat32;
 
 {$INCLUDE '.\UniSettings_defs.inc'}
@@ -99,30 +99,85 @@ end;
 {$WARNINGS OFF} // supresses warnings on lines after the final end
 end.
 
-{$ELSE Included}
+{$ELSE UNS_Included}
 
 {$WARNINGS ON}
 
-{$IFDEF Included_Declaration}
-    Function Float32ValueGet(const ValueName: String; AccessDefVal: Boolean = False): Float32; virtual;
-    procedure Float32ValueSet(const ValueName: String; NewValue: Float32; AccessDefVal: Boolean = False); virtual;
-    Function FloatValueGet(const ValueName: String; AccessDefVal: Boolean = False): Float32; virtual;
-    procedure FloatValueSet(const ValueName: String; NewValue: Float32; AccessDefVal: Boolean = False); virtual;
-{$ENDIF}
+{$IFDEF UNS_Include_Declaration}
+    Function Float32ValueGetNoLock(const ValueName: String; ValueKind: TUNSValueKind = vkActual): Float32; virtual;
+    procedure Float32ValueSetNoLock(const ValueName: String; NewValue: Float32; ValueKind: TUNSValueKind = vkActual); virtual;
+
+    Function Float32ValueGet(const ValueName: String; ValueKind: TUNSValueKind = vkActual): Float32; virtual;
+    procedure Float32ValueSet(const ValueName: String; NewValue: Float32; ValueKind: TUNSValueKind = vkActual); virtual;
+
+    Function FloatValueGetNoLock(const ValueName: String; ValueKind: TUNSValueKind = vkActual): Float32; virtual;
+    procedure FloatValueSetNoLock(const ValueName: String; NewValue: Float32; ValueKind: TUNSValueKind = vkActual); virtual;
+
+    Function FloatValueGet(const ValueName: String; ValueKind: TUNSValueKind = vkActual): Float32; virtual;
+    procedure FloatValueSet(const ValueName: String; NewValue: Float32; ValueKind: TUNSValueKind = vkActual); virtual;
+{$ENDIF UNS_Include_Declaration}
 
 //==============================================================================
 
-{$IFDEF Included_Implementation}
+{$IFDEF UNS_Include_Implementation}
 
-Function TUniSettings.Float32ValueGet(const ValueName: String; AccessDefVal: Boolean = False): Float32;
+Function TUniSettings.Float32ValueGetNoLock(const ValueName: String; ValueKind: TUNSValueKind = vkActual): Float32;
+var
+  TempNode:       TUNSNodeLeaf;
+  TempValueKind:  TUNSValueKind;
+  TempIndex:      Integer;
+begin
+If CheckedLeafNodeTypeAccessIsArray(ValueName,vtFloat32,'Float32ValueGetNoLock',TempNode,TempValueKind,TempIndex) then
+  case TempValueKind of
+    vkActual:   Result := TUNSNodeAoFloat32(TempNode).Items[TempIndex];
+    vkSaved:    Result := TUNSNodeAoFloat32(TempNode).SavedItems[TempIndex];
+    vkDefault:  Result := TUNSNodeAoFloat32(TempNode).DefaultItems[TempIndex];
+  else
+    raise EUNSInvalidValueKindException.Create(TempValueKind,Self,'Float32ValueGetNoLock');
+  end
+else
+  case ValueKind of
+    vkActual:   Result := TUNSNodeFloat32(TempNode).Value;
+    vkSaved:    Result := TUNSNodeFloat32(TempNode).SavedValue;
+    vkDefault:  Result := TUNSNodeFloat32(TempNode).DefaultValue;
+  else
+    raise EUNSInvalidValueKindException.Create(TempValueKind,Self,'Float32ValueGetNoLock');
+  end;
+end;
+ 
+//------------------------------------------------------------------------------
+
+procedure TUniSettings.Float32ValueSetNoLock(const ValueName: String; NewValue: Float32; ValueKind: TUNSValueKind = vkActual);
+var
+  TempNode:       TUNSNodeLeaf;
+  TempValueKind:  TUNSValueKind;
+  TempIndex:      Integer;
+begin
+If CheckedLeafNodeTypeAccessIsArray(ValueName,vtBool,'Float32ValueSetNoLock',TempNode,TempValueKind,TempIndex) then
+  case TempValueKind of
+    vkActual:   TUNSNodeAoFloat32(TempNode).Items[TempIndex] := NewValue;
+    vkSaved:    TUNSNodeAoFloat32(TempNode).SavedItems[TempIndex] := NewValue;
+    vkDefault:  TUNSNodeAoFloat32(TempNode).DefaultItems[TempIndex] := NewValue;
+  else
+    raise EUNSInvalidValueKindException.Create(TempValueKind,Self,'Float32ValueSetNoLock');
+  end
+else
+  case ValueKind of
+    vkActual:   TUNSNodeFloat32(TempNode).Value := NewValue;
+    vkSaved:    TUNSNodeFloat32(TempNode).SavedValue := NewValue;
+    vkDefault:  TUNSNodeFloat32(TempNode).DefaultValue := NewValue;
+  else
+    raise EUNSInvalidValueKindException.Create(ValueKind,Self,'Float32ValueSetNoLock');
+  end;
+end;
+
+//------------------------------------------------------------------------------
+
+Function TUniSettings.Float32ValueGet(const ValueName: String; ValueKind: TUNSValueKind = vkActual): Float32;
 begin
 ReadLock;
 try
-  with TUNSNodeFloat32(CheckedLeafNodeTypeAccess(ValueName,vtFloat32,'Float32ValueGet')) do
-    If AccessDefVal then
-      Result := Value
-    else
-      Result := DefaultValue;
+  Result := Float32ValueGetNoLock(ValueName,ValueKind);
 finally
   ReadUnlock;
 end;
@@ -130,15 +185,11 @@ end;
 
 //------------------------------------------------------------------------------
 
-procedure TUniSettings.Float32ValueSet(const ValueName: String; NewValue: Float32; AccessDefVal: Boolean = False);
+procedure TUniSettings.Float32ValueSet(const ValueName: String; NewValue: Float32; ValueKind: TUNSValueKind = vkActual);
 begin
 WriteLock;
 try
-  with TUNSNodeFloat32(CheckedLeafNodeTypeAccess(ValueName,vtFloat32,'Float32ValueSet')) do
-    If AccessDefVal then
-      Value := NewValue
-    else
-      DefaultValue := NewValue;
+  Float32ValueSetNoLock(ValueName,NewValue,ValueKind);
 finally
   WriteUnlock;
 end;
@@ -146,36 +197,32 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function TUniSettings.FloatValueGet(const ValueName: String; AccessDefVal: Boolean = False): Float32;
+Function TUniSettings.FloatValueGetNoLock(const ValueName: String; ValueKind: TUNSValueKind = vkActual): Float32;
 begin
-ReadLock;
-try
-  with TUNSNodeFloat32(CheckedLeafNodeTypeAccess(ValueName,vtFloat,'FloatValueGet')) do
-    If AccessDefVal then
-      Result := Value
-    else
-      Result := DefaultValue;
-finally
-  ReadUnlock;
-end;
+Result := Float32ValueGetNoLock(ValueName,ValueKind);
 end;
 
 //------------------------------------------------------------------------------
 
-procedure TUniSettings.FloatValueSet(const ValueName: String; NewValue: Float32; AccessDefVal: Boolean = False);
+procedure TUniSettings.FloatValueSetNoLock(const ValueName: String; NewValue: Float32; ValueKind: TUNSValueKind = vkActual);
 begin
-WriteLock;
-try
-  with TUNSNodeFloat32(CheckedLeafNodeTypeAccess(ValueName,vtFloat,'FloatValueSet')) do
-    If AccessDefVal then
-      Value := NewValue
-    else
-      DefaultValue := NewValue;
-finally
-  WriteUnlock;
-end;
+Float32ValueSetNoLock(ValueName,NewValue,ValueKind);
 end;
 
-{$ENDIF}
+//------------------------------------------------------------------------------
 
-{$ENDIF Included}
+Function TUniSettings.FloatValueGet(const ValueName: String; ValueKind: TUNSValueKind = vkActual): Float32;
+begin
+Result := Float32ValueGet(ValueName,ValueKind);
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TUniSettings.FloatValueSet(const ValueName: String; NewValue: Float32; ValueKind: TUNSValueKind = vkActual);
+begin
+Float32ValueSet(ValueName,NewValue,ValueKind);
+end;
+
+{$ENDIF UNS_Include_Implementation}
+
+{$ENDIF UNS_Included}

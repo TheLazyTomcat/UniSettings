@@ -1,4 +1,4 @@
-{$IFNDEF Included}
+{$IFNDEF UNS_Included}
 unit UniSettings_NodeBuffer;
 
 {$INCLUDE '.\UniSettings_defs.inc'}
@@ -110,34 +110,84 @@ end;
 {$WARNINGS OFF} // supresses warnings on lines after the final end
 end.
 
-{$ELSE Included}
+{$ELSE UNS_Included}
 
 {$WARNINGS ON}
 
-{$IFDEF Included_Declaration}
-    Function BufferValueGet(const ValueName: String; CreateCopy: Boolean = True; AccessDefVal: Boolean = False): TUNSNodeValueType; virtual;
-    procedure BufferValueSet(const ValueName: String; NewValue: TUNSNodeValueType; CreateCopy: Boolean = True; AccessDefVal: Boolean = False); virtual;
-{$ENDIF}
+{$IFDEF UNS_Include_Declaration}
+    Function BufferValueGetNoLock(const ValueName: String; ValueKind: TUNSValueKind = vkActual; CreateCopy: Boolean = True): TMemoryBuffer; virtual;
+    procedure BufferValueSetNoLock(const ValueName: String; const NewValue: TMemoryBuffer; ValueKind: TUNSValueKind = vkActual); virtual;
+
+    Function BufferValueGet(const ValueName: String; ValueKind: TUNSValueKind = vkActual; CreateCopy: Boolean = True): TMemoryBuffer; virtual;
+    procedure BufferValueSet(const ValueName: String; const NewValue: TMemoryBuffer; ValueKind: TUNSValueKind = vkActual); virtual;
+{$ENDIF UNS_Include_Declaration}
 
 //==============================================================================
 
-{$IFDEF Included_Implementation}
+{$IFDEF UNS_Include_Implementation}
 
-Function TUniSettings.BufferValueGet(const ValueName: String; CreateCopy: Boolean = True; AccessDefVal: Boolean = False): TUNSNodeValueType;
+Function TUniSettings.BufferValueGetNoLock(const ValueName: String; ValueKind: TUNSValueKind = vkActual; CreateCopy: Boolean = True): TMemoryBuffer;
 var
-  Temp: TUNSNodeValueType;
+  TempNode:       TUNSNodeLeaf;
+  TempValueKind:  TUNSValueKind;
+  TempIndex:      Integer;
+  TempBuffer:     TMemoryBuffer;
+begin
+If CheckedLeafNodeTypeAccessIsArray(ValueName,vtBuffer,'BufferValueGetNoLock',TempNode,TempValueKind,TempIndex) then
+  case TempValueKind of
+    vkActual:   TempBuffer := TUNSNodeAoBuffer(TempNode).Items[TempIndex];
+    vkSaved:    TempBuffer := TUNSNodeAoBuffer(TempNode).SavedItems[TempIndex];
+    vkDefault:  TempBuffer := TUNSNodeAoBuffer(TempNode).DefaultItems[TempIndex];
+  else
+    raise EUNSInvalidValueKindException.Create(TempValueKind,Self,'BufferValueGetNoLock');
+  end
+else
+  case ValueKind of
+    vkActual:   TempBuffer := TUNSNodeBuffer(TempNode).Value;
+    vkSaved:    TempBuffer := TUNSNodeBuffer(TempNode).SavedValue;
+    vkDefault:  TempBuffer := TUNSNodeBuffer(TempNode).DefaultValue;
+  else
+    raise EUNSInvalidValueKindException.Create(TempValueKind,Self,'BufferValueGetNoLock');
+  end;
+If CreateCopy then
+  CopyBuffer(TempBuffer,Result)
+else
+  Result := TempBuffer;
+end;
+ 
+//------------------------------------------------------------------------------
+
+procedure TUniSettings.BufferValueSetNoLock(const ValueName: String; const NewValue: TMemoryBuffer; ValueKind: TUNSValueKind = vkActual);
+var
+  TempNode:       TUNSNodeLeaf;
+  TempValueKind:  TUNSValueKind;
+  TempIndex:      Integer;
+begin
+If CheckedLeafNodeTypeAccessIsArray(ValueName,vtBuffer,'BufferValueSetNoLock',TempNode,TempValueKind,TempIndex) then
+  case TempValueKind of
+    vkActual:   TUNSNodeAoBuffer(TempNode).Items[TempIndex] := NewValue;
+    vkSaved:    TUNSNodeAoBuffer(TempNode).SavedItems[TempIndex] := NewValue;
+    vkDefault:  TUNSNodeAoBuffer(TempNode).DefaultItems[TempIndex] := NewValue;
+  else
+    raise EUNSInvalidValueKindException.Create(TempValueKind,Self,'BufferValueSetNoLock');
+  end
+else
+  case ValueKind of
+    vkActual:   TUNSNodeBuffer(TempNode).Value := NewValue;
+    vkSaved:    TUNSNodeBuffer(TempNode).SavedValue := NewValue;
+    vkDefault:  TUNSNodeBuffer(TempNode).DefaultValue := NewValue;
+  else
+    raise EUNSInvalidValueKindException.Create(ValueKind,Self,'BufferValueSetNoLock');
+  end;
+end;
+
+//------------------------------------------------------------------------------
+
+Function TUniSettings.BufferValueGet(const ValueName: String; ValueKind: TUNSValueKind = vkActual; CreateCopy: Boolean = True): TMemoryBuffer;
 begin
 ReadLock;
 try
-  with TUNSNodeBuffer(CheckedLeafNodeTypeAccess(ValueName,vtBuffer,'BufferValueGet')) do
-    If AccessDefVal then
-      Temp := Value
-    else
-      Temp := DefaultValue;
-  If CreateCopy then
-    CopyBuffer(Temp,Result)
-  else
-    Result := Temp;
+  Result := BufferValueGetNoLock(ValueName,ValueKind,CreateCopy);
 finally
   ReadUnlock;
 end;
@@ -145,26 +195,16 @@ end;
 
 //------------------------------------------------------------------------------
 
-procedure TUniSettings.BufferValueSet(const ValueName: String; NewValue: TUNSNodeValueType; CreateCopy: Boolean = True; AccessDefVal: Boolean = False);
-var
-  Temp: TUNSNodeValueType;
+procedure TUniSettings.BufferValueSet(const ValueName: String; const NewValue: TMemoryBuffer; ValueKind: TUNSValueKind = vkActual);
 begin
 WriteLock;
 try
-  If CreateCopy then
-    CopyBuffer(NewValue,Temp)
-  else
-    Temp := NewValue;
-  with TUNSNodeBuffer(CheckedLeafNodeTypeAccess(ValueName,vtBuffer,'BufferValueSet')) do
-    If AccessDefVal then
-      Value := Temp
-    else
-      DefaultValue := Temp;
+  BufferValueSetNoLock(ValueName,NewValue,ValueKind);
 finally
   WriteUnlock;
 end;
 end;
 
-{$ENDIF}
+{$ENDIF UNS_Include_Implementation}
 
-{$ENDIF Included}
+{$ENDIF UNS_Included}

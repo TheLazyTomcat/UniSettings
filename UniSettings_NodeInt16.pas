@@ -1,4 +1,4 @@
-{$IFNDEF Included}
+{$IFNDEF UNS_Included}
 unit UniSettings_NodeInt16;
 
 {$INCLUDE '.\UniSettings_defs.inc'}
@@ -92,28 +92,79 @@ end;
 {$WARNINGS OFF} // supresses warnings on lines after the final end
 end.
 
-{$ELSE Included}
+{$ELSE UNS_Included}
 
 {$WARNINGS ON}
 
-{$IFDEF Included_Declaration}
-    Function Int16ValueGet(const ValueName: String; AccessDefVal: Boolean = False): Int16; virtual;
-    procedure Int16ValueSet(const ValueName: String; NewValue: Int16; AccessDefVal: Boolean = False); virtual;
-{$ENDIF}
+{$IFDEF UNS_Include_Declaration}
+    Function Int16ValueGetNoLock(const ValueName: String; ValueKind: TUNSValueKind = vkActual): Int16; virtual;
+    procedure Int16ValueSetNoLock(const ValueName: String; NewValue: Int16; ValueKind: TUNSValueKind = vkActual); virtual;
+
+    Function Int16ValueGet(const ValueName: String; ValueKind: TUNSValueKind = vkActual): Int16; virtual;
+    procedure Int16ValueSet(const ValueName: String; NewValue: Int16; ValueKind: TUNSValueKind = vkActual); virtual;
+{$ENDIF UNS_Include_Declaration}
 
 //==============================================================================
 
-{$IFDEF Included_Implementation}
+{$IFDEF UNS_Include_Implementation}
 
-Function TUniSettings.Int16ValueGet(const ValueName: String; AccessDefVal: Boolean = False): Int16;
+Function TUniSettings.Int16ValueGetNoLock(const ValueName: String; ValueKind: TUNSValueKind = vkActual): Int16;
+var
+  TempNode:       TUNSNodeLeaf;
+  TempValueKind:  TUNSValueKind;
+  TempIndex:      Integer;
+begin
+If CheckedLeafNodeTypeAccessIsArray(ValueName,vtInt16,'Int16ValueGetNoLock',TempNode,TempValueKind,TempIndex) then
+  case TempValueKind of
+    vkActual:   Result := TUNSNodeAoInt16(TempNode).Items[TempIndex];
+    vkSaved:    Result := TUNSNodeAoInt16(TempNode).SavedItems[TempIndex];
+    vkDefault:  Result := TUNSNodeAoInt16(TempNode).DefaultItems[TempIndex];
+  else
+    raise EUNSInvalidValueKindException.Create(TempValueKind,Self,'Int16ValueGetNoLock');
+  end
+else
+  case ValueKind of
+    vkActual:   Result := TUNSNodeInt16(TempNode).Value;
+    vkSaved:    Result := TUNSNodeInt16(TempNode).SavedValue;
+    vkDefault:  Result := TUNSNodeInt16(TempNode).DefaultValue;
+  else
+    raise EUNSInvalidValueKindException.Create(TempValueKind,Self,'Int16ValueGetNoLock');
+  end;
+end;
+ 
+//------------------------------------------------------------------------------
+
+procedure TUniSettings.Int16ValueSetNoLock(const ValueName: String; NewValue: Int16; ValueKind: TUNSValueKind = vkActual);
+var
+  TempNode:       TUNSNodeLeaf;
+  TempValueKind:  TUNSValueKind;
+  TempIndex:      Integer;
+begin
+If CheckedLeafNodeTypeAccessIsArray(ValueName,vtBool,'Int16ValueSetNoLock',TempNode,TempValueKind,TempIndex) then
+  case TempValueKind of
+    vkActual:   TUNSNodeAoInt16(TempNode).Items[TempIndex] := NewValue;
+    vkSaved:    TUNSNodeAoInt16(TempNode).SavedItems[TempIndex] := NewValue;
+    vkDefault:  TUNSNodeAoInt16(TempNode).DefaultItems[TempIndex] := NewValue;
+  else
+    raise EUNSInvalidValueKindException.Create(TempValueKind,Self,'Int16ValueSetNoLock');
+  end
+else
+  case ValueKind of
+    vkActual:   TUNSNodeInt16(TempNode).Value := NewValue;
+    vkSaved:    TUNSNodeInt16(TempNode).SavedValue := NewValue;
+    vkDefault:  TUNSNodeInt16(TempNode).DefaultValue := NewValue;
+  else
+    raise EUNSInvalidValueKindException.Create(ValueKind,Self,'Int16ValueSetNoLock');
+  end;
+end;
+
+//------------------------------------------------------------------------------
+
+Function TUniSettings.Int16ValueGet(const ValueName: String; ValueKind: TUNSValueKind = vkActual): Int16;
 begin
 ReadLock;
 try
-  with TUNSNodeInt16(CheckedLeafNodeTypeAccess(ValueName,vtInt16,'Int16ValueGet')) do
-    If AccessDefVal then
-      Result := Value
-    else
-      Result := DefaultValue;
+  Result := Int16ValueGetNoLock(ValueName,ValueKind);
 finally
   ReadUnlock;
 end;
@@ -121,20 +172,16 @@ end;
 
 //------------------------------------------------------------------------------
 
-procedure TUniSettings.Int16ValueSet(const ValueName: String; NewValue: Int16; AccessDefVal: Boolean = False);
+procedure TUniSettings.Int16ValueSet(const ValueName: String; NewValue: Int16; ValueKind: TUNSValueKind = vkActual);
 begin
 WriteLock;
 try
-  with TUNSNodeInt16(CheckedLeafNodeTypeAccess(ValueName,vtInt16,'Int16ValueSet')) do
-    If AccessDefVal then
-      Value := NewValue
-    else
-      DefaultValue := NewValue;
+  Int16ValueSetNoLock(ValueName,NewValue,ValueKind);
 finally
   WriteUnlock;
 end;
 end;
 
-{$ENDIF}
+{$ENDIF UNS_Include_Implementation}
 
-{$ENDIF Included}
+{$ENDIF UNS_Included}

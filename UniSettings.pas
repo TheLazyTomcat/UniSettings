@@ -8,6 +8,7 @@ todo (* = completed):
 * name parts -> CDA
   TUniSettings copy constructor
 * make copies thread safe
+  integer can be 64bit...
 
 * nodes
 
@@ -64,13 +65,17 @@ type
     Function FindLeafNode(const NodeName: String; ValueType: TUNSValueType; out Node: TUNSNodeLeaf): Boolean; overload; virtual;
     Function CheckedLeafNodeAccess(const NodeName, Caller: String): TUNSNodeLeaf; virtual;
     Function CheckedLeafArrayNodeAccess(const NodeName, Caller: String): TUNSNodePrimitiveArray; virtual;
-    Function CheckedLeafNodeTypeAccess(const NodeName: String; ValueType: TUNSValueType; Caller: String): TUNSNodeLeaf; virtual;
+    Function CheckedLeafNodeTypeAccess(const NodeName: String; ValueType: TUNSValueType; const Caller: String): TUNSNodeLeaf; virtual;
     Function CheckedLeafNodeAccessIsArray(const NodeName, Caller: String; out Node: TUNSNodeLeaf; out ValueKind: TUNSValueKind; out Index: Integer): Boolean; virtual;
+    Function CheckedLeafNodeTypeAccessIsArray(const NodeName: String; ValueType: TUNSValueType; const Caller: String; out Node: TUNSNodeLeaf; out ValueKind: TUNSValueKind; out Index: Integer): Boolean; virtual;
+
     procedure ChangingStart;
     procedure ChangingEnd;
     procedure OnChangeHandler(Sender: TObject); virtual;
   public
     constructor Create;
+    //constructor CreateAsCopy(Source: TUniSettings);
+    //Function CreateCopy: TUniSettings; virtual;
     destructor Destroy; override;
     //--- Locking --------------------------------------------------------------
     procedure ReadLock; virtual;
@@ -216,8 +221,8 @@ type
     procedure ValueDelete(const ValueName: String; Index: Integer; ValueKind: TUNSValueKind = vkActual); virtual;
     procedure ValueClear(const ValueName: String; ValueKind: TUNSValueKind = vkActual); virtual;
     //--- Specific value types access ------------------------------------------
-  (*
-  {$DEFINE Included}{$DEFINE Included_Declaration}
+  {$DEFINE UNS_Included}{$DEFINE UNS_Include_Declaration}
+    // simple types
     {$INCLUDE '.\UniSettings_NodeBool.pas'}
     {$INCLUDE '.\UniSettings_NodeInt8.pas'}
     {$INCLUDE '.\UniSettings_NodeUInt8.pas'}
@@ -234,8 +239,24 @@ type
     {$INCLUDE '.\UniSettings_NodeTime.pas'}
     {$INCLUDE '.\UniSettings_NodeText.pas'}
     {$INCLUDE '.\UniSettings_NodeBuffer.pas'}
-  {$UNDEF Included_Declaration}{$UNDEF Included}
-    *)
+    // array types
+    {$INCLUDE '.\UniSettings_NodeAoBool.pas'}
+    {$INCLUDE '.\UniSettings_NodeAoInt8.pas'}
+    {$INCLUDE '.\UniSettings_NodeAoUInt8.pas'}
+    {$INCLUDE '.\UniSettings_NodeAoInt16.pas'}
+    {$INCLUDE '.\UniSettings_NodeAoUInt16.pas'}
+    {$INCLUDE '.\UniSettings_NodeAoInt32.pas'}
+    {$INCLUDE '.\UniSettings_NodeAoUInt32.pas'}
+    {$INCLUDE '.\UniSettings_NodeAoInt64.pas'}
+    {$INCLUDE '.\UniSettings_NodeAoUInt64.pas'}
+    {$INCLUDE '.\UniSettings_NodeAoFloat32.pas'}
+    {$INCLUDE '.\UniSettings_NodeAoFloat64.pas'}
+    {$INCLUDE '.\UniSettings_NodeAoDateTime.pas'}
+    {$INCLUDE '.\UniSettings_NodeAoDate.pas'}
+    {$INCLUDE '.\UniSettings_NodeAoTime.pas'}
+    {$INCLUDE '.\UniSettings_NodeAoText.pas'}
+    {$INCLUDE '.\UniSettings_NodeAoBuffer.pas'}
+  {$UNDEF UNS_Include_Declaration}{$UNDEF UNS_Included}
     //--- Properties -----------------------------------------------------------
     property WorkingBranch: String read GetWorkingBranch write SetWorkingBranch;
     //--- Format settings properties -------------------------------------------
@@ -389,7 +410,7 @@ end;
 Function TUniSettings.CreateLeafNode(ValueType: TUNSValueType; const NodeName: String; ParentNode: TUNSNodeBranch): TUNSNodeLeaf;
 begin
 case ValueType of
-  // simple values
+  // simple types
   vtBlank:       Result := TUNSNodeBlank.Create(NodeName,ParentNode);
   vtBool:        Result := TUNSNodeBool.Create(NodeName,ParentNode);
   vtInt8:        Result := TUNSNodeInt8.Create(NodeName,ParentNode);
@@ -407,7 +428,7 @@ case ValueType of
   vtDateTime:    Result := TUNSNodeDateTime.Create(NodeName,ParentNode);
   vtText:        Result := TUNSNodeText.Create(NodeName,ParentNode);
   vtBuffer:      Result := TUNSNodeBuffer.Create(NodeName,ParentNode);
-  // array values
+  // array types
   vtAoBool:      Result := TUNSNodeAoBool.Create(NodeName,ParentNode);
   vtAoInt8:      Result := TUNSNodeAoInt8.Create(NodeName,ParentNode);
   vtAoUInt8:     Result := TUNSNodeAoUInt8.Create(NodeName,ParentNode);
@@ -666,7 +687,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function TUniSettings.CheckedLeafNodeTypeAccess(const NodeName: String; ValueType: TUNSValueType; Caller: String): TUNSNodeLeaf;
+Function TUniSettings.CheckedLeafNodeTypeAccess(const NodeName: String; ValueType: TUNSValueType; const Caller: String): TUNSNodeLeaf;
 begin
 If FindLeafNode(NodeName,Result) then
   begin
@@ -740,6 +761,24 @@ If UNSNameParts(NodeName,NameParts) > 0 then
         else
           raise EUNSValueNotFoundException.Create(NodeName,Self,Caller);
       end;
+  end;
+end;
+
+//------------------------------------------------------------------------------
+
+Function TUniSettings.CheckedLeafNodeTypeAccessIsArray(const NodeName: String; ValueType: TUNSValueType; const Caller: String; out Node: TUNSNodeLeaf; out ValueKind: TUNSValueKind; out Index: Integer): Boolean;
+begin
+If CheckedLeafNodeAccessIsArray(NodeName,Caller,Node,ValueKind,Index) then
+  begin
+    If TUNSNodePrimitiveArray(Node).ItemValueType <> ValueType then
+      raise EUNSValueTypeNotFoundException.Create(NodeName,ValueType,Self,Caller);
+    Result := True;
+  end
+else
+  begin
+    If Node.ValueType <> ValueType then
+      raise EUNSValueTypeNotFoundException.Create(NodeName,ValueType,Self,Caller);
+    Result := False;
   end;
 end;
 
@@ -2322,8 +2361,9 @@ end;
 end;
 
 //------------------------------------------------------------------------------
-(*
-{$DEFINE Included}{$DEFINE Included_Implementation}
+
+{$DEFINE UNS_Included}{$DEFINE UNS_Include_Implementation}
+  // simple types
   {$INCLUDE '.\UniSettings_NodeBool.pas'}
   {$INCLUDE '.\UniSettings_NodeInt8.pas'}
   {$INCLUDE '.\UniSettings_NodeUInt8.pas'}
@@ -2339,7 +2379,24 @@ end;
   {$INCLUDE '.\UniSettings_NodeDate.pas'}
   {$INCLUDE '.\UniSettings_NodeTime.pas'}
   {$INCLUDE '.\UniSettings_NodeText.pas'}
-  {$INCLUDE '.\UniSettings_NodeBuffer.pas'}  
-{$UNDEF Included_Implementation}{$UNDEF Included}
-*)
+  {$INCLUDE '.\UniSettings_NodeBuffer.pas'}
+  // array types
+  {$INCLUDE '.\UniSettings_NodeAoBool.pas'}
+  {$INCLUDE '.\UniSettings_NodeAoInt8.pas'}
+  {$INCLUDE '.\UniSettings_NodeAoUInt8.pas'}
+  {$INCLUDE '.\UniSettings_NodeAoInt16.pas'}
+  {$INCLUDE '.\UniSettings_NodeAoUInt16.pas'}
+  {$INCLUDE '.\UniSettings_NodeAoInt32.pas'}
+  {$INCLUDE '.\UniSettings_NodeAoUInt32.pas'}
+  {$INCLUDE '.\UniSettings_NodeAoInt64.pas'}
+  {$INCLUDE '.\UniSettings_NodeAoUInt64.pas'}
+  {$INCLUDE '.\UniSettings_NodeAoFloat32.pas'}
+  {$INCLUDE '.\UniSettings_NodeAoFloat64.pas'}
+  {$INCLUDE '.\UniSettings_NodeAoDateTime.pas'}
+  {$INCLUDE '.\UniSettings_NodeAoDate.pas'}
+  {$INCLUDE '.\UniSettings_NodeAoTime.pas'}
+  {$INCLUDE '.\UniSettings_NodeAoText.pas'}
+  {$INCLUDE '.\UniSettings_NodeAoBuffer.pas'}
+{$UNDEF UNS_Include_Implementation}{$UNDEF UNS_Included}
+
 end.

@@ -1,4 +1,4 @@
-{$IFNDEF Included}
+{$IFNDEF UNS_Included}
 unit UniSettings_NodeBool;
 
 {$INCLUDE '.\UniSettings_defs.inc'}
@@ -92,28 +92,79 @@ end;
 {$WARNINGS OFF} // supresses warnings on lines after the final end
 end.
 
-{$ELSE Included}
+{$ELSE UNS_Included}
 
 {$WARNINGS ON}
 
-{$IFDEF Included_Declaration}
+{$IFDEF UNS_Include_Declaration}
+    Function BooleanValueGetNoLock(const ValueName: String; ValueKind: TUNSValueKind = vkActual): Boolean; virtual;
+    procedure BooleanValueSetNoLock(const ValueName: String; NewValue: Boolean; ValueKind: TUNSValueKind = vkActual); virtual;
+
     Function BooleanValueGet(const ValueName: String; ValueKind: TUNSValueKind = vkActual): Boolean; virtual;
     procedure BooleanValueSet(const ValueName: String; NewValue: Boolean; ValueKind: TUNSValueKind = vkActual); virtual;
-{$ENDIF}
+{$ENDIF UNS_Include_Declaration}
 
 //==============================================================================
 
-{$IFDEF Included_Implementation}
+{$IFDEF UNS_Include_Implementation}
+
+Function TUniSettings.BooleanValueGetNoLock(const ValueName: String; ValueKind: TUNSValueKind = vkActual): Boolean;
+var
+  TempNode:       TUNSNodeLeaf;
+  TempValueKind:  TUNSValueKind;
+  TempIndex:      Integer;
+begin
+If CheckedLeafNodeTypeAccessIsArray(ValueName,vtBool,'BooleanValueGetNoLock',TempNode,TempValueKind,TempIndex) then
+  case TempValueKind of
+    vkActual:   Result := TUNSNodeAoBool(TempNode).Items[TempIndex];
+    vkSaved:    Result := TUNSNodeAoBool(TempNode).SavedItems[TempIndex];
+    vkDefault:  Result := TUNSNodeAoBool(TempNode).DefaultItems[TempIndex];
+  else
+    raise EUNSInvalidValueKindException.Create(TempValueKind,Self,'BooleanValueGetNoLock');
+  end
+else
+  case ValueKind of
+    vkActual:   Result := TUNSNodeBool(TempNode).Value;
+    vkSaved:    Result := TUNSNodeBool(TempNode).SavedValue;
+    vkDefault:  Result := TUNSNodeBool(TempNode).DefaultValue;
+  else
+    raise EUNSInvalidValueKindException.Create(TempValueKind,Self,'BooleanValueGetNoLock');
+  end;
+end;
+ 
+//------------------------------------------------------------------------------
+
+procedure TUniSettings.BooleanValueSetNoLock(const ValueName: String; NewValue: Boolean; ValueKind: TUNSValueKind = vkActual);
+var
+  TempNode:       TUNSNodeLeaf;
+  TempValueKind:  TUNSValueKind;
+  TempIndex:      Integer;
+begin
+If CheckedLeafNodeTypeAccessIsArray(ValueName,vtBool,'BooleanValueSetNoLock',TempNode,TempValueKind,TempIndex) then
+  case TempValueKind of
+    vkActual:   TUNSNodeAoBool(TempNode).Items[TempIndex] := NewValue;
+    vkSaved:    TUNSNodeAoBool(TempNode).SavedItems[TempIndex] := NewValue;
+    vkDefault:  TUNSNodeAoBool(TempNode).DefaultItems[TempIndex] := NewValue;
+  else
+    raise EUNSInvalidValueKindException.Create(TempValueKind,Self,'BooleanValueSetNoLock');
+  end
+else
+  case ValueKind of
+    vkActual:   TUNSNodeBool(TempNode).Value := NewValue;
+    vkSaved:    TUNSNodeBool(TempNode).SavedValue := NewValue;
+    vkDefault:  TUNSNodeBool(TempNode).DefaultValue := NewValue;
+  else
+    raise EUNSInvalidValueKindException.Create(ValueKind,Self,'BooleanValueSetNoLock');
+  end;
+end;
+
+//------------------------------------------------------------------------------
 
 Function TUniSettings.BooleanValueGet(const ValueName: String; ValueKind: TUNSValueKind = vkActual): Boolean;
 begin
 ReadLock;
 try
-  with TUNSNodeBool(CheckedLeafNodeTypeAccess(ValueName,vtBool,'BooleanValueGet')) do
-    If AccessDefVal then
-      Result := Value
-    else
-      Result := DefaultValue;
+  Result := BooleanValueGetNoLock(ValueName,ValueKind);
 finally
   ReadUnlock;
 end;
@@ -125,16 +176,12 @@ procedure TUniSettings.BooleanValueSet(const ValueName: String; NewValue: Boolea
 begin
 WriteLock;
 try
-  with TUNSNodeBool(CheckedLeafNodeTypeAccess(ValueName,vtBool,'BooleanValueSet')) do
-    If AccessDefVal then
-      Value := NewValue
-    else
-      DefaultValue := NewValue;
+  BooleanValueSetNoLock(ValueName,NewValue,ValueKind);
 finally
   WriteUnlock;
 end;
 end;
 
-{$ENDIF}
+{$ENDIF UNS_Include_Implementation}
 
-{$ENDIF Included}
+{$ENDIF UNS_Included}

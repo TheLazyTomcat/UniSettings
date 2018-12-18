@@ -1,6 +1,12 @@
 //------------------------------------------------------------------------------
 // do not touch following lines...
 
+{$UNDEF UNS_Include_Declaration}
+{$UNDEF UNS_Include_Implementation}
+
+{$UNDEF UNS_NodeInclude_Declaration}
+{$UNDEF UNS_NodeInclude_Implementation}
+
 // defines for node code template inclusions
 {$UNDEF UNS_NodeBlank}
 {$UNDEF UNS_NodeBool}

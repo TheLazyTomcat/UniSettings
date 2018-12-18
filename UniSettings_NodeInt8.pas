@@ -1,4 +1,4 @@
-{$IFNDEF Included}
+{$IFNDEF UNS_Included}
 unit UniSettings_NodeInt8;
 
 {$INCLUDE '.\UniSettings_defs.inc'}
@@ -92,28 +92,79 @@ end;
 {$WARNINGS OFF} // supresses warnings on lines after the final end
 end.
 
-{$ELSE Included}
+{$ELSE UNS_Included}
 
 {$WARNINGS ON}
 
-{$IFDEF Included_Declaration}
+{$IFDEF UNS_Include_Declaration}
+    Function Int8ValueGetNoLock(const ValueName: String; ValueKind: TUNSValueKind = vkActual): Int8; virtual;
+    procedure Int8ValueSetNoLock(const ValueName: String; NewValue: Int8; ValueKind: TUNSValueKind = vkActual); virtual;
+
     Function Int8ValueGet(const ValueName: String; ValueKind: TUNSValueKind = vkActual): Int8; virtual;
     procedure Int8ValueSet(const ValueName: String; NewValue: Int8; ValueKind: TUNSValueKind = vkActual); virtual;
-{$ENDIF}
+{$ENDIF UNS_Include_Declaration}
 
 //==============================================================================
 
-{$IFDEF Included_Implementation}
+{$IFDEF UNS_Include_Implementation}
+
+Function TUniSettings.Int8ValueGetNoLock(const ValueName: String; ValueKind: TUNSValueKind = vkActual): Int8;
+var
+  TempNode:       TUNSNodeLeaf;
+  TempValueKind:  TUNSValueKind;
+  TempIndex:      Integer;
+begin
+If CheckedLeafNodeTypeAccessIsArray(ValueName,vtInt8,'Int8ValueGetNoLock',TempNode,TempValueKind,TempIndex) then
+  case TempValueKind of
+    vkActual:   Result := TUNSNodeAoInt8(TempNode).Items[TempIndex];
+    vkSaved:    Result := TUNSNodeAoInt8(TempNode).SavedItems[TempIndex];
+    vkDefault:  Result := TUNSNodeAoInt8(TempNode).DefaultItems[TempIndex];
+  else
+    raise EUNSInvalidValueKindException.Create(TempValueKind,Self,'Int8ValueGetNoLock');
+  end
+else
+  case ValueKind of
+    vkActual:   Result := TUNSNodeInt8(TempNode).Value;
+    vkSaved:    Result := TUNSNodeInt8(TempNode).SavedValue;
+    vkDefault:  Result := TUNSNodeInt8(TempNode).DefaultValue;
+  else
+    raise EUNSInvalidValueKindException.Create(TempValueKind,Self,'Int8ValueGetNoLock');
+  end;
+end;
+ 
+//------------------------------------------------------------------------------
+
+procedure TUniSettings.Int8ValueSetNoLock(const ValueName: String; NewValue: Int8; ValueKind: TUNSValueKind = vkActual);
+var
+  TempNode:       TUNSNodeLeaf;
+  TempValueKind:  TUNSValueKind;
+  TempIndex:      Integer;
+begin
+If CheckedLeafNodeTypeAccessIsArray(ValueName,vtBool,'Int8ValueSetNoLock',TempNode,TempValueKind,TempIndex) then
+  case TempValueKind of
+    vkActual:   TUNSNodeAoInt8(TempNode).Items[TempIndex] := NewValue;
+    vkSaved:    TUNSNodeAoInt8(TempNode).SavedItems[TempIndex] := NewValue;
+    vkDefault:  TUNSNodeAoInt8(TempNode).DefaultItems[TempIndex] := NewValue;
+  else
+    raise EUNSInvalidValueKindException.Create(TempValueKind,Self,'Int8ValueSetNoLock');
+  end
+else
+  case ValueKind of
+    vkActual:   TUNSNodeInt8(TempNode).Value := NewValue;
+    vkSaved:    TUNSNodeInt8(TempNode).SavedValue := NewValue;
+    vkDefault:  TUNSNodeInt8(TempNode).DefaultValue := NewValue;
+  else
+    raise EUNSInvalidValueKindException.Create(ValueKind,Self,'Int8ValueSetNoLock');
+  end;
+end;
+
+//------------------------------------------------------------------------------
 
 Function TUniSettings.Int8ValueGet(const ValueName: String; ValueKind: TUNSValueKind = vkActual): Int8;
 begin
 ReadLock;
 try
-  with TUNSNodeInt8(CheckedLeafNodeTypeAccess(ValueName,vtInt8,'Int8ValueGet')) do
-    If AccessDefVal then
-      Result := Value
-    else
-      Result := DefaultValue;
+  Result := Int8ValueGetNoLock(ValueName,ValueKind);
 finally
   ReadUnlock;
 end;
@@ -125,16 +176,12 @@ procedure TUniSettings.Int8ValueSet(const ValueName: String; NewValue: Int8; Val
 begin
 WriteLock;
 try
-  with TUNSNodeInt8(CheckedLeafNodeTypeAccess(ValueName,vtInt8,'Int8ValueSet')) do
-    If AccessDefVal then
-      Value := NewValue
-    else
-      DefaultValue := NewValue;
+  Int8ValueSetNoLock(ValueName,NewValue,ValueKind);
 finally
   WriteUnlock;
 end;
 end;
 
-{$ENDIF}
+{$ENDIF UNS_Include_Implementation}
 
-{$ENDIF Included}
+{$ENDIF UNS_Included}
