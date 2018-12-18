@@ -57,12 +57,8 @@ type
                    vtAoTime,      // array of times
                    vtAoDateTime,  // array of date + time values
                    vtAoText,      // array of strings
-                   vtAoBuffer,    // array of memory buffers
-                   // some aliases...
-                   vtInteger   = vtInt32,
-                   vtFloat     = vtFloat32,
-                   vtAoInteger = vtAoInt32,
-                   vtAoFloat   = vtAoFloat32);
+                   vtAoBuffer);   // array of memory buffers
+
 
 const
   UNS_VALUETYPE_STRS: array[TUNSValueType] of String = (

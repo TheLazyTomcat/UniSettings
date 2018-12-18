@@ -103,12 +103,6 @@ end.
 
     Function Int32ValueGet(const ValueName: String; ValueKind: TUNSValueKind = vkActual): Int32; virtual;
     procedure Int32ValueSet(const ValueName: String; NewValue: Int32; ValueKind: TUNSValueKind = vkActual); virtual;
-
-    Function IntegerValueGetNoLock(const ValueName: String; ValueKind: TUNSValueKind = vkActual): Int32; virtual;
-    procedure IntegerValueSetNoLock(const ValueName: String; NewValue: Int32; ValueKind: TUNSValueKind = vkActual); virtual;
-
-    Function IntegerValueGet(const ValueName: String; ValueKind: TUNSValueKind = vkActual): Int32; virtual;
-    procedure IntegerValueSet(const ValueName: String; NewValue: Int32; ValueKind: TUNSValueKind = vkActual); virtual;
 {$ENDIF UNS_Include_Declaration}
 
 //==============================================================================
@@ -187,34 +181,6 @@ try
 finally
   WriteUnlock;
 end;
-end;
-
-//------------------------------------------------------------------------------
-
-Function TUniSettings.IntegerValueGetNoLock(const ValueName: String; ValueKind: TUNSValueKind = vkActual): Int32;
-begin
-Result := Int32ValueGetNoLock(ValueName,ValueKind);
-end;
-
-//------------------------------------------------------------------------------
-
-procedure TUniSettings.IntegerValueSetNoLock(const ValueName: String; NewValue: Int32; ValueKind: TUNSValueKind = vkActual);
-begin
-Int32ValueSetNoLock(ValueName,NewValue,ValueKind);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TUniSettings.IntegerValueGet(const ValueName: String; ValueKind: TUNSValueKind = vkActual): Int32;
-begin
-Result := Int32ValueGet(ValueName,ValueKind);
-end;
-
-//------------------------------------------------------------------------------
-
-procedure TUniSettings.IntegerValueSet(const ValueName: String; NewValue: Int32; ValueKind: TUNSValueKind = vkActual);
-begin
-Int32ValueSet(ValueName,NewValue,ValueKind);
 end;
 
 {$ENDIF UNS_Include_Implementation}

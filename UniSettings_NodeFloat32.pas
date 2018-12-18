@@ -109,12 +109,6 @@ end.
 
     Function Float32ValueGet(const ValueName: String; ValueKind: TUNSValueKind = vkActual): Float32; virtual;
     procedure Float32ValueSet(const ValueName: String; NewValue: Float32; ValueKind: TUNSValueKind = vkActual); virtual;
-
-    Function FloatValueGetNoLock(const ValueName: String; ValueKind: TUNSValueKind = vkActual): Float32; virtual;
-    procedure FloatValueSetNoLock(const ValueName: String; NewValue: Float32; ValueKind: TUNSValueKind = vkActual); virtual;
-
-    Function FloatValueGet(const ValueName: String; ValueKind: TUNSValueKind = vkActual): Float32; virtual;
-    procedure FloatValueSet(const ValueName: String; NewValue: Float32; ValueKind: TUNSValueKind = vkActual); virtual;
 {$ENDIF UNS_Include_Declaration}
 
 //==============================================================================
@@ -193,34 +187,6 @@ try
 finally
   WriteUnlock;
 end;
-end;
-
-//------------------------------------------------------------------------------
-
-Function TUniSettings.FloatValueGetNoLock(const ValueName: String; ValueKind: TUNSValueKind = vkActual): Float32;
-begin
-Result := Float32ValueGetNoLock(ValueName,ValueKind);
-end;
-
-//------------------------------------------------------------------------------
-
-procedure TUniSettings.FloatValueSetNoLock(const ValueName: String; NewValue: Float32; ValueKind: TUNSValueKind = vkActual);
-begin
-Float32ValueSetNoLock(ValueName,NewValue,ValueKind);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TUniSettings.FloatValueGet(const ValueName: String; ValueKind: TUNSValueKind = vkActual): Float32;
-begin
-Result := Float32ValueGet(ValueName,ValueKind);
-end;
-
-//------------------------------------------------------------------------------
-
-procedure TUniSettings.FloatValueSet(const ValueName: String; NewValue: Float32; ValueKind: TUNSValueKind = vkActual);
-begin
-Float32ValueSet(ValueName,NewValue,ValueKind);
 end;
 
 {$ENDIF UNS_Include_Implementation}
