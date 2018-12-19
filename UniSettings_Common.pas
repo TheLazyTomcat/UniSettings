@@ -18,7 +18,7 @@ type
 
 //------------------------------------------------------------------------------
 
-  TUNSNodeClass = (ncUndefined,ncBranch,ncArrayItem,ncArray,ncLeaf);
+  TUNSNodeType = (ntUndefined,ntBranch,ntArrayItem,ntArray,ntLeaf);
 
   TUNSValueKind = (vkActual,vkSaved,vkDefault);
 

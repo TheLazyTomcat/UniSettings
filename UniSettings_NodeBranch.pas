@@ -14,7 +14,7 @@ type
     fCount:     Integer;
     Function GetSubNode(Index: Integer): TUNSNodeBase;
   protected
-    class Function GetNodeClass: TUNSNodeClass; override;
+    class Function GetNodeType: TUNSNodeType; override;
     procedure SetMaster(Value: TObject); override;
     Function GetMaxNodeLevel: Integer; override;
   public
@@ -63,9 +63,9 @@ end;
 
 //==============================================================================
 
-class Function TUNSNodeBranch.GetNodeClass: TUNSNodeClass;
+class Function TUNSNodeBranch.GetNodeType: TUNSNodeType;
 begin
-Result := ncBranch;
+Result := ntBranch;
 end;
 
 //------------------------------------------------------------------------------
@@ -275,7 +275,7 @@ Function TUNSNodeBranch.FindBranchNode(Name: TUNSHashedString; out Node: TUNSNod
 begin
 If FindNode(Name,Node,Recursive) then
   begin
-    If not(Node.NodeClass in [ncBranch,ncArray,ncArrayItem]) then
+    If not(Node.NodeType in [ntBranch,ntArray,ntArrayItem]) then
       begin
         Result := False;
         Node := nil;
@@ -298,7 +298,7 @@ Function TUNSNodeBranch.FindLeafNode(Name: TUNSHashedString; out Node: TUNSNodeB
 begin
 If FindNode(Name,Node,Recursive) then
   begin
-    If not(Node.NodeClass = ncLeaf) then
+    If not(Node.NodeType = ntLeaf) then
       begin
         Result := False;
         Node := nil;

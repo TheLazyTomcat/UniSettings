@@ -14,7 +14,7 @@ type
   protected
     class Function GetValueType: TUNSValueType; virtual;
     class Function SameValues(const A,B): Boolean; virtual; abstract;
-    class Function GetNodeClass: TUNSNodeClass; override;
+    class Function GetNodeType: TUNSNodeType; override;
     Function GetValueSize: TMemSize; virtual; abstract;
     Function GetSavedValueSize: TMemSize; virtual; abstract;
     Function GetDefaultValueSize: TMemSize; virtual; abstract;
@@ -51,9 +51,9 @@ end;
 
 //------------------------------------------------------------------------------
 
-class Function TUNSNodeLeaf.GetNodeClass: TUNSNodeClass;
+class Function TUNSNodeLeaf.GetNodeType: TUNSNodeType;
 begin
-Result := ncLeaf;
+Result := ntLeaf;
 end;
 
 //------------------------------------------------------------------------------

@@ -20,7 +20,7 @@ type
     fChanged:       Boolean;
     fChangesProp:   Boolean;
     fOnChange:      TNotifyEvent;
-    class Function GetNodeClass: TUNSNodeClass; virtual;
+    class Function GetNodeType: TUNSNodeType; virtual;
     procedure SetNodeNameStr(const Value: String); virtual;
     procedure SetMaster(Value: TObject); virtual;
     Function GetNodeLevel: Integer; virtual;
@@ -47,7 +47,7 @@ type
     Function ActualEqualsDefault: Boolean; overload; virtual;
     procedure Save; overload; virtual;
     procedure Restore; overload; virtual;
-    property NodeClass: TUNSNodeClass read GetNodeClass;
+    property NodeType: TUNSNodeType read GetNodeType;
     property Name: TUNSHashedString read fName write fName;       
     property NameStr: String read fName.Str write SetNodeNameStr;
     property ParentNode: TUNSNodeBase read fParentNode;
@@ -67,11 +67,11 @@ uses
   UniSettings;
 
 type
-  TNodeClass = class of TUNSNodeBase;
+  TUNSNodeClass = class of TUNSNodeBase;
 
-class Function TUNSNodeBase.GetNodeClass: TUNSNodeClass;
+class Function TUNSNodeBase.GetNodeType: TUNSNodeType;
 begin
-Result := ncUndefined;
+Result := ntUndefined;
 end;
 
 //------------------------------------------------------------------------------
@@ -125,18 +125,18 @@ Function TUNSNodeBase.ReconstructFullNameInternal(TopLevelCall: Boolean; Include
 var
   TempStr:  String;
 begin
-case GetNodeClass of
-  ncBranch:     If TopLevelCall then
+case GetNodeType of
+  ntBranch:     If TopLevelCall then
                   TempStr := fName.Str
                 else
                   TempStr := fName.Str + UNS_NAME_DELIMITER;
-  ncArray:      If TopLevelCall then
+  ntArray:      If TopLevelCall then
                   TempStr := Format('%s[]',[fName.Str])
                 else If (TUNSNodeArray(Self).Count <= 0) then
                   TempStr := Format('%s[]',[fName.Str]) + UNS_NAME_DELIMITER
                 else
                   TempStr := fName.Str;
-  ncArrayItem:  If Assigned(fParentNode) then
+  ntArrayItem:  If Assigned(fParentNode) then
                   begin
                     If TopLevelCall or (TUNSNodeArrayItem(Self).Count <= 0) then
                       TempStr := Format('[%d]',[TUNSNodeArrayItem(Self).ArrayIndex])
@@ -144,7 +144,7 @@ case GetNodeClass of
                       TempStr := Format('[%d]',[TUNSNodeArrayItem(Self).ArrayIndex]) + UNS_NAME_DELIMITER;
                   end
                 else raise EUNSException.Create('Parent node not assigned.',Self,'ReconstructFullNameInternal');
-  ncLeaf:       TempStr := fName.Str;
+  ntLeaf:       TempStr := fName.Str;
 else
   {ncUndefined}
   TempStr := '';
@@ -224,7 +224,7 @@ end;
 
 Function TUNSNodeBase.CreateCopy(const Name: String; ParentNode: TUNSNodeBase): TUNSNodeBase;
 begin
-Result := TNodeClass(Self.ClassType).CreateAsCopy(Self,Name,ParentNode);
+Result := TUNSNodeClass(Self.ClassType).CreateAsCopy(Self,Name,ParentNode);
 end;
 
 //------------------------------------------------------------------------------

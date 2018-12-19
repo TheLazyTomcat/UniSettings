@@ -12,7 +12,7 @@ type
   private
     fArrayIndex:  Integer;
   protected
-    class Function GetNodeClass: TUNSNodeClass; override;
+    class Function GetNodeType: TUNSNodeType; override;
     procedure SetNodeNameStr(const Value: String); override;
     procedure SetName(Value: TUNSHashedString); virtual;
     procedure SetArrayIndex(Value: Integer); virtual;
@@ -43,9 +43,9 @@ end;
 
 //==============================================================================
 
-class Function TUNSNodeArrayItem.GetNodeClass: TUNSNodeClass;
+class Function TUNSNodeArrayItem.GetNodeType: TUNSNodeType;
 begin
-Result := ncArrayItem;
+Result := ntArrayItem;
 end;
 
 //------------------------------------------------------------------------------

@@ -206,15 +206,6 @@ var
   Node: TUNSNodeLeaf;
   i:    Integer;
 begin
-{$message 'revisit'}
-
-Write('>>> ');
-Write(Format('%-10s %-40s',[UNS_VALUETYPE_STRS[Value.ValueType],Value.Name]));
-Write('  ');
-For i := CDA_Low(Value.DefValStrs) to CDA_High(Value.DefValStrs) do
-  Write(' ',CDA_GetItem(Value.DefValStrs,i));
-WriteLn;
-
 If Assigned(fAddMethod) then
   begin
     If fAddMethod(Value.Name,Value.ValueType,Node) then
