@@ -1,17 +1,17 @@
 (*
 todo (* = completed):
 
-  tree building
+* tree building
   IO
 * arrays
 * array nodes: listsorters -> implementation uses
 * access to array items trough index in value name
 * name parts -> CDA
-  TUniSettings copy constructor
+* TUniSettings copy constructor
 * make copies thread safe
 * integer can be 64bit...
   per value change tracking (rework change system)
-  remove flags from values
+* remove flags from values (let's leave them there for now) 
 
 * nodes
 
@@ -92,34 +92,42 @@ type
     procedure Unlock; virtual;
     //--- Tree construction (no lock) ------------------------------------------
     procedure ConstructFromLineNoLock(const Line: String); virtual;
-    //procedure ConstructFromLinesNoLock(Lines: TStrings); virtual;
-    //procedure ConstructFromTextNoLock(const Text: String); virtual;
-    //procedure ConstructFromStreamNoLock(Stream: TStream); virtual;
-    //procedure ConstructFromCompressedStreamNoLock(Stream: TStream); virtual;
-    //procedure ConstructFromFileNoLock(const FileName: String); virtual;
-    //procedure ConstructFromCompressedFileNoLock(const FileName: String); virtual;
+    procedure ConstructFromLinesNoLock(Lines: TStrings); virtual;
+    procedure ConstructFromTextNoLock(const Text: String); virtual;
+    procedure ConstructFromStreamNoLock(Stream: TStream); virtual;
+    procedure ConstructFromCompressedStreamNoLock(Stream: TStream); virtual;
+    procedure ConstructFromFileNoLock(const FileName: String); virtual;
+    procedure ConstructFromCompressedFileNoLock(const FileName: String); virtual;
+    procedure ConstructFromResourceNoLock(const ResourceName: String); virtual;
+    procedure ConstructFromCompressedResourceNoLock(const ResourceName: String); virtual;
     procedure AppendFromLineNoLock(const Line: String); virtual;
-    //procedure AppendFromLinesNoLock(Lines: TStrings); virtual;
-    //procedure AppendFromTextNoLock(const Text: String); virtual;
-    //procedure AppendFromStreamNoLock(Stream: TStream); virtual;
-    //procedure AppendFromCompressedStreamNoLock(Stream: TStream); virtual;
-    //procedure AppendFromFileNoLock(const FileName: String); virtual;
-    //procedure AppendFromCompressedFileNoLock(const FileName: String); virtual;
+    procedure AppendFromLinesNoLock(Lines: TStrings); virtual;
+    procedure AppendFromTextNoLock(const Text: String); virtual;
+    procedure AppendFromStreamNoLock(Stream: TStream); virtual;
+    procedure AppendFromCompressedStreamNoLock(Stream: TStream); virtual;
+    procedure AppendFromFileNoLock(const FileName: String); virtual;
+    procedure AppendFromCompressedFileNoLock(const FileName: String); virtual;
+    procedure AppendFromResourceNoLock(const ResourceName: String); virtual;
+    procedure AppendFromCompressedResourceNoLock(const ResourceName: String); virtual;
     //--- Tree construction (lock) ---------------------------------------------
-    //procedure ConstructFromLine(const Line: String); virtual;
-    //procedure ConstructFromLines(Lines: TStrings); virtual;
-    //procedure ConstructFromText(const Text: String); virtual;
-    //procedure ConstructFromStream(Stream: TStream); virtual;
-    //procedure ConstructFromCompressedStream(Stream: TStream); virtual;
-    //procedure ConstructFromFile(const FileName: String); virtual;
-    //procedure ConstructFromCompressedFile(const FileName: String); virtual;
-    //procedure AppendFromLine(const Line: String); virtual;
-    //procedure AppendFromLines(Lines: TStrings); virtual;
-    //procedure AppendFromText(const Text: String); virtual;
-    //procedure AppendFromStream(Stream: TStream); virtual;
-    //procedure AppendFromCompressedStream(Stream: TStream); virtual;
-    //procedure AppendFromFile(const FileName: String); virtual;
-    //procedure AppendFromCompressedFile(const FileName: String); virtual;
+    procedure ConstructFromLine(const Line: String); virtual;
+    procedure ConstructFromLines(Lines: TStrings); virtual;
+    procedure ConstructFromText(const Text: String); virtual;
+    procedure ConstructFromStream(Stream: TStream); virtual;
+    procedure ConstructFromCompressedStream(Stream: TStream); virtual;
+    procedure ConstructFromFile(const FileName: String); virtual;
+    procedure ConstructFromCompressedFile(const FileName: String); virtual;
+    procedure ConstructFromResource(const ResourceName: String); virtual;
+    procedure ConstructFromCompressedResource(const ResourceName: String); virtual;
+    procedure AppendFromLine(const Line: String); virtual;
+    procedure AppendFromLines(Lines: TStrings); virtual;
+    procedure AppendFromText(const Text: String); virtual;
+    procedure AppendFromStream(Stream: TStream); virtual;
+    procedure AppendFromCompressedStream(Stream: TStream); virtual;
+    procedure AppendFromFile(const FileName: String); virtual;
+    procedure AppendFromCompressedFile(const FileName: String); virtual;
+    procedure AppendFromResource(const ResourceName: String); virtual;
+    procedure AppendFromCompressedResource(const ResourceName: String); virtual;
     //--- Values management (no lock) ------------------------------------------
     Function ExistsNoLock(const ValueName: String): Boolean; virtual;
     Function AddNoLock(const ValueName: String; ValueType: TUNSValueType): Boolean; virtual;
@@ -311,6 +319,7 @@ type
 implementation
 
 uses
+  StrRect,
   UniSettings_Utils, UniSettings_Exceptions,
   // leaf nodes
   UniSettings_NodeBlank,
@@ -823,7 +832,7 @@ end;
 
 procedure TUniSettings.ConstructionInitialization;
 begin
-Clear;
+ClearNoLock;
 fParser.Initialize;
 end;
 
@@ -956,7 +965,71 @@ end;
 procedure TUniSettings.ConstructFromLineNoLock(const Line: String);
 begin
 ConstructionInitialization;
-fParser.ParseLine(Line);
+AppendFromLineNoLock(Line);
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TUniSettings.ConstructFromLinesNoLock(Lines: TStrings);
+begin
+ConstructionInitialization;
+AppendFromLinesNoLock(Lines);
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TUniSettings.ConstructFromTextNoLock(const Text: String);
+begin
+ConstructionInitialization;
+AppendFromTextNoLock(Text);
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TUniSettings.ConstructFromStreamNoLock(Stream: TStream);
+begin
+ConstructionInitialization;
+AppendFromStreamNoLock(Stream);
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TUniSettings.ConstructFromCompressedStreamNoLock(Stream: TStream);
+begin
+ConstructionInitialization;
+AppendFromCompressedStreamNoLock(Stream);
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TUniSettings.ConstructFromFileNoLock(const FileName: String);
+begin
+ConstructionInitialization;
+AppendFromFileNoLock(FileName);
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TUniSettings.ConstructFromCompressedFileNoLock(const FileName: String);
+begin
+ConstructionInitialization;
+AppendFromCompressedFileNoLock(FileName);
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TUniSettings.ConstructFromResourceNoLock(const ResourceName: String);
+begin
+ConstructionInitialization;
+AppendFromResourceNoLock(ResourceName);
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TUniSettings.ConstructFromCompressedResourceNoLock(const ResourceName: String);
+begin
+ConstructionInitialization;
+AppendFromCompressedResourceNoLock(ResourceName);
 end;
 
 //------------------------------------------------------------------------------
@@ -964,6 +1037,306 @@ end;
 procedure TUniSettings.AppendFromLineNoLock(const Line: String);
 begin
 fParser.ParseLine(Line);
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TUniSettings.AppendFromLinesNoLock(Lines: TStrings);
+begin
+fParser.ParseLines(Lines);
+end;
+ 
+//------------------------------------------------------------------------------
+
+procedure TUniSettings.AppendFromTextNoLock(const Text: String);
+begin
+fParser.ParseText(Text);
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TUniSettings.AppendFromStreamNoLock(Stream: TStream);
+begin
+fParser.ParseStream(Stream);
+end;
+ 
+//------------------------------------------------------------------------------
+
+procedure TUniSettings.AppendFromCompressedStreamNoLock(Stream: TStream);
+begin
+fParser.ParseCompressedStream(Stream);
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TUniSettings.AppendFromFileNoLock(const FileName: String);
+var
+  FileStream: TFileStream;
+begin
+FileStream := TFileStream.Create(StrToRTL(FileName),fmOpenRead or fmShareDenyWrite);
+try
+  ConstructFromStreamNoLock(FileStream);
+finally
+  FileStream.Free;
+end;
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TUniSettings.AppendFromCompressedFileNoLock(const FileName: String);
+var
+  FileStream: TFileStream;
+begin
+FileStream := TFileStream.Create(StrToRTL(FileName),fmOpenRead or fmShareDenyWrite);
+try
+  ConstructFromCompressedStreamNoLock(FileStream);
+finally
+  FileStream.Free;
+end;
+end;
+ 
+//------------------------------------------------------------------------------
+
+procedure TUniSettings.AppendFromResourceNoLock(const ResourceName: String);
+var
+  ResourceStream: TResourceStream;
+begin
+ResourceStream := TResourceStream.Create(hInstance,StrToRTL(ResourceName),PChar(10){RT_RCDATA});
+try
+  ConstructFromStreamNoLock(ResourceStream);
+finally
+  ResourceStream.Free;
+end;
+end;
+ 
+//------------------------------------------------------------------------------
+
+procedure TUniSettings.AppendFromCompressedResourceNoLock(const ResourceName: String);
+var
+  ResourceStream: TResourceStream;
+begin
+ResourceStream := TResourceStream.Create(hInstance,StrToRTL(ResourceName),PChar(10){RT_RCDATA});
+try
+  ConstructFromCompressedStreamNoLock(ResourceStream);
+finally
+  ResourceStream.Free;
+end;
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TUniSettings.ConstructFromLine(const Line: String);
+begin
+WriteLock;
+try
+  ConstructFromLineNoLock(Line);
+finally
+  WriteUnlock;
+end;
+end;  
+
+//------------------------------------------------------------------------------
+
+procedure TUniSettings.ConstructFromLines(Lines: TStrings);
+begin
+WriteLock;
+try
+  ConstructFromLinesNoLock(Lines);
+finally
+  WriteUnlock;
+end;
+end;      
+
+//------------------------------------------------------------------------------
+
+procedure TUniSettings.ConstructFromText(const Text: String);
+begin
+WriteLock;
+try
+  ConstructFromTextNoLock(Text);
+finally
+  WriteUnlock;
+end;
+end;  
+
+//------------------------------------------------------------------------------
+
+procedure TUniSettings.ConstructFromStream(Stream: TStream);
+begin
+WriteLock;
+try
+  ConstructFromStreamNoLock(Stream);
+finally
+  WriteUnlock;
+end;
+end;   
+
+//------------------------------------------------------------------------------
+
+procedure TUniSettings.ConstructFromCompressedStream(Stream: TStream);
+begin
+WriteLock;
+try
+  ConstructFromCompressedStreamNoLock(Stream);
+finally
+  WriteUnlock;
+end;
+end;        
+
+//------------------------------------------------------------------------------
+
+procedure TUniSettings.ConstructFromFile(const FileName: String);
+begin
+WriteLock;
+try
+  ConstructFromFileNoLock(FileName);
+finally
+  WriteUnlock;
+end;
+end;   
+
+//------------------------------------------------------------------------------
+
+procedure TUniSettings.ConstructFromCompressedFile(const FileName: String);
+begin
+WriteLock;
+try
+  ConstructFromCompressedFileNoLock(FileName);
+finally
+  WriteUnlock;
+end;
+end;  
+
+//------------------------------------------------------------------------------
+
+procedure TUniSettings.ConstructFromResource(const ResourceName: String);
+begin
+WriteLock;
+try
+  ConstructFromResourceNoLock(ResourceName);
+finally
+  WriteUnlock;
+end;
+end;    
+
+//------------------------------------------------------------------------------
+
+procedure TUniSettings.ConstructFromCompressedResource(const ResourceName: String);
+begin
+WriteLock;
+try
+  ConstructFromCompressedResourceNoLock(ResourceName);
+finally
+  WriteUnlock;
+end;
+end;  
+
+//------------------------------------------------------------------------------
+
+procedure TUniSettings.AppendFromLine(const Line: String);
+begin
+WriteLock;
+try
+  AppendFromLineNoLock(Line);
+finally
+  WriteUnlock;
+end;
+end;    
+
+//------------------------------------------------------------------------------
+
+procedure TUniSettings.AppendFromLines(Lines: TStrings);
+begin
+WriteLock;
+try
+  AppendFromLinesNoLock(Lines);
+finally
+  WriteUnlock;
+end;
+end;    
+
+//------------------------------------------------------------------------------
+
+procedure TUniSettings.AppendFromText(const Text: String);
+begin
+WriteLock;
+try
+  AppendFromTextNoLock(Text);
+finally
+  WriteUnlock;
+end;
+end;      
+
+//------------------------------------------------------------------------------
+
+procedure TUniSettings.AppendFromStream(Stream: TStream);
+begin
+WriteLock;
+try
+  AppendFromStreamNoLock(Stream);
+finally
+  WriteUnlock;
+end;
+end;    
+
+//------------------------------------------------------------------------------
+
+procedure TUniSettings.AppendFromCompressedStream(Stream: TStream);
+begin
+WriteLock;
+try
+  AppendFromCompressedStreamNoLock(Stream);
+finally
+  WriteUnlock;
+end;
+end;         
+
+//------------------------------------------------------------------------------
+
+procedure TUniSettings.AppendFromFile(const FileName: String);
+begin
+WriteLock;
+try
+  AppendFromFileNoLock(FileName);
+finally
+  WriteUnlock;
+end;
+end;       
+
+//------------------------------------------------------------------------------
+
+procedure TUniSettings.AppendFromCompressedFile(const FileName: String);
+begin
+WriteLock;
+try
+  AppendFromCompressedFileNoLock(FileName);
+finally
+  WriteUnlock;
+end;
+end;          
+
+//------------------------------------------------------------------------------
+
+procedure TUniSettings.AppendFromResource(const ResourceName: String);
+begin
+WriteLock;
+try
+  AppendFromResourceNoLock(ResourceName);
+finally
+  WriteUnlock;
+end;
+end;      
+
+//------------------------------------------------------------------------------
+
+procedure TUniSettings.AppendFromCompressedResource(const ResourceName: String);
+begin
+WriteLock;
+try
+  AppendFromCompressedResourceNoLock(ResourceName);
+finally
+  WriteUnlock;
+end;
 end;
 
 //------------------------------------------------------------------------------
