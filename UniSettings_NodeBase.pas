@@ -18,6 +18,7 @@ type
     fFlags:         TUNSValueFlags;
     fConvSettings:  TFormatSettings;
     fChanged:       Boolean;
+    fChangesProp:   Boolean;
     fOnChange:      TNotifyEvent;
     class Function GetNodeClass: TUNSNodeClass; virtual;
     procedure SetNodeNameStr(const Value: String); virtual;
@@ -27,6 +28,7 @@ type
     procedure SetChanged(Value: Boolean); virtual;
     Function ReconstructFullNameInternal(TopLevelCall: Boolean; IncludeRoot: Boolean): String; virtual;
     Function ValueFormatSettings: TUNSValueFormatSettings; virtual;
+    procedure ChangesPropagation(Enable: Boolean); virtual;
     procedure DoChange; virtual;
   public
     constructor Create(const Name: String; ParentNode: TUNSNodeBase);
@@ -63,6 +65,9 @@ uses
   UniSettings_Utils, UniSettings_Exceptions, UniSettings_NodeBranch,
   UniSettings_NodeArray, UniSettings_NodeArrayItem,
   UniSettings;
+
+type
+  TNodeClass = class of TUNSNodeBase;
 
 class Function TUNSNodeBase.GetNodeClass: TUNSNodeClass;
 begin
@@ -166,10 +171,17 @@ end;
 
 //------------------------------------------------------------------------------
 
+procedure TUNSNodeBase.ChangesPropagation(Enable: Boolean);
+begin
+fChangesProp := Enable;
+end;
+
+//------------------------------------------------------------------------------
+
 procedure TUNSNodeBase.DoChange;
 begin
 SetChanged(True);
-If Assigned(fOnChange) then
+If Assigned(fOnChange) and fChangesProp then
   fOnChange(Self);
 end;
 
@@ -193,6 +205,7 @@ fConvSettings.LongTimeFormat := 'hh:nn:ss';
 fConvSettings.ShortTimeFormat := fConvSettings.LongTimeFormat;
 fConvSettings.TimeSeparator := ':';
 fChanged := False;
+fChangesProp := True;
 fOnChange := nil;
 end;
 
@@ -203,6 +216,7 @@ begin
 Create(Name,ParentNode);
 If not(Source is Self.ClassType) then
   raise EUNSException.CreateFmt('Incompatible source class (%s).',[Source.ClassName],Self,'CreateCopy');
+fFlags := Source.Flags;
 // copy data in descendants
 end;
 
@@ -210,7 +224,7 @@ end;
 
 Function TUNSNodeBase.CreateCopy(const Name: String; ParentNode: TUNSNodeBase): TUNSNodeBase;
 begin
-Result := CreateAsCopy(Self,Name,ParentNode);
+Result := TNodeClass(Self.ClassType).CreateAsCopy(Self,Name,ParentNode);
 end;
 
 //------------------------------------------------------------------------------

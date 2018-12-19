@@ -59,7 +59,6 @@ type
                    vtAoText,      // array of strings
                    vtAoBuffer);   // array of memory buffers
 
-
 const
   UNS_VALUETYPE_STRS: array[TUNSValueType] of String = (
     'undefined','Blank',

@@ -59,6 +59,8 @@ type
     Function Remove(const Item; ValueKind: TUNSValueKind = vkActual): Integer; virtual; abstract;
     procedure Delete(Index: Integer; ValueKind: TUNSValueKind = vkActual); virtual; abstract;
     procedure Clear(ValueKind: TUNSValueKind = vkActual); virtual; abstract;
+    // SetEmpty is only for internal purposes, do not publish it through UniSettings methods
+    procedure PrepareEmptyItems(Count: Integer; ValueKind: TUNSValueKind = vkActual); virtual; abstract;
     property ItemValueType: TUNSValueType read GetItemValueType;
     property Count: Integer read GetCount;
     property SavedCount: Integer read GetSavedCount;

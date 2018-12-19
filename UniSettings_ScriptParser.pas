@@ -122,7 +122,7 @@ type
     procedure Initialize; virtual;
     procedure ParseLine(const Line: String); virtual;
     Function ParseLines(const Lines: TStrings): Integer; virtual;
-    Function ParseString(const Str: String): Integer; virtual;    
+    Function ParseText(const Text: String): Integer; virtual;
     Function ParseStream(Stream: TStream): Integer; virtual;
     Function ParseCompressedStream(Stream: TStream): Integer; virtual;
   end;
@@ -132,7 +132,8 @@ implementation
 uses
   SysUtils,
   ExplicitStringLists, SimpleCompress,
-  UniSettings_Exceptions, UniSettings_Utils, UniSettings_ScriptUtils; 
+  UniSettings_Exceptions, UniSettings_Utils, UniSettings_NodePrimitiveArray,
+  UniSettings_ScriptUtils;
 
 
 Function CDA_CompareFunc(const A,B: TUNSParserValue): Integer;
@@ -202,15 +203,41 @@ end;
 
 procedure TUNSParser.AddNewValue(Value: TUNSParserValue);
 var
-  i:  Integer;
+  Node: TUNSNodeLeaf;
+  i:    Integer;
 begin
-{$message 'implement'}
+{$message 'revisit'}
+
 Write('>>> ');
 Write(Format('%-10s %-40s',[UNS_VALUETYPE_STRS[Value.ValueType],Value.Name]));
 Write('  ');
 For i := CDA_Low(Value.DefValStrs) to CDA_High(Value.DefValStrs) do
   Write(' ',CDA_GetItem(Value.DefValStrs,i));
 WriteLn;
+
+If Assigned(fAddMethod) then
+  begin
+    If fAddMethod(Value.Name,Value.ValueType,Node) then
+      begin
+        If CDA_Count(Value.DefValStrs) > 0 then
+          begin
+            If UNSIsArrayValueType(Value.ValueType) then
+              begin
+                // first add as many items as there is default values...
+                TUNSNodePrimitiveArray(Node).Clear(vkActual);
+                TUNSNodePrimitiveArray(Node).Clear(vkSaved);
+                TUNSNodePrimitiveArray(Node).PrepareEmptyItems(CDA_Count(Value.DefValStrs),vkDefault);
+                // ...then resolve the values from strings
+                For i := CDA_Low(Value.DefValStrs) to CDA_High(Value.DefValStrs) do
+                  TUNSNodePrimitiveArray(Node).FromString(i,CDA_GetItem(Value.DefValStrs,i),vkDefault);
+              end
+            else Node.FromString(CDA_First(Value.DefValStrs),vkDefault);
+            Node.ActualFromDefault;
+          end;
+      end
+    else raise EUNSException.CreateFmt('Unable to add value %s of type %s.',
+           [Value.Name,UNS_VALUETYPE_STRS[Value.ValueType]],Self,'AddNewValue');
+  end;
 Inc(fAddCounter);  
 end;
 
@@ -613,6 +640,7 @@ For i := Low(fPrefixes) to High(fPrefixes) do
   fPrefixes[i] := '';
 SetLength(fStructs.Arr,0);
 fStructs.Count := 0;
+fState := psCommandAdd;
 end;
 
 //------------------------------------------------------------------------------
@@ -668,13 +696,13 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function TUNSParser.ParseString(const Str: String): Integer;
+Function TUNSParser.ParseText(const Text: String): Integer;
 var
   Lines:  TStringList;
 begin
 Lines := TStringList.Create;
 try
-  Lines.Text := Str;
+  Lines.Text := Text;
   Result := ParseLines(Lines);
 finally
   Lines.Free;

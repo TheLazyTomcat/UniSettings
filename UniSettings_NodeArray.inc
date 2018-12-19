@@ -70,7 +70,8 @@
     procedure Move(SrcIndex,DstIndex: Integer; ValueKind: TUNSValueKind = vkActual); override;
     Function Remove(const Item: TUNSNodeValueItemType; ValueKind: TUNSValueKind = vkActual): Integer; reintroduce;
     procedure Delete(Index: Integer; ValueKind: TUNSValueKind = vkActual); override;
-    procedure Clear(ValueKind: TUNSValueKind = vkActual); override;     
+    procedure Clear(ValueKind: TUNSValueKind = vkActual); override;
+    procedure PrepareEmptyItems(Count: Integer; ValueKind: TUNSValueKind = vkActual); override;
     property Value: TUNSNodeValueType read fValue write SetValue;
     property SavedValue: TUNSNodeValueType read fSavedValue write SetSavedValue;
     property DefaultValue: TUNSNodeValueType read fDefaultValue write SetDefaultValue;
@@ -396,6 +397,7 @@ begin
   This could use some optimization, right?... nope, this method is NOT supposed
   to be used to create monstrous lists!
 }
+Result := '';
 If CDA_Count(Value) > 0 then
   begin
     For i := CDA_Low(Value) to CDA_High(Value) do
@@ -403,8 +405,7 @@ If CDA_Count(Value) > 0 then
         Result := Result + ConvItemToStr(CDA_GetItem(Value,i)) + ' '
       else
         Result := Result + ConvItemToStr(CDA_GetItem(Value,i));
-  end
-else Result := '';
+  end;
 end;
 
 //------------------------------------------------------------------------------
@@ -1217,6 +1218,41 @@ case ValueKind of
   vkDefault:  ClearFrom(fDefaultValue);
 else
   raise EUNSInvalidValueKindException.Create(ValueKind,Self,'Clear');
+end;
+DoChange;
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TUNSNodeClassType.PrepareEmptyItems(Count: Integer; ValueKind: TUNSValueKind = vkActual);
+var
+  i:          Integer;
+{$IFDEF UNS_NodeAoBuffer}
+  TempBuffer: TMemoryBuffer;
+{$ENDIF}
+begin
+ChangesPropagation(False);
+try
+  Clear(ValueKind);
+{$IFDEF UNS_NodeAoBuffer}
+  InitBuffer(TempBuffer);
+{$ENDIF}
+  For i := 0 to Pred(Count) do
+  {$IF Defined(UNS_NodeAoBuffer)}
+    Add(TempBuffer,ValueKind);
+  {$ELSEIF Defined(UNS_NodeAoText)}
+    Add('',ValueKind);
+  {$ELSEIF Defined(UNS_NodeAoDateTime) or Defined(UNS_NodeAoDate) or Defined(UNS_NodeAoTime)}
+    Add(Now,ValueKind);
+  {$ELSEIF Defined(UNS_NodeAoFloat32) or Defined(UNS_NodeAoFloat64)}
+    Add(0.0,ValueKind);
+  {$ELSEIF Defined(UNS_NodeAoBool)}
+    Add(False,ValueKind);
+  {$ELSE}
+    Add(0,ValueKind);
+  {$IFEND}
+finally
+  ChangesPropagation(True);
 end;
 DoChange;
 end;

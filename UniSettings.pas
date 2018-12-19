@@ -2,13 +2,16 @@
 todo (* = completed):
 
   tree building
+  IO
 * arrays
 * array nodes: listsorters -> implementation uses
 * access to array items trough index in value name
 * name parts -> CDA
   TUniSettings copy constructor
 * make copies thread safe
-  integer can be 64bit...
+* integer can be 64bit...
+  per value change tracking (rework change system)
+  remove flags from values
 
 * nodes
 
@@ -35,7 +38,8 @@ uses
   SysUtils, Classes,
   AuxTypes, AuxClasses, MemoryBuffer,
   UniSettings_Common, UniSettings_NodeBase, UniSettings_NodeLeaf,
-  UniSettings_NodePrimitiveArray, UniSettings_NodeBranch;
+  UniSettings_NodePrimitiveArray, UniSettings_NodeBranch,
+  UniSettings_ScriptParser;
 
 type
   TUNSNode = TUNSNodeBase;
@@ -47,6 +51,7 @@ type
     fRootNode:            TUNSNodeBranch;
     fWorkingBranch:       String;
     fWorkingNode:         TUNSNodeBranch;
+    fParser:              TUNSParser;
     fChangeCounter:       Integer;
     fChanged:             Boolean;
     fOnChange:            TNotifyEvent;
@@ -68,14 +73,15 @@ type
     Function CheckedLeafNodeTypeAccess(const NodeName: String; ValueType: TUNSValueType; const Caller: String): TUNSNodeLeaf; virtual;
     Function CheckedLeafNodeAccessIsArray(const NodeName, Caller: String; out Node: TUNSNodeLeaf; out ValueKind: TUNSValueKind; out Index: Integer): Boolean; virtual;
     Function CheckedLeafNodeTypeAccessIsArray(const NodeName: String; ValueType: TUNSValueType; const Caller: String; out Node: TUNSNodeLeaf; out ValueKind: TUNSValueKind; out Index: Integer): Boolean; virtual;
-
+    procedure ConstructionInitialization; virtual;
     procedure ChangingStart;
     procedure ChangingEnd;
     procedure OnChangeHandler(Sender: TObject); virtual;
+    constructor Create(RootNode: TUNSNodeBranch); overload;
   public
-    constructor Create;
-    //constructor CreateAsCopy(Source: TUniSettings);
-    //Function CreateCopy: TUniSettings; virtual;
+    constructor Create; overload;
+    constructor CreateAsCopy(Source: TUniSettings);
+    Function CreateCopy: TUniSettings; virtual;
     destructor Destroy; override;
     //--- Locking --------------------------------------------------------------
     procedure ReadLock; virtual;
@@ -84,6 +90,36 @@ type
     procedure WriteUnlock; virtual;
     procedure Lock; virtual;
     procedure Unlock; virtual;
+    //--- Tree construction (no lock) ------------------------------------------
+    procedure ConstructFromLineNoLock(const Line: String); virtual;
+    //procedure ConstructFromLinesNoLock(Lines: TStrings); virtual;
+    //procedure ConstructFromTextNoLock(const Text: String); virtual;
+    //procedure ConstructFromStreamNoLock(Stream: TStream); virtual;
+    //procedure ConstructFromCompressedStreamNoLock(Stream: TStream); virtual;
+    //procedure ConstructFromFileNoLock(const FileName: String); virtual;
+    //procedure ConstructFromCompressedFileNoLock(const FileName: String); virtual;
+    procedure AppendFromLineNoLock(const Line: String); virtual;
+    //procedure AppendFromLinesNoLock(Lines: TStrings); virtual;
+    //procedure AppendFromTextNoLock(const Text: String); virtual;
+    //procedure AppendFromStreamNoLock(Stream: TStream); virtual;
+    //procedure AppendFromCompressedStreamNoLock(Stream: TStream); virtual;
+    //procedure AppendFromFileNoLock(const FileName: String); virtual;
+    //procedure AppendFromCompressedFileNoLock(const FileName: String); virtual;
+    //--- Tree construction (lock) ---------------------------------------------
+    //procedure ConstructFromLine(const Line: String); virtual;
+    //procedure ConstructFromLines(Lines: TStrings); virtual;
+    //procedure ConstructFromText(const Text: String); virtual;
+    //procedure ConstructFromStream(Stream: TStream); virtual;
+    //procedure ConstructFromCompressedStream(Stream: TStream); virtual;
+    //procedure ConstructFromFile(const FileName: String); virtual;
+    //procedure ConstructFromCompressedFile(const FileName: String); virtual;
+    //procedure AppendFromLine(const Line: String); virtual;
+    //procedure AppendFromLines(Lines: TStrings); virtual;
+    //procedure AppendFromText(const Text: String); virtual;
+    //procedure AppendFromStream(Stream: TStream); virtual;
+    //procedure AppendFromCompressedStream(Stream: TStream); virtual;
+    //procedure AppendFromFile(const FileName: String); virtual;
+    //procedure AppendFromCompressedFile(const FileName: String); virtual;
     //--- Values management (no lock) ------------------------------------------
     Function ExistsNoLock(const ValueName: String): Boolean; virtual;
     Function AddNoLock(const ValueName: String; ValueType: TUNSValueType): Boolean; virtual;
@@ -96,7 +132,6 @@ type
     Function Remove(const ValueName: String): Boolean; virtual;
     procedure Clear; virtual;
     Function ListValues(Strings: TStrings): Integer; virtual;
-    //--- Tree construction ----------------------------------------------------
     //--- IO operations --------------------------------------------------------
     (*
     SaveToIni
@@ -316,6 +351,8 @@ uses
   UniSettings_NodeArray,
   UniSettings_NodeArrayItem;
 
+type
+  TUNSUniSettingsClass = class of TUniSettings;
 
 Function TUniSettings.GetValueFormatSettings: TUNSValueFormatSettings;
 begin
@@ -784,6 +821,14 @@ end;
 
 //------------------------------------------------------------------------------
 
+procedure TUniSettings.ConstructionInitialization;
+begin
+Clear;
+fParser.Initialize;
+end;
+
+//------------------------------------------------------------------------------
+
 procedure TUniSettings.ChangingStart;
 begin
 Inc(fChangeCounter);
@@ -812,21 +857,45 @@ If (fChangeCounter <= 0) and Assigned(fOnChange) then
   fOnChange(Self);
 end;
 
-//==============================================================================
+//------------------------------------------------------------------------------
 
-constructor TUniSettings.Create;
+constructor TUniSettings.Create(RootNode: TUNSNodeBranch);
 begin
 inherited Create;
 fValueFormatSettings := UNS_VALUEFORMATSETTINGS_DEFAULT;
 fSynchronizer := TMultiReadExclusiveWriteSynchronizer.Create;
-fRootNode := TUNSNodeBranch.Create(UNS_NAME_ROOTNODE,nil);
+fRootNode := RootNode;
 fRootNode.Master := Self;
 fRootNode.OnChange := OnChangeHandler;
 fWorkingBranch := '';
 fWorkingNode := fRootNode;
+fParser := TUNSParser.Create(AddNode);
 fChangeCounter := 0;
 fChanged := False;
 fOnChange := nil;
+end;
+
+//==============================================================================
+
+constructor TUniSettings.Create;
+begin
+Create(TUNSNodeBranch.Create(UNS_NAME_ROOTNODE,nil));
+end;
+
+//------------------------------------------------------------------------------
+
+constructor TUniSettings.CreateAsCopy(Source: TUniSettings);
+begin
+Create(TUNSNodeBranch.CreateAsCopy(Source.fRootNode,UNS_NAME_ROOTNODE,nil));
+fValueFormatSettings := Source.ValueFormatSettings;
+SetWorkingBranch(Source.WorkingBranch);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TUniSettings.CreateCopy: TUniSettings;
+begin
+Result := TUNSUniSettingsClass(Self.ClassType).CreateAsCopy(Self);
 end;
 
 //------------------------------------------------------------------------------
@@ -834,6 +903,7 @@ end;
 destructor TUniSettings.Destroy;
 begin
 Clear;
+fParser.Free;
 fRootNode.Free;
 fSynchronizer.Free;
 inherited;
@@ -880,6 +950,23 @@ procedure TUniSettings.Unlock;
 begin
 WriteUnlock;
 end;
+
+//------------------------------------------------------------------------------
+
+procedure TUniSettings.ConstructFromLineNoLock(const Line: String);
+begin
+ConstructionInitialization;
+fParser.ParseLine(Line);
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TUniSettings.AppendFromLineNoLock(const Line: String);
+begin
+fParser.ParseLine(Line);
+end;
+
+//------------------------------------------------------------------------------
 
 Function TUniSettings.ExistsNoLock(const ValueName: String): Boolean;
 var
