@@ -21,7 +21,10 @@ type
   PBufferCountedDynArray = ^TBufferCountedDynArray;
 
   TCDABaseType = TMemoryBuffer;
+  PCDABaseType = PMemoryBuffer;
+
   TCDAArrayType = TBufferCountedDynArray;
+  PCDAArrayType = PBufferCountedDynArray;
 
 {$DEFINE CDA_Interface}
 {$INCLUDE '.\CountedDynArrays.inc'}

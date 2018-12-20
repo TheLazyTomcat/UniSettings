@@ -11,7 +11,11 @@ todo (* = completed):
 * make copies thread safe
 * integer can be 64bit...
   per value change tracking (rework change system)
-* remove flags from values (let's leave them there for now) 
+* remove flags from values (let's leave them there for now)
+  remove IS where possible, replace with node type checks
+  remove IsPrimitiveArray method
+  hashes (branch list, node list)
+  replace direct access to cd arrays with CDA_GetItemPtr 
 
 * nodes
 
@@ -128,6 +132,20 @@ type
     procedure AppendFromCompressedFile(const FileName: String); virtual;
     procedure AppendFromResource(const ResourceName: String); virtual;
     procedure AppendFromCompressedResource(const ResourceName: String); virtual;
+    //--- IO operations (no lock) ----------------------------------------------
+    (*
+    SaveToIniNoLock
+    LoadFromIniNoLock
+    SaveToRegistryNoLock
+    LoadFromRegistryNoLock
+    *)
+    //--- IO operations (lock) -------------------------------------------------
+    (*
+    SaveToIni
+    LoadFromIni
+    SaveToRegistry
+    LoadFromRegistry
+    *)
     //--- Values management (no lock) ------------------------------------------
     Function ExistsNoLock(const ValueName: String): Boolean; virtual;
     Function AddNoLock(const ValueName: String; ValueType: TUNSValueType): Boolean; virtual;
@@ -140,13 +158,6 @@ type
     Function Remove(const ValueName: String): Boolean; virtual;
     procedure Clear; virtual;
     Function ListValues(Strings: TStrings): Integer; virtual;
-    //--- IO operations --------------------------------------------------------
-    (*
-    SaveToIni
-    LoadFromIni
-    SaveToRegistry
-    LoadFromRegistry
-    *)
     //--- General value access (no lock) ---------------------------------------
     procedure ValueKindMoveNoLock(Src,Dest: TUNSValueKind); virtual;
     procedure ValueKindExchangeNoLock(ValA,ValB: TUNSValueKind); virtual;
@@ -263,7 +274,7 @@ type
     procedure ValueMove(const ValueName: String; SrcIndex,DstIndex: Integer; ValueKind: TUNSValueKind = vkActual); virtual;
     procedure ValueDelete(const ValueName: String; Index: Integer; ValueKind: TUNSValueKind = vkActual); virtual;
     procedure ValueClear(const ValueName: String; ValueKind: TUNSValueKind = vkActual); virtual;
-    //--- Specific value types access ------------------------------------------
+    //--- Type-specific value access -------------------------------------------
   {$DEFINE UNS_Included}{$DEFINE UNS_Include_Declaration}
     // simple types
     {$INCLUDE '.\UniSettings_NodeBool.pas'}
@@ -440,7 +451,7 @@ try
   If UNSNameParts(Branch,NameParts) > 0 then
     begin
       Node := FindNode(NameParts);
-      If Node is TUNSNodeBranch then
+      If UNSIsBranchNode(Node) then
         begin
           fWorkingBranch := Node.ReconstructFullName(False);
           fWorkingNode := TUNSNodeBranch(Node);
@@ -513,7 +524,7 @@ case NodeNamePart.PartType of
   nptArrayIndex,
   nptArrayIndexSav,
   nptArrayIndexDef:
-    If Branch is TUNSNodeArray then
+    If Branch.NodeType = ntArray then
       begin
         If TUNSNodeArray(Branch).CheckIndex(NodeNamePart.PartIndex) then
           Node := TUNSNodeArray(Branch)[NodeNamePart.PartIndex];
@@ -525,7 +536,7 @@ case NodeNamePart.PartType of
   nptArrayItemSav,
   nptArrayItemDef:
     begin
-      If Branch is TUNSNodeArray then
+      If Branch.NodeType = ntArray then
         case NodeNamePart.PartIndex of
           UNS_NAME_ARRAYITEM_NEW:
             If CanCreateArrayItem then
@@ -568,7 +579,7 @@ If CDA_Count(NodeNameParts) > 0 then
         For i := CDA_Low(NodeNameParts) to CDA_High(NodeNameParts) do
           begin
             NodeFound := GetSubNode(CDA_GetItem(NodeNameParts,i),CurrentBranch,NextNode,True);
-            If NextNode is TUNSNodeBlank then
+            If UNSIsLeafNodeOfValueType(NextNode,vtBlank) then
               begin
                 CurrentBranch.Remove(NextNode);
                 NextNode := nil;
@@ -577,7 +588,7 @@ If CDA_Count(NodeNameParts) > 0 then
             If NodeFound then
               begin
                 // node was found
-                If not(NextNode is TUNSNodeBranch) then
+                If not UNSIsBranchNode(NextNode) then
                   begin
                     CurrentBranch := nil;
                     Break{For i};
@@ -622,8 +633,7 @@ Node := nil;
 Result := False;
 If UNSNameParts(NodeName,NameParts) > 0 then
   // must not end with array index or array item
-  If not(CDA_Last(NameParts).PartType in [nptArrayIndex,nptArrayIndexSav,
-    nptArrayIndexDef,nptArrayItem,nptArrayItemSav,nptArrayItemDef]) then
+  If not NameParts.EndsWithIndex then
     begin
       If NamePartsHideLast(NameParts) then
         try
@@ -636,7 +646,7 @@ If UNSNameParts(NodeName,NameParts) > 0 then
         begin
           Index := BranchNode.IndexOf(CDA_Last(NameParts).PartStr);
           If BranchNode.CheckIndex(Index) then
-            If BranchNode[Index] is TUNSNodeBlank then
+            If UNSIsLeafNodeOfValueType(BranchNode[Index],vtBlank) then
               begin
                 BranchNode.Delete(Index);
                 Index := -1;
@@ -666,7 +676,7 @@ If NodeNameParts.Valid and (CDA_Count(NodeNameParts) > 0) then
     CurrentNode := fWorkingNode;
     For i := CDA_Low(NodeNameParts) to CDA_High(NodeNameParts) do
       begin
-        If CurrentNode is TUNSNodeBranch then
+        If UNSIsBranchNode(CurrentNode) then
           begin
             If not GetSubNode(CDA_GetItem(NodeNameParts,i),TUNSNodeBranch(CurrentNode),CurrentNode,False) then
               Exit;
@@ -689,7 +699,7 @@ Node := nil;
 If UNSNameParts(NodeName,NameParts) > 0 then
   begin
     FoundNode := FindNode(NameParts);
-    If FoundNode is TUNSNodeLeaf then
+    If UNSIsLeafNode(FoundNode) then
       begin
         Node := TUNSNodeLeaf(FoundNode);
         Result := True;
@@ -723,7 +733,7 @@ var
 begin
 If FindLeafNode(NodeName,Node) then
   begin
-    If Node.IsPrimitiveArray then
+    If UNSIsPrimitiveArrayNode(Node) then
       Result := TUNSNodePrimitiveArray(Node)
     else
       raise EUNSValueNotAnArrayException.Create(NodeName,Self,Caller);
@@ -765,7 +775,7 @@ If UNSNameParts(NodeName,NameParts) > 0 then
             NamePartsShowLast(NameParts);
           end
         else FoundNode := nil;
-        If FoundNode is TUNSNodePrimitiveArray then
+        If UNSIsPrimitiveArrayNode(FoundNode) then
           begin
             Node := TUNSNodeLeaf(FoundNode);
             // resolve value kind
@@ -797,12 +807,12 @@ If UNSNameParts(NodeName,NameParts) > 0 then
             end;
             Result := True;
           end
-        else EUNSValueNotAnArrayException.Create(NodeName,Self,Caller);
+        else raise EUNSValueNotAnArrayException.Create(NodeName,Self,Caller);
       end
     else
       begin
         FoundNode := FindNode(NameParts);
-        If FoundNode is TUNSNodeLeaf then
+        If UNSIsLeafNode(FoundNode) then
           Node := TUNSNodeLeaf(FoundNode)
         else
           raise EUNSValueNotFoundException.Create(NodeName,Self,Caller);
@@ -1359,7 +1369,7 @@ If UNSNameParts(ValueName,NameParts) > 0 then
             NamePartsShowLast(NameParts);
           end
         else Node := nil;
-        If Node is TUNSNodePrimitiveArray then
+        If UNSIsPrimitiveArrayNode(Node) then
           case CDA_Last(NameParts).PartType of
             nptArrayIndex:
               Result := TUNSNodePrimitiveArray(Node).CheckIndex(CDA_Last(NameParts).PartIndex,vkActual);
@@ -1381,7 +1391,7 @@ If UNSNameParts(ValueName,NameParts) > 0 then
     else
       begin
         Node := FindNode(NameParts);
-        Result := Node is TUNSNodeLeaf;
+        Result := UNSIsLeafNode(Node);
       end;
   end;
 end;
@@ -1437,7 +1447,7 @@ If UNSNameParts(ValueName,NameParts) > 0 then
             end
           else Node := nil;
           Result := True;
-          If Node is TUNSNodePrimitiveArray then
+          If UNSIsPrimitiveArrayNode(Node) then
             case CDA_Last(NameParts).PartType of
               nptArrayIndex:
                 TUNSNodePrimitiveArray(Node).Delete(CDA_Last(NameParts).PartIndex,vkActual);
@@ -1459,7 +1469,7 @@ If UNSNameParts(ValueName,NameParts) > 0 then
       else
         begin
           Node := FindNode(NameParts);
-          If Node.ParentNode is TUNSNodeBranch then
+          If UNSIsBranchNode(Node.ParentNode) then
             Result := TUNSNodeBranch(Node.ParentNode).Remove(Node) >= 0;
         end;
     finally
@@ -1488,7 +1498,7 @@ Function TUniSettings.ListValuesNoLock(Strings: TStrings): Integer;
   var
     i:  Integer;
   begin
-    If Node is TUNSNodeBranch then
+    If UNSIsBranchNode(Node) then
       begin
         For i := TUNSNodeBranch(Node).LowIndex to TUNSNodeBranch(Node).HighIndex do
           AddNodeToListing(TUNSNodeBranch(Node)[i]);

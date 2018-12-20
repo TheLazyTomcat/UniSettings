@@ -57,6 +57,7 @@ type
     ValueType:  TUNSValueType;
     DefValStrs: TStringCountedDynArray;
   end;
+  PUNSParserValue = ^TUNSParserValue;
 
   TUNSParserPrefixes = array[0..9] of String;
 
@@ -66,9 +67,13 @@ type
     Count:      Integer;
     Data:       PtrInt;
   end;
+  PUNSParserStruct = ^TUNSParserStruct;
 
   TCDABaseType = TUNSParserValue;
+  PCDABaseType = PUNSParserValue;
+
   TCDAArrayType = TUNSParserStruct;
+  PCDAArrayType = PUNSParserStruct;
 
 {$DEFINE CDA_Interface}
 {$INCLUDE '.\CountedDynArrays.inc'}

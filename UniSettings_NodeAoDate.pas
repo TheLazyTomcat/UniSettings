@@ -21,7 +21,10 @@ type
   PDateCountedDynArray = ^TDateCountedDynArray;
 
   TCDABaseType = TDate;
+  PCDABaseType = PDate;
+
   TCDAArrayType = TDateCountedDynArray;
+  PCDAArrayType = PDateCountedDynArray;
 
 {$DEFINE CDA_Interface}
 {$INCLUDE '.\CountedDynArrays.inc'}

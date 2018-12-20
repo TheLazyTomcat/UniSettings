@@ -166,7 +166,7 @@ var
 begin
 Result := -1;
 For i := LowIndex to HighIndex do
-  If UNSSameHashString(Name,fSubNodes[i].Name) then
+  If UNSSameHashString(Name,fSubNodes[i].Name,True) then
     begin
       Result := i;
       Break{For i};
@@ -254,7 +254,7 @@ If CheckIndex(Index) then
 else
   If Recursive then
     For i := LowIndex to HighIndex do
-      If fSubNodes[i] is TUNSNodeBranch then
+      If UNSIsBranchNode(fSubNodes[i]) then
         If TUNSNodeBranch(fSubNodes[i]).FindNode(Name,Node,Recursive) then
           begin
             Result := True;
@@ -275,7 +275,7 @@ Function TUNSNodeBranch.FindBranchNode(Name: TUNSHashedString; out Node: TUNSNod
 begin
 If FindNode(Name,Node,Recursive) then
   begin
-    If not(Node.NodeType in [ntBranch,ntArray,ntArrayItem]) then
+    If not UNSIsBranchNode(Node) then
       begin
         Result := False;
         Node := nil;
@@ -298,7 +298,7 @@ Function TUNSNodeBranch.FindLeafNode(Name: TUNSHashedString; out Node: TUNSNodeB
 begin
 If FindNode(Name,Node,Recursive) then
   begin
-    If not(Node.NodeType = ntLeaf) then
+    If not UNSIsLeafNode(Node) then
       begin
         Result := False;
         Node := nil;

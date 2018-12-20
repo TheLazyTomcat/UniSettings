@@ -62,7 +62,7 @@ begin
 inherited Create(Name,ParentNode);
 fArrayIndex := -1;
 fName := UNSHashedString(IntToStr(fArrayIndex));
-If not(ParentNode is TUNSNodeArray) then
+If ParentNode.NodeType <> ntArray then
   raise EUNSException.Create('Parent node is not of type TUNSNodeArray.',Self,'Create');
 end;
 

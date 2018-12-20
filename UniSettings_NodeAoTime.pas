@@ -21,7 +21,10 @@ type
   PTimeCountedDynArray = ^TTimeCountedDynArray;
 
   TCDABaseType = TTime;
+  PCDABaseType = PTime;
+
   TCDAArrayType = TTimeCountedDynArray;
+  PCDAArrayType = PTimeCountedDynArray;
 
 {$DEFINE CDA_Interface}
 {$INCLUDE '.\CountedDynArrays.inc'}

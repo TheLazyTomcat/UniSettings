@@ -12,6 +12,7 @@ uses
 type
   TUNSNodePrimitiveArray = class(TUNSNodeLeaf)
   protected
+    class Function GetNodeType: TUNSNodeType; override;
     class Function GetItemValueType: TUNSValueType; virtual;
     class Function SameItemValues(const A,B): Boolean; virtual; abstract;
     Function GetCount: Integer; virtual; abstract;
@@ -23,7 +24,6 @@ type
     Function ConvItemToStr(const Value): String; virtual; abstract;
     Function ConvItemFromStr(const Str: String): Pointer; virtual; abstract;
   public
-    class Function IsPrimitiveArray: Boolean; override;
     destructor Destroy; override;
     Function ObtainCount(ValueKind: TUNSValueKind): Integer; virtual;
     Function ObtainItemSize(Index: Integer; ValueKind: TUNSValueKind): TMemSize; virtual;
@@ -75,6 +75,13 @@ implementation
 uses
   UniSettings_Exceptions;
 
+class Function TUNSNodePrimitiveArray.GetNodeType: TUNSNodeType;
+begin
+Result := ntLeafArray;
+end;
+
+//------------------------------------------------------------------------------
+
 class Function TUNSNodePrimitiveArray.GetItemValueType: TUNSValueType;
 begin
 Result := vtUndefined;
@@ -107,13 +114,6 @@ end;
 end;
 
 //==============================================================================
-
-class Function TUNSNodePrimitiveArray.IsPrimitiveArray: Boolean;
-begin
-Result := True;
-end;
-
-//------------------------------------------------------------------------------
 
 destructor TUNSNodePrimitiveArray.Destroy;
 begin

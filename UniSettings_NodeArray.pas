@@ -53,7 +53,7 @@ end;
 
 Function TUNSNodeArray.Add(Node: TUNSNodeBase): Integer;
 begin
-If Node is TUNSNodeArrayItem then
+If Node.NodeType = ntArrayItem then
   begin
     Result := inherited Add(Node);
     TUNSNodeArrayItem(Node).ArrayIndex := Result;

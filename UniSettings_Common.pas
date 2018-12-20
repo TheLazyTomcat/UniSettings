@@ -18,7 +18,7 @@ type
 
 //------------------------------------------------------------------------------
 
-  TUNSNodeType = (ntUndefined,ntBranch,ntArrayItem,ntArray,ntLeaf);
+  TUNSNodeType = (ntUndefined,ntBranch,ntArray,ntArrayItem,ntLeaf,ntLeafArray);
 
   TUNSValueKind = (vkActual,vkSaved,vkDefault);
 
@@ -106,6 +106,7 @@ type
     PartStr:    TUNSHashedString;
     PartIndex:  Integer;
   end;
+  PUNSNamePart = ^TUNSNamePart;
 
   TUNSNameParts = record
     Arr:            array of TUNSNamePart;
@@ -150,7 +151,10 @@ const
 
 type
   TCDABaseType = TUNSNamePart;
+  PCDABaseType = PUNSNamePart;
+
   TCDAArrayType = TUNSNameParts;
+  PCDAArrayType = PUNSNameParts;
 
 {$DEFINE CDA_Interface}
 {$INCLUDE '.\CountedDynArrays.inc'}

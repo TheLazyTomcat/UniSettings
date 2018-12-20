@@ -12,16 +12,15 @@ uses
 type
   TUNSNodeLeaf = class(TUNSNodeBase)
   protected
+    class Function GetNodeType: TUNSNodeType; override;
     class Function GetValueType: TUNSValueType; virtual;
     class Function SameValues(const A,B): Boolean; virtual; abstract;
-    class Function GetNodeType: TUNSNodeType; override;
     Function GetValueSize: TMemSize; virtual; abstract;
     Function GetSavedValueSize: TMemSize; virtual; abstract;
     Function GetDefaultValueSize: TMemSize; virtual; abstract;
     Function ConvToStr(const Value): String; virtual; abstract;
     Function ConvFromStr(const Str: String): Pointer; virtual; abstract;
   public
-    class Function IsPrimitiveArray: Boolean; virtual;
     Function ObtainValueSize(ValueKind: TUNSValueKind): TMemSize; virtual;
     Function NodeEquals(Node: TUNSNodeLeaf; CompareValueKinds: TUNSValueKinds = [vkActual]): Boolean; virtual;
     Function Address(ValueKind: TUNSValueKind = vkActual): Pointer; overload; virtual; abstract;
@@ -44,16 +43,16 @@ implementation
 uses
   UniSettings_Exceptions;
 
-class Function TUNSNodeLeaf.GetValueType: TUNSValueType;
+class Function TUNSNodeLeaf.GetNodeType: TUNSNodeType;
 begin
-Result := vtUndefined;
+Result := ntLeaf;
 end;
 
 //------------------------------------------------------------------------------
 
-class Function TUNSNodeLeaf.GetNodeType: TUNSNodeType;
+class Function TUNSNodeLeaf.GetValueType: TUNSValueType;
 begin
-Result := ntLeaf;
+Result := vtUndefined;
 end;
 
 //------------------------------------------------------------------------------
@@ -71,16 +70,9 @@ end;
 
 //==============================================================================
 
-class Function TUNSNodeLeaf.IsPrimitiveArray: Boolean;
-begin
-Result := False;
-end;
-
-//------------------------------------------------------------------------------
-
 Function TUNSNodeLeaf.NodeEquals(Node: TUNSNodeLeaf; CompareValueKinds: TUNSValueKinds = [vkActual]): Boolean;
 begin
-Result := Self is Node.ClassType;
+Result := (GetNodeType = Node.NodeType) and (GetValueType = Node.ValueType);
 end;
 
 //------------------------------------------------------------------------------
