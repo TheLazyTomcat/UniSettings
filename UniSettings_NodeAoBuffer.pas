@@ -135,7 +135,7 @@ var
   Temp: TUNSNodeValueItemType;
 begin
 For i := CDA_Low(Dest) to CDA_High(Dest) do
-  FreeBuffer(Dest.Arr[i]);
+  FreeBuffer(CDA_GetItemPtr(Dest,i)^);
 CDA_Clear(Dest);
 For i := CDA_Low(Src) to CDA_High(Src) do
   begin

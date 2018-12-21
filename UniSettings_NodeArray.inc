@@ -166,7 +166,7 @@ If CDA_CheckIndex(fValue,Index) then
     If not SameItemValues(CDA_GetItem(fValue,Index),NewValue) then
       begin
       {$IFDEF UNS_NodeAoBuffer}
-        CopyBufferInto(NewValue,fValue.Arr[Index]);
+        CopyBufferInto(NewValue,CDA_GetItemPtr(fValue,Index)^);
       {$ELSE}
         CDA_SetItem(fValue,Index,NewValue);
       {$ENDIF}
@@ -185,7 +185,7 @@ If CDA_CheckIndex(fSavedValue,Index) then
     If not SameItemValues(CDA_GetItem(fSavedValue,Index),NewValue) then
       begin
       {$IFDEF UNS_NodeAoBuffer}
-        CopyBufferInto(NewValue,fSavedValue.Arr[Index]);
+        CopyBufferInto(NewValue,CDA_GetItemPtr(fSavedValue,Index)^);
       {$ELSE}
         CDA_SetItem(fSavedValue,Index,NewValue);
       {$ENDIF}
@@ -204,7 +204,7 @@ If CDA_CheckIndex(fDefaultValue,Index) then
     If not SameItemValues(CDA_GetItem(fDefaultValue,Index),NewValue) then
       begin
       {$IFDEF UNS_NodeAoBuffer}
-        CopyBufferInto(NewValue,fDefaultValue.Arr[Index]);
+        CopyBufferInto(NewValue,CDA_GetItemPtr(fDefaultValue,Index)^);
       {$ELSE}
         CDA_SetItem(fDefaultValue,Index,NewValue);
       {$ENDIF}
@@ -419,7 +419,7 @@ var
   Temp:       TUNSNodeValueItemType;
 begin
 For i := CDA_Low(Value) to CDA_High(Value) do
-  FreeBuffer(Value.Arr[i]);
+  FreeBuffer(CDA_GetItemPtr(Value,i)^);
 {$ELSE}
 begin
 {$ENDIF}
@@ -431,8 +431,10 @@ For Position := 1 to Length(Str) do
       begin
         If ItemStart <> Position then
         {$IFDEF UNS_NodeAoBuffer}
-          ConvItemFromStr(Copy(Str,ItemStart,Position - ItemStart),Temp);
-          CDA_Add(Value,Temp);
+          begin
+            ConvItemFromStr(Copy(Str,ItemStart,Position - ItemStart),Temp);
+            CDA_Add(Value,Temp);
+          end;
         {$ELSE}
           CDA_Add(Value,ConvItemFromStr(Copy(Str,ItemStart,Position - ItemStart)));
         {$ENDIF}
@@ -441,8 +443,10 @@ For Position := 1 to Length(Str) do
   end;
 If ItemStart <= Length(Str) then
 {$IFDEF UNS_NodeAoBuffer}
-  ConvItemFromStr(Copy(Str,ItemStart,Length(Str)),Temp);
-  CDA_Add(Value,Temp);
+  begin
+    ConvItemFromStr(Copy(Str,ItemStart,Length(Str)),Temp);
+    CDA_Add(Value,Temp);
+  end;
 {$ELSE}
   CDA_Add(Value,ConvItemFromStr(Copy(Str,ItemStart,Length(Str))));
 {$ENDIF}
@@ -468,7 +472,7 @@ constructor TUNSNodeClassType.CreateAsCopy(Source: TUNSNodeBase; const Name: Str
     i:  Integer;
   begin
     For i := CDA_Low(Value) to CDA_High(Value) do
-      UniqueString(Value.Arr[i]);
+      UniqueString(CDA_GetItemPtr(Value,i)^);
   end;
 {$ENDIF}
 
@@ -632,7 +636,7 @@ case ValueKind of
   vkActual:   begin
               {$IFDEF UNS_NodeAoBuffer}
                 For i := CDA_Low(fValue) to CDA_High(fValue) do
-                  FreeBuffer(fValue.Arr[i]);
+                  FreeBuffer(CDA_GetItemPtr(fValue,i)^);
               {$ENDIF}
                 CDA_Clear(fValue);
                 For i := 0 to Pred(Stream_ReadInt32(Stream)) do
@@ -641,7 +645,7 @@ case ValueKind of
   vkSaved:    begin
               {$IFDEF UNS_NodeAoBuffer}
                 For i := CDA_Low(fSavedValue) to CDA_High(fSavedValue) do
-                  FreeBuffer(fSavedValue.Arr[i]);
+                  FreeBuffer(CDA_GetItemPtr(fSavedValue,i)^);
               {$ENDIF}
                 CDA_Clear(fSavedValue);
                 For i := 0 to Pred(Stream_ReadInt32(Stream)) do
@@ -650,7 +654,7 @@ case ValueKind of
   vkDefault:  begin
               {$IFDEF UNS_NodeAoBuffer}
                 For i := CDA_Low(fDefaultValue) to CDA_High(fDefaultValue) do
-                  FreeBuffer(fDefaultValue.Arr[i]);
+                  FreeBuffer(CDA_GetItemPtr(fDefaultValue,i)^);
               {$ENDIF}
                 CDA_Clear(fDefaultValue);
                 For i := 0 to Pred(Stream_ReadInt32(Stream)) do
@@ -697,7 +701,7 @@ If Buffer.Size >= ObtainValueSize(ValueKind) then
       vkActual:   begin
                   {$IFDEF UNS_NodeAoBuffer}
                     For i := CDA_Low(fValue) to CDA_High(fValue) do
-                      FreeBuffer(fValue.Arr[i]);
+                      FreeBuffer(CDA_GetItemPtr(fValue,i)^);
                   {$ENDIF}
                     CDA_Clear(fValue);
                     For i := 0 to Pred(Ptr_ReadInt32(Buffer.Memory,True)) do
@@ -706,7 +710,7 @@ If Buffer.Size >= ObtainValueSize(ValueKind) then
       vkSaved:    begin
                   {$IFDEF UNS_NodeAoBuffer}
                     For i := CDA_Low(fSavedValue) to CDA_High(fSavedValue) do
-                      FreeBuffer(fSavedValue.Arr[i]);
+                      FreeBuffer(CDA_GetItemPtr(fSavedValue,i)^);
                   {$ENDIF}
                     CDA_Clear(fSavedValue);
                     For i := 0 to Pred(Ptr_ReadInt32(Buffer.Memory,True)) do
@@ -715,7 +719,7 @@ If Buffer.Size >= ObtainValueSize(ValueKind) then
       vkDefault:  begin
                   {$IFDEF UNS_NodeAoBuffer}
                     For i := CDA_Low(fDefaultValue) to CDA_High(fDefaultValue) do
-                      FreeBuffer(fDefaultValue.Arr[i]);
+                      FreeBuffer(CDA_GetItemPtr(fDefaultValue,i)^);
                   {$ENDIF}
                     CDA_Clear(fDefaultValue);
                     For i := 0 to Pred(Ptr_ReadInt32(Buffer.Memory,True)) do
@@ -789,9 +793,9 @@ Function TUNSNodeClassType.Address(Index: Integer; ValueKind: TUNSValueKind = vk
 begin
 If CheckIndex(Index,ValueKind) then
   case ValueKind of
-    vkActual:   Result := Addr(fValue.Arr[Index]);
-    vkSaved:    Result := Addr(fSavedValue.Arr[Index]);
-    vkDefault:  Result := Addr(fDefaultValue.Arr[Index]);
+    vkActual:   Result := CDA_GetItemPtr(fValue,Index);
+    vkSaved:    Result := CDA_GetItemPtr(fSavedValue,Index);
+    vkDefault:  Result := CDA_GetItemPtr(fDefaultValue,Index);
   else
     raise EUNSInvalidValueKindException.Create(ValueKind,Self,'Address');
   end
@@ -816,23 +820,23 @@ end;
 //------------------------------------------------------------------------------
 
 procedure TUNSNodeClassType.FromString(Index: Integer; const Str: String; ValueKind: TUNSValueKind = vkActual);
+
+{$IFDEF UNS_NodeAoBuffer}
+  procedure SetBufferItem(var Item: TMemoryBuffer);
+  begin
+    FreeBuffer(Item);
+    ConvItemFromStr(Str,Item);
+  end;
+{$ENDIF}
+
 begin
 If CheckIndex(Index,ValueKind) then
   begin
     case ValueKind of
     {$IFDEF UNS_NodeAoBuffer}
-      vkActual:   begin
-                    FreeBuffer(fValue.Arr[Index]);
-                    ConvItemFromStr(Str,fValue.Arr[Index]);
-                  end;
-      vkSaved:    begin
-                    FreeBuffer(fSavedValue.Arr[Index]);
-                    ConvItemFromStr(Str,fSavedValue.Arr[Index]);
-                  end;
-      vkDefault:  begin
-                    FreeBuffer(fDefaultValue.Arr[Index]);
-                    ConvItemFromStr(Str,fDefaultValue.Arr[Index]);
-                  end;
+      vkActual:   SetBufferItem(CDA_GetItemPtr(fValue,Index)^);
+      vkSaved:    SetBufferItem(CDA_GetItemPtr(fSavedValue,Index)^);
+      vkDefault:  SetBufferItem(CDA_GetItemPtr(fDefaultValue,Index)^);
     {$ELSE}
       vkActual:   SetItem(Index,ConvItemFromStr(Str));
       vkSaved:    SetSavedItem(Index,ConvItemFromStr(Str));
@@ -866,23 +870,23 @@ end;
 //------------------------------------------------------------------------------
 
 procedure TUNSNodeClassType.FromStream(Index: Integer; Stream: TStream; ValueKind: TUNSValueKind = vkActual);
+
+{$IFDEF UNS_NodeAoBuffer}
+  procedure SetBufferItem(var Item: TMemoryBuffer);
+  begin
+    FreeBuffer(Item);
+    Item := UNS_StreamReadFunction(Stream);
+  end;
+{$ENDIF}
+
 begin
 If CheckIndex(Index,ValueKind) then
   begin
     case ValueKind of
     {$IFDEF UNS_NodeAoBuffer}
-      vkActual:   begin
-                    FreeBuffer(fValue.Arr[Index]);
-                    fValue.Arr[Index] := UNS_StreamReadFunction(Stream);
-                  end;
-      vkSaved:    begin
-                    FreeBuffer(fSavedValue.Arr[Index]);
-                    fSavedValue.Arr[Index] := UNS_StreamReadFunction(Stream);
-                  end;
-      vkDefault:  begin
-                    FreeBuffer(fDefaultValue.Arr[Index]);
-                    fDefaultValue.Arr[Index] := UNS_StreamReadFunction(Stream);
-                  end;
+      vkActual:   SetBufferItem(CDA_GetItemPtr(fValue,Index)^);
+      vkSaved:    SetBufferItem(CDA_GetItemPtr(fSavedValue,Index)^);
+      vkDefault:  SetBufferItem(CDA_GetItemPtr(fDefaultValue,Index)^);
     {$ELSE}
       vkActual:   SetItem(Index,UNS_StreamReadFunction(Stream));
       vkSaved:    SetSavedItem(Index,UNS_StreamReadFunction(Stream));
@@ -916,23 +920,23 @@ end;
 //------------------------------------------------------------------------------
 
 procedure TUNSNodeClassType.FromBuffer(Index: Integer; Buffer: TMemoryBuffer; ValueKind: TUNSValueKind = vkActual);
+
+{$IFDEF UNS_NodeAoBuffer}
+  procedure SetBufferItem(var Item: TMemoryBuffer);
+  begin
+    FreeBuffer(Item);
+    Item := UNS_BufferReadFunction(Buffer.Memory,False);
+  end;
+{$ENDIF}
+
 begin
 If CheckIndex(Index,ValueKind) then
   begin
     case ValueKind of
     {$IFDEF UNS_NodeAoBuffer}
-      vkActual:   begin
-                    FreeBuffer(fValue.Arr[Index]);
-                    fValue.Arr[Index] := UNS_BufferReadFunction(Buffer.Memory,False);;
-                  end;
-      vkSaved:    begin
-                    FreeBuffer(fSavedValue.Arr[Index]);
-                    fSavedValue.Arr[Index] := UNS_BufferReadFunction(Buffer.Memory,False);;
-                  end;
-      vkDefault:  begin
-                    FreeBuffer(fDefaultValue.Arr[Index]);
-                    fDefaultValue.Arr[Index] := UNS_BufferReadFunction(Buffer.Memory,False);
-                  end;
+      vkActual:   SetBufferItem(CDA_GetItemPtr(fValue,Index)^);
+      vkSaved:    SetBufferItem(CDA_GetItemPtr(fSavedValue,Index)^);
+      vkDefault:  SetBufferItem(CDA_GetItemPtr(fDefaultValue,Index)^);
     {$ELSE}
       vkActual:   SetItem(Index,UNS_BufferReadFunction(Buffer.Memory,False));
       vkSaved:    SetSavedItem(Index,UNS_BufferReadFunction(Buffer.Memory,False));
@@ -1148,7 +1152,7 @@ Function TUNSNodeClassType.Remove(const Item: TUNSNodeValueItemType; ValueKind: 
     Result := CDA_IndexOf(Value,Item);
     If CDA_CheckIndex(Value,Result) then
       begin
-        FreeBuffer(Value.Arr[Result]);
+        FreeBuffer(CDA_GetItemPtr(Value,Result)^);
         CDA_Delete(Value,Result);
       end;
   {$ELSE}
@@ -1176,7 +1180,7 @@ procedure TUNSNodeClassType.Delete(Index: Integer; ValueKind: TUNSValueKind = vk
   procedure DeleteFrom(var Value: TUNSNodeValueType);
   begin
   {$IFDEF UNS_NodeAoBuffer}
-    FreeBuffer(Value.Arr[Index]);
+    FreeBuffer(CDA_GetItemPtr(Value,Index)^);
   {$ENDIF}
     CDA_Delete(Value,Index);
   end;
@@ -1204,7 +1208,7 @@ procedure TUNSNodeClassType.Clear(ValueKind: TUNSValueKind = vkActual);
     i:  Integer;
   begin
     For i := CDA_Low(Value) to CDA_High(Value) do
-      FreeBuffer(Value.Arr[i]);
+      FreeBuffer(CDA_GetItemPtr(Value,i)^);
   {$ELSE}
   begin
   {$ENDIF}

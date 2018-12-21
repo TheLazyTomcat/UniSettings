@@ -12,10 +12,10 @@ todo (* = completed):
 * integer can be 64bit...
   per value change tracking (rework change system)
 * remove flags from values (let's leave them there for now)
-  remove IS where possible, replace with node type checks
-  remove IsPrimitiveArray method
+* remove IS where possible, replace with node type checks
+* remove IsPrimitiveArray method
   hashes (branch list, node list)
-  replace direct access to cd arrays with CDA_GetItemPtr 
+* replace direct access to cd arrays with CDA_GetItemPtr 
 
 * nodes
 

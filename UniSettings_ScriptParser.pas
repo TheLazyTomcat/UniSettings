@@ -45,46 +45,33 @@ interface
 
 uses
   Classes,
-  AuxTypes, ListSorters, CountedDynArrays, CountedDynArrayString,
+  AuxTypes, CountedDynArrays, CountedDynArrayString,
   UniSettings_Common, UniSettings_NodeLeaf, UniSettings_ScriptCommon,
-  UniSettings_ScriptLexer;
+  UniSettings_ScriptLexer, UniSettings_ScriptParserStruct;
 
 type
   TUNSParserAddValueEvent = Function(const ValueName: String; ValueType: TUNSValueType; out Node: TUNSNodeLeaf): Boolean of object;
 
-  TUNSParserValue = record
-    Name:       String;
-    ValueType:  TUNSValueType;
-    DefValStrs: TStringCountedDynArray;
-  end;
-  PUNSParserValue = ^TUNSParserValue;
-
   TUNSParserPrefixes = array[0..9] of String;
 
-  TUNSParserStruct = record
-    Name:       String;
-    Arr:        array of TUNSParserValue;
-    Count:      Integer;
-    Data:       PtrInt;
+  TUNSParserStructs = record
+    Arr:    array of TUNSParserStruct;
+    Count:  Integer;
+    Data:   PtrInt;
   end;
-  PUNSParserStruct = ^TUNSParserStruct;
+  PUNSParserStructs = ^TUNSParserStructs;
 
-  TCDABaseType = TUNSParserValue;
-  PCDABaseType = PUNSParserValue;
+  TCDABaseType = TUNSParserStruct;
+  PCDABaseType = PUNSParserStruct;
 
-  TCDAArrayType = TUNSParserStruct;
-  PCDAArrayType = PUNSParserStruct;
+  TCDAArrayType = TUNSParserStructs;
+  PCDAArrayType = PUNSParserStructs;
 
 {$DEFINE CDA_Interface}
 {$INCLUDE '.\CountedDynArrays.inc'}
 {$UNDEF CDA_Interface}
 
 type
-  TUNSParserStructs = record
-    Arr:    array of TUNSParserStruct;
-    Count:  Integer;
-  end;
-
   TUNSParserState = (psReset,psCommandAdd,psCommandPrefix,psCommandStruct,
                      psPendingStruct,psAddPendingDefVals,psStructPendingDefVals,
                      psAddExpandPendingDefVals,psStructExpandPendingDefVals);
@@ -136,12 +123,11 @@ implementation
 
 uses
   SysUtils,
-  ExplicitStringLists, SimpleCompress,
+  ExplicitStringLists, SimpleCompress, ListSorters,
   UniSettings_Exceptions, UniSettings_Utils, UniSettings_NodePrimitiveArray,
   UniSettings_ScriptUtils;
 
-
-Function CDA_CompareFunc(const A,B: TUNSParserValue): Integer;
+Function CDA_CompareFunc(const A,B: TUNSParserStruct): Integer;
 begin
 Result := -AnsiCompareText(A.Name,B.Name);
 end;
@@ -151,6 +137,7 @@ end;
 {$DEFINE CDA_Implementation}
 {$INCLUDE '.\CountedDynArrays.inc'}
 {$UNDEF CDA_Implementation}
+
 
 //******************************************************************************
 
@@ -169,7 +156,7 @@ var
 begin
 Dest := CDA_Copy(Src);
 For i := CDA_Low(Dest) to CDA_High(Dest) do
-  CDA_UniqueArray(Dest.Arr[i].DefValStrs);
+  CDA_UniqueArray(CDA_GetItemPtr(Dest,i)^.DefValStrs);
 Dest.Name := Src.Name;
 end;
 
@@ -180,8 +167,8 @@ var
   i:  Integer;
 begin
 Result := -1;
-For i := Low(fStructs.Arr) to Pred(fStructs.Count) do
-  If AnsiSameText(fStructs.Arr[i].Name,StructName) then
+For i := CDA_Low(fStructs) to CDA_High(fStructs) do
+  If AnsiSameText(CDA_GetItem(fStructs,i).Name,StructName) then
     begin
       Result := i;
       Break{For i};
@@ -191,15 +178,14 @@ end;
 //------------------------------------------------------------------------------
 
 Function TUNSParser.StructAdd(Struct: TUNSParserStruct): Integer;
+var
+  NewItem:  TUNSParserStruct;
 begin
 Result := StructIndexOf(Struct.Name);
 If Result < 0 then
   begin
-    If Length(fStructs.Arr) <= fStructs.Count then
-      SetLength(fStructs.Arr,Length(fStructs.Arr) + 8);
-    Result := fStructs.Count;
-    UNSCopyParserStruct(Struct,fStructs.Arr[Result]);
-    Inc(fStructs.Count);
+    UNSCopyParserStruct(Struct,NewItem);
+    Result := CDA_Add(fStructs,NewItem); 
   end
 else raise EUNSParsingException.CreateFmt('Structure %s redeclared.',[Struct.Name],Self,'StructAdd','');
 end;
@@ -336,11 +322,11 @@ If fLexer.Count >= 3 then
         StructIndex := StructIndexOf(fLexer[fLexer.LowIndex + 2].LexemeText);
         If StructIndex >= 0 then
           begin
-            UNSCopyParserStruct(fStructs.Arr[StructIndex],fPendingExpansion);
+            UNSCopyParserStruct(CDA_GetItem(fStructs,StructIndex),fPendingExpansion);
             fPendingExpansion.Name := fPendingValue.Name;
             // expand names
             For i := CDA_Low(fPendingExpansion) to CDA_High(fPendingExpansion) do
-              fPendingExpansion.Arr[i].Name := fPendingExpansion.Name + fPendingExpansion.Arr[i].Name;
+              CDA_GetItemPtr(fPendingExpansion,i)^.Name := fPendingExpansion.Name + CDA_GetItem(fPendingExpansion,i).Name;
             // load default values when present or add the expansion
             If fLexer.Count >= 4 then
               begin
@@ -411,12 +397,12 @@ var
 begin
 PendingDefValsIdx := CDA_Low(fPendingDefVals);
 For ValIdx := CDA_Low(fPendingExpansion) to CDA_High(fPendingExpansion) do
-  For ValItemIdx := CDA_Low(fPendingExpansion.Arr[ValIdx].DefValStrs) to
-    CDA_High(fPendingExpansion.Arr[ValIdx].DefValStrs) do
+  For ValItemIdx := CDA_Low(CDA_GetItem(fPendingExpansion,ValIdx).DefValStrs) to
+                   CDA_High(CDA_GetItem(fPendingExpansion,ValIdx).DefValStrs) do
     begin
       If PendingDefValsIdx <= CDA_High(fPendingDefVals) then
         begin
-          CDA_SetItem(fPendingExpansion.Arr[ValIdx].DefValStrs,ValItemIdx,
+          CDA_SetItem(CDA_GetItemPtr(fPendingExpansion,ValIdx)^.DefValStrs,ValItemIdx,
             CDA_GetItem(fPendingDefVals,PendingDefValsIdx));
           Inc(PendingDefValsIdx);
         end
@@ -634,8 +620,7 @@ var
 begin
 For i := Low(fPrefixes) to High(fPrefixes) do
   fPrefixes[i] := '';
-SetLength(fStructs.Arr,0);
-fStructs.Count := 0;
+CDA_Clear(fStructs);
 fState := psCommandAdd;
 end;
 
@@ -736,9 +721,11 @@ begin
 MemStream := TMemoryStream.Create;
 try
   If ZDecompressStream(Stream,MemStream) then
-    Result := ParseStream(MemStream)
-  else
-    Result := 0;
+    begin
+      MemStream.Seek(0,soBeginning);
+      Result := ParseStream(MemStream);
+    end
+  else Result := 0;
 finally
   MemStream.Free;
 end;
