@@ -31,7 +31,7 @@ implementation
 uses
   SysUtils,
   BinaryStreaming, StrRect,
-  UniSettings_Exceptions;
+  UniSettings_Exceptions, UniSettings_ScriptUtils;
 
 type
   TUNSNodeClassType = TUNSNodeAoText;
@@ -71,14 +71,14 @@ end;
 
 Function TUNSNodeClassType.ConvItemToStr(const Value: TUNSNodeValueItemType): String;
 begin
-Result := Value;
+Result := UNSEncodeString(Value);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TUNSNodeClassType.ConvItemFromStr(const Str: String): TUNSNodeValueItemType;
 begin
-Result := Str;
+Result := UNSDecodeString(Str);
 end;
 
 //------------------------------------------------------------------------------

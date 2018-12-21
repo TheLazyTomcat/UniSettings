@@ -45,7 +45,6 @@ type
     procedure Clear; virtual;
     // lexing methods
     procedure DiscernLexemeType(var Lexeme: TUNSLexeme); virtual;
-    Function RectifyQuotes(const Str: String): String; virtual;
     procedure InitializeLexing(const Line: String); virtual;
     procedure Lexing_Traverse; virtual;
     procedure Lexing_Text; virtual;
@@ -164,25 +163,6 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function TUNSLexer.RectifyQuotes(const Str: String): String;
-var
-  i,ResPos: Integer;
-begin
-SetLength(Result,Length(Str));
-ResPos := 1;
-For i := 1 to Length(Str) do
-  begin
-    If (Str[i] = UNS_SCRIPT_TEXTQUOTECHAR) and (i > 1) then
-      If Str[i - 1] = UNS_SCRIPT_TEXTQUOTECHAR then
-        Continue; // char is not copied into result and ResPos is not increased
-    Result[ResPos] := Str[i];
-    Inc(ResPos);    
-  end;
-SetLength(Result,ResPos - 1);
-end;
-
-//------------------------------------------------------------------------------
-                                                                                   
 procedure TUNSLexer.InitializeLexing(const Line: String);
 begin
 Clear;
@@ -256,7 +236,7 @@ If fLine[fPosition] = UNS_SCRIPT_TEXTQUOTECHAR then
   begin
     If not QuoteAhead then
       begin
-        Add(lxtText,RectifyQuotes(Copy(fLine,fLexemeStart,fLexemeLength)));
+        Add(lxtText,Copy(fLine,fLexemeStart,fLexemeLength));
         fStage := lxsTraverse;
       end
     else
@@ -317,7 +297,7 @@ while fPosition <= Length(fLine) do
 // process lingering stuff
 case fStage of
   lxsText:       Add(lxtUnknown,Copy(fLine,fLexemeStart,fLexemeLength));
-  lxsQuotedText: Add(lxtText,RectifyQuotes(Copy(fLine,fLexemeStart,fLexemeLength)));
+  lxsQuotedText: Add(lxtText,Copy(fLine,fLexemeStart,fLexemeLength));
   lxsComment:    Add(lxtComment,Copy(fLine,fLexemeStart,fLexemeLength));
 end;
 // decide final types

@@ -15,7 +15,8 @@ todo (* = completed):
 * remove IS where possible, replace with node type checks
 * remove IsPrimitiveArray method
   hashes (branch list, node list)
-* replace direct access to cd arrays with CDA_GetItemPtr 
+* replace direct access to cd arrays with CDA_GetItemPtr
+  ToString/FromString - en(/de)code strings, do not do it in lexer
 
 * nodes
 

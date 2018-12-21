@@ -27,7 +27,7 @@ implementation
 uses
   SysUtils,
   BinaryStreaming, StrRect,
-  UniSettings_Exceptions;
+  UniSettings_Exceptions, UniSettings_ScriptUtils;
 
 type
   TUNSNodeClassType = TUNSNodeText;
@@ -60,14 +60,14 @@ end;
 
 Function TUNSNodeClassType.ConvToStr(const Value: TUNSNodeValueType): String;
 begin
-Result := Value;
+Result := UNSEncodeString(Value);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TUNSNodeClassType.ConvFromStr(const Str: String): TUNSNodeValueType;
 begin
-Result := Str;
+Result := UNSDecodeString(Str);
 end;
 
 //==============================================================================
