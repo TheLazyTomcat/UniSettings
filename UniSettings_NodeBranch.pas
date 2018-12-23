@@ -5,18 +5,19 @@ unit UniSettings_NodeBranch;
 interface
 
 uses
-  UniSettings_Common, UniSettings_NodeBase;
+  UniSettings_Common, UniSettings_NodeBase, UniSettings_NodeList;
 
 type
   TUNSNodeBranch = class(TUNSNodeBase)
   private
-    fSubNodes:  array of TUNSNodeBase;
-    fCount:     Integer;
+    fSubNodes:  TUNSNodeList;
+    Function GetCount: Integer;
     Function GetSubNode(Index: Integer): TUNSNodeBase;
   protected
     class Function GetNodeType: TUNSNodeType; override;
     procedure SetMaster(Value: TObject); override;
     Function GetMaxNodeLevel: Integer; override;
+    Function CreateSubNodesList: TUNSNodeList; virtual;
   public
     constructor Create(const Name: String; ParentNode: TUNSNodeBase);
     constructor CreateAsCopy(Source: TUNSNodeBase; const Name: String; ParentNode: TUNSNodeBase);
@@ -41,7 +42,7 @@ type
     procedure ValueKindExchange(ValA,ValB: TUNSValueKind); override;
     Function ValueKindCompare(ValA,ValB: TUNSValueKind): Boolean; override;
     property SubNodes[Index: Integer]: TUNSNodeBase read GetSubNode; default;
-    property Count: Integer read fCount;
+    property Count: Integer read GetCount;
   end;
 
 implementation
@@ -50,13 +51,17 @@ uses
   SysUtils,
   UniSettings_Exceptions, UniSettings_Utils;
 
-const
-  UNS_BRANCHNODE_GROWFACTOR = 128;
+Function TUNSNodeBranch.GetCount: Integer;
+begin
+Result := fSubNodes.Count;
+end;
+
+//------------------------------------------------------------------------------
 
 Function TUNSNodeBranch.GetSubNode(Index: Integer): TUNSNodeBase;
 begin
 If CheckIndex(Index) then
-  Result := fSubNodes[Index]
+  Result := fSubNodes[Index].Node
 else
   raise EUNSIndexOutOfBoundsException.Create(Index,Self,'GetSubNode');
 end;
@@ -76,7 +81,7 @@ var
 begin
 inherited;
 For i := LowIndex to HighIndex do
-  fSubNodes[i].Master := Value;
+  fSubNodes[i].Node.Master := Value;
 end;
 
 //------------------------------------------------------------------------------
@@ -88,10 +93,17 @@ begin
 Result := inherited GetMaxNodeLevel;
 For i := LowIndex to HighIndex do
   begin
-    Temp := fSubNodes[i].MaxNodeLevel;
+    Temp := fSubNodes[i].Node.MaxNodeLevel;
     If Temp > Result  then
       Result := Temp;
   end;
+end;
+
+//------------------------------------------------------------------------------
+
+Function TUNSNodeBranch.CreateSubNodesList: TUNSNodeList;
+begin
+Result := TUNSHashedNodeList.Create;
 end;
 
 //==============================================================================
@@ -99,8 +111,7 @@ end;
 constructor TUNSNodeBranch.Create(const Name: String; ParentNode: TUNSNodeBase);
 begin
 inherited Create(Name,ParentNode);
-SetLength(fSubNodes,0);
-fCount := 0;
+fSubNodes := CreateSubNodesList;
 end;
 
 //------------------------------------------------------------------------------
@@ -118,7 +129,7 @@ end;
 
 destructor TUNSNodeBranch.Destroy;
 begin
-Clear;
+fSubNodes.Free;
 inherited;
 end;
 
@@ -126,76 +137,56 @@ end;
 
 Function TUNSNodeBranch.LowIndex: Integer;
 begin
-Result := Low(fSubNodes);
+Result := fSubNodes.LowIndex;;
 end;
 
 //------------------------------------------------------------------------------
 
 Function TUNSNodeBranch.HighIndex: Integer;
 begin
-Result := Pred(fCount);
+Result := fSubNodes.HighIndex;
 end;
 
 //------------------------------------------------------------------------------
 
 Function TUNSNodeBranch.CheckIndex(Index: Integer): Boolean;
 begin
-Result := (Index >= LowIndex) and (Index <= HighIndex);
+Result := fSubNodes.CheckIndex(Index);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TUNSNodeBranch.IndexOf(Node: TUNSNodeBase): Integer;
-var
-  i:  Integer;
 begin
-Result := -1;
-For i := LowIndex to HighIndex do
-  If fSubNodes[i] = Node then
-    begin
-      Result := i;
-      Break{For i};
-    end;
+Result := fSubNodes.IndexOf(Node);
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function TUNSNodeBranch.IndexOf(Name: TUNSHashedString): Integer;
-var
-  i:  Integer;
 begin
-Result := -1;
-For i := LowIndex to HighIndex do
-  If UNSSameHashString(Name,fSubNodes[i].Name,True) then
-    begin
-      Result := i;
-      Break{For i};
-    end;
+Result := fSubNodes.IndexOf(Name);
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function TUNSNodeBranch.IndexOf(const Name: String): Integer;
 begin
-Result := IndexOf(UNSHashedString(Name));
+Result := fSubNodes.IndexOf(Name);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TUNSNodeBranch.Add(Node: TUNSNodeBase): Integer;
 begin
-If fCount >= Length(fSubNodes) then
-  SetLength(fSubNodes,Length(fSubNodes) + UNS_BRANCHNODE_GROWFACTOR);
-Result := fCount;
-fSubNodes[Result] := Node;
-fSubNodes[Result].Master := fMaster;
+Result := fSubNodes.Add(Node.Name,Node);
+fSubNodes[Result].Node.Master := fMaster;
 {
   The handler assigned here should be invariant for the entire lifetime of this
   node, so there is no need for a redirection to a dynamic handler method that
   will call actual fOnChange.
 }
-fSubNodes[Result].OnChange := fOnChange;
-Inc(fCount);
+fSubNodes[Result].Node.OnChange := fOnChange;
 DoChange;
 end;
 
@@ -203,37 +194,24 @@ end;
 
 Function TUNSNodeBranch.Remove(Node: TUNSNodeBase): Integer;
 begin
-Result := IndexOf(Node);
-If CheckIndex(Result) then
-  Delete(Result);
+Result := fSubNodes.Remove(Node);
+If Result >= 0 then
+  DoChange;
 end;
 
 //------------------------------------------------------------------------------
 
 procedure TUNSNodeBranch.Delete(Index: Integer);
-var
-  i:  Integer;
 begin
-If CheckIndex(Index) then
-  begin
-    fSubNodes[Index].Free;
-    For i := Index to Pred(HighIndex) do
-      fSubNodes[i] := fSubNodes[i + 1];
-    Dec(fCount);
-    DoChange;
-  end
-else raise EUNSIndexOutOfBoundsException.Create(Index,Self,'Delete');
+fSubNodes.Delete(Index);
+DoChange;
 end;
 
 //------------------------------------------------------------------------------
 
 procedure TUNSNodeBranch.Clear;
-var
-  i:  Integer;
 begin
-For i := LowIndex to HighIndex do
-  FreeAndNil(fSubNodes[i]);
-fCount := 0;
+fSubNodes.Clear;
 DoChange;
 end;
 
@@ -248,14 +226,14 @@ Result := False;
 Index := IndexOf(Name);
 If CheckIndex(Index) then
   begin
-    Node := fSubNodes[Index];
+    Node := fSubNodes[Index].Node;
     Result := True;
   end
 else
   If Recursive then
     For i := LowIndex to HighIndex do
-      If UNSIsBranchNode(fSubNodes[i]) then
-        If TUNSNodeBranch(fSubNodes[i]).FindNode(Name,Node,Recursive) then
+      If UNSIsBranchNode(fSubNodes[i].Node) then
+        If TUNSNodeBranch(fSubNodes[i].Node).FindNode(Name,Node,Recursive) then
           begin
             Result := True;
             Break{For i};
@@ -322,7 +300,7 @@ var
   i:  Integer;
 begin
 For i := LowIndex to HighIndex do
-  fSubNodes[i].ValueKindMove(Src,Dest);
+  fSubNodes[i].Node.ValueKindMove(Src,Dest);
 end;
 
 //------------------------------------------------------------------------------
@@ -332,7 +310,7 @@ var
   i:  Integer;
 begin
 For i := LowIndex to HighIndex do
-  fSubNodes[i].ValueKindExchange(ValA,ValB);
+  fSubNodes[i].Node.ValueKindExchange(ValA,ValB);
 end;
 
 //------------------------------------------------------------------------------
@@ -343,7 +321,7 @@ var
 begin
 Result := True;
 For i := LowIndex to HighIndex do
-  If not fSubNodes[i].ValueKindCompare(ValA,ValB) then
+  If not fSubNodes[i].Node.ValueKindCompare(ValA,ValB) then
     begin
       Result := False;
       Break{For i};

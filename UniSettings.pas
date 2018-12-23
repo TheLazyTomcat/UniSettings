@@ -57,6 +57,7 @@ type
     fWorkingBranch:       String;
     fWorkingNode:         TUNSNodeBranch;
     fParser:              TUNSParser;
+    fAdditionCounter:     Integer;
     fChangeCounter:       Integer;
     fChanged:             Boolean;
     fOnChange:            TNotifyEvent;
@@ -152,13 +153,13 @@ type
     Function AddNoLock(const ValueName: String; ValueType: TUNSValueType): Boolean; virtual;
     Function RemoveNoLock(const ValueName: String): Boolean; virtual;
     procedure ClearNoLock; virtual;
-    Function ListValuesNoLock(Strings: TStrings): Integer; virtual;
+    Function ListValuesNoLock(Strings: TStrings; PreserveAdditionOrder: Boolean = False): Integer; virtual;
     //--- Values management (lock) ---------------------------------------------
     Function Exists(const ValueName: String): Boolean; virtual;
     Function Add(const ValueName: String; ValueType: TUNSValueType): Boolean; virtual;
     Function Remove(const ValueName: String): Boolean; virtual;
     procedure Clear; virtual;
-    Function ListValues(Strings: TStrings): Integer; virtual;
+    Function ListValues(Strings: TStrings; PreserveAdditionOrder: Boolean = False): Integer; virtual;
     //--- General value access (no lock) ---------------------------------------
     procedure ValueKindMoveNoLock(Src,Dest: TUNSValueKind); virtual;
     procedure ValueKindExchangeNoLock(ValA,ValB: TUNSValueKind); virtual;
@@ -331,7 +332,7 @@ type
 implementation
 
 uses
-  StrRect,
+  StrRect, ListSorters,
   UniSettings_Utils, UniSettings_Exceptions,
   // leaf nodes
   UniSettings_NodeBlank,
@@ -507,6 +508,8 @@ else
  {vtUndefined}
   raise EUNSException.CreateFmt('Invalid node value type (%d).',[Ord(ValueType)],Self,'CreateLeafNode');
 end;
+Result.AdditionIndex := fAdditionCounter;
+Inc(fAdditionCounter);
 end;
 
 //------------------------------------------------------------------------------
@@ -543,6 +546,7 @@ case NodeNamePart.PartType of
             If CanCreateArrayItem then
               begin
                 Node := TUNSNodeArrayItem.Create('',Branch);
+                TUNSNodeArrayItem(Node).ArrayIndex := Branch.Count;
                 Branch.Add(Node);
               end;
           UNS_NAME_ARRAYITEM_LOW:
@@ -890,6 +894,7 @@ fRootNode.OnChange := OnChangeHandler;
 fWorkingBranch := '';
 fWorkingNode := fRootNode;
 fParser := TUNSParser.Create(AddNode);
+fAdditionCounter := 0;
 fChangeCounter := 0;
 fChanged := False;
 fOnChange := nil;
@@ -1493,7 +1498,24 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function TUniSettings.ListValuesNoLock(Strings: TStrings): Integer;
+Function UNS_LV_Compare(Context: Pointer; Index1,Index2: Integer): Integer;
+begin
+Result := TUNSNodeBase(TStrings(Context).Objects[Index2]).AdditionIndex -
+          TUNSNodeBase(TStrings(Context).Objects[Index1]).AdditionIndex;
+end;
+
+//   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
+
+procedure UNS_LV_Exchange(Context: Pointer; Index1,Index2: Integer);
+begin
+TStrings(Context).Exchange(Index1,Index2);
+end;
+
+//   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
+
+Function TUniSettings.ListValuesNoLock(Strings: TStrings; PreserveAdditionOrder: Boolean = False): Integer;
+var
+  Sorter: TListQuickSorter;
 
   procedure AddNodeToListing(Node: TUNSNode);
   var
@@ -1504,12 +1526,21 @@ Function TUniSettings.ListValuesNoLock(Strings: TStrings): Integer;
         For i := TUNSNodeBranch(Node).LowIndex to TUNSNodeBranch(Node).HighIndex do
           AddNodeToListing(TUNSNodeBranch(Node)[i]);
       end
-    else Strings.Add(Node.ReconstructFullName(False));
+    else Strings.AddObject(Node.ReconstructFullName(False),Node);
   end;
 
 begin
 Strings.Clear;
 AddNodeToListing(fWorkingNode);
+If PreserveAdditionOrder and (Strings.Count > 0) then
+  begin
+    Sorter := TListQuickSorter.Create(Pointer(Strings),UNS_LV_Compare,UNS_LV_Exchange);
+    try
+      Sorter.Sort(0,Pred(Strings.Count));
+    finally
+      Sorter.Free;
+    end;
+  end;
 Result := Strings.Count;
 end;
 
@@ -1563,11 +1594,11 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function TUniSettings.ListValues(Strings: TStrings): Integer;
+Function TUniSettings.ListValues(Strings: TStrings; PreserveAdditionOrder: Boolean = False): Integer;
 begin
 ReadLock;
 try
-  Result := ListValuesNoLock(Strings);
+  Result := ListValuesNoLock(Strings,PreserveAdditionOrder);
 finally
   ReadUnlock;
 end;

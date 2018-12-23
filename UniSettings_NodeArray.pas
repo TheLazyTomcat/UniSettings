@@ -6,7 +6,7 @@ interface
 
 uses
   UniSettings_Common, UniSettings_NodeBase, UniSettings_NodeBranch,
-  UniSettings_NodeArrayItem;
+  UniSettings_NodeArrayItem, UniSettings_NodeList;
 
 type
   TUNSNodeArray = class(TUNSNodeBranch)
@@ -14,6 +14,7 @@ type
     Function GetItem(Index: Integer): TUNSNodeArrayItem;
   protected
     class Function GetNodeType: TUNSNodeType; override;
+    Function CreateSubNodesList: TUNSNodeList; override;
     procedure ReindexItems; virtual;
   public
     Function Add(Node: TUNSNodeBase): Integer; override;
@@ -41,6 +42,13 @@ end;
 
 //------------------------------------------------------------------------------
 
+Function TUNSNodeArray.CreateSubNodesList: TUNSNodeList;
+begin
+Result := TUNSNodeList.Create;
+end;
+
+//------------------------------------------------------------------------------
+
 procedure TUNSNodeArray.ReindexItems;
 var
   i:  Integer;
@@ -58,7 +66,7 @@ If Node.NodeType = ntArrayItem then
     Result := inherited Add(Node);
     TUNSNodeArrayItem(Node).ArrayIndex := Result;
   end
-else raise EUNSException.Create('Added node is not of type TUNSNodeArrayItem.',Self,'Add');
+else raise EUNSException.Create('Added node is not of type ntArrayItem.',Self,'Add');
 end;
 
 //------------------------------------------------------------------------------

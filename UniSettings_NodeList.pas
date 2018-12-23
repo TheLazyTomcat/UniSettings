@@ -1,4 +1,4 @@
-unit UniSettings_HashedNodeList;
+unit UniSettings_NodeList;
 
 {$INCLUDE '.\UniSettings_defs.inc'}
 
@@ -9,25 +9,22 @@ uses
   UniSettings_Common, UniSettings_NodeBase;
 
 type
-  TUNSHashedNodeListItem = record
+  TUNSNodeListItem = record
     Name: TUNSHashedString;
     Node: TUNSNodeBase;
   end;
 
-  TUNSHashedNodeList = class(TCustomListObject)
+  TUNSNodeList = class(TCustomListObject)
   private
-    fItems: array of TUNSHashedNodeListItem;
+    fItems: array of TUNSNodeListItem;
     fCount: Integer;
-    Function GetItem(Index: Integer): TUNSHashedNodeListItem;
-    procedure SetItem(Index: Integer; Item: TUNSHashedNodeListItem);
+    Function GetItem(Index: Integer): TUNSNodeListItem;
+    procedure SetItem(Index: Integer; Item: TUNSNodeListItem);
   protected
     Function GetCapacity: Integer; override;
     procedure SetCapacity(Value: Integer); override;
     Function GetCount: Integer; override;
     procedure SetCount(Value: Integer); override;
-    Function IndexOf_Iter(Name: TUNSHashedString): Integer; virtual;  // iterative search
-    Function IndexOf_Bin(Name: TUNSHashedString): Integer; virtual;   // binary search
-    Function IndexForAddition(Name: TUNSHashedString): Integer; virtual;
   public
     destructor Destroy; override;
     Function LowIndex: Integer; override;
@@ -44,7 +41,15 @@ type
     Function Remove(const Name: String): Integer; overload; virtual;
     procedure Delete(Index: Integer); virtual;
     procedure Clear; virtual;
-    property Items[Index: Integer]: TUNSHashedNodeListItem read GetItem write SetItem; default;
+    property Items[Index: Integer]: TUNSNodeListItem read GetItem write SetItem; default;
+  end;
+
+  TUNSHashedNodeList = class(TUNSNodeList)
+  protected
+    Function IndexForAddition(Name: TUNSHashedString): Integer; virtual;
+  public
+    Function IndexOf(Name: TUNSHashedString): Integer; override;
+    Function Add(Name: TUNSHashedString; Node: TUNSNodeBase): Integer; override;
   end;
 
 implementation
@@ -53,7 +58,7 @@ uses
   AuxTypes,
   UniSettings_Exceptions, UniSettings_Utils;
 
-Function TUNSHashedNodeList.GetItem(Index: Integer): TUNSHashedNodeListItem;
+Function TUNSNodeList.GetItem(Index: Integer): TUNSNodeListItem;
 begin
 If CheckIndex(Index) then
   Result := fItems[Index]
@@ -63,7 +68,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-procedure TUNSHashedNodeList.SetItem(Index: Integer; Item: TUNSHashedNodeListItem);
+procedure TUNSNodeList.SetItem(Index: Integer; Item: TUNSNodeListItem);
 begin
 If CheckIndex(Index) then
   fItems[Index] := Item
@@ -73,14 +78,14 @@ end;
 
 //==============================================================================
 
-Function TUNSHashedNodeList.GetCapacity: Integer;
+Function TUNSNodeList.GetCapacity: Integer;
 begin
 Result := Length(fItems);
 end;
 
 //------------------------------------------------------------------------------
 
-procedure TUNSHashedNodeList.SetCapacity(Value: Integer);
+procedure TUNSNodeList.SetCapacity(Value: Integer);
 begin
 SetLength(fItems,Value);
 If Value < fCount then
@@ -89,21 +94,84 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function TUNSHashedNodeList.GetCount: Integer;
+Function TUNSNodeList.GetCount: Integer;
 begin
 Result := fCount;
 end;
 
 //------------------------------------------------------------------------------
 
-procedure TUNSHashedNodeList.SetCount(Value: Integer);
+procedure TUNSNodeList.SetCount(Value: Integer);
 begin
 // do nothing
 end;
 
+//==============================================================================
+
+destructor TUNSNodeList.Destroy;
+begin
+Clear;
+inherited;
+end;
+
 //------------------------------------------------------------------------------
 
-Function TUNSHashedNodeList.IndexOf_Iter(Name: TUNSHashedString): Integer;
+Function TUNSNodeList.LowIndex: Integer;
+begin
+Result := Low(fItems);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TUNSNodeList.HighIndex: Integer;
+begin
+Result := Pred(fCount);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TUNSNodeList.Find(Name: TUNSHashedString; out Node: TUNSNodeBase): Boolean;
+var
+  Index:  Integer;
+begin
+Index := IndexOf(Name);
+If CheckIndex(Index) then
+  begin
+    Node := fItems[Index].Node;
+    Result := True;
+  end
+else
+  begin
+    Node := nil;
+    Result := False;
+  end;
+end;
+
+//------------------------------------------------------------------------------
+
+Function TUNSNodeList.Find(const Name: String; out Node: TUNSNodeBase): Boolean;
+begin
+Result := Find(UNSHashedString(Name),Node);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TUNSNodeList.IndexOf(Node: TUNSNodeBase): Integer;
+var
+  i:  Integer;
+begin
+Result := -1;
+For i := LowIndex to HighIndex do
+  If fItems[i].Node = Node then
+    begin
+      Result := i;
+      Break{For i};
+    end;
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function TUNSNodeList.IndexOf(Name: TUNSHashedString): Integer;
 var
   i:  Integer;
 begin
@@ -116,35 +184,85 @@ For i := LowIndex to HighIndex do
     end;
 end;
 
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function TUNSNodeList.IndexOf(const Name: String): Integer;
+begin
+Result := IndexOf(UNSHashedString(Name));
+end;
+
 //------------------------------------------------------------------------------
 
-Function TUNSHashedNodeList.IndexOf_Bin(Name: TUNSHashedString): Integer;
-var
-  LowIdx:   Integer;
-  HighIdx:  Integer;
-  Index:    Integer;  
-  Temp:     Int64;
+Function TUNSNodeList.Add(Name: TUNSHashedString; Node: TUNSNodeBase): Integer;
 begin
-Result := -1;
-LowIdx := LowIndex;
-HighIdx := HighIndex;
-while HighIdx >= LowIdx do
+Result := IndexOf(Name);
+If not CheckIndex(Result) then
   begin
-    Index := ((HighIdx - LowIdx) shr 1) + LowIdx;
-    Temp := Int64(fItems[Index].Name.Hash) - Int64(Name.Hash);
-    If Temp > 0 then
-      HighIdx := Index - 1
-    else If Temp < 0 then
-      LowIdx := Index + 1 
-    else {Temp = 0}
-      begin
-        Result := Index;
-        Break{while};
-      end;
-  end;
+    Grow;
+    Result := fCount;
+    fItems[Result].Name := Name;
+    fItems[Result].Node := Node;
+    Inc(fCount);
+  end
+else If Node <> fItems[Result].Node then
+  raise EUNSException.CreateFmt('Name "%s" is already registered for different node.',[Name.Str],Self,'Add');
 end;
- 
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function TUNSNodeList.Add(const Name: String; Node: TUNSNodeBase): Integer;
+begin
+Result := Add(UNSHashedString(Name),Node);
+end;
+
 //------------------------------------------------------------------------------
+
+Function TUNSNodeList.Remove(Node: TUNSNodeBase): Integer;
+begin
+Result := IndexOf(Node);
+If CheckIndex(Result) then
+  Delete(Result);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function TUNSNodeList.Remove(Name: TUNSHashedString): Integer;
+begin
+Result := IndexOf(Name);
+If CheckIndex(Result) then
+  Delete(Result);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function TUNSNodeList.Remove(const Name: String): Integer;
+begin
+Result := Remove(UNSHashedString(Name));
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TUNSNodeList.Delete(Index: Integer);
+var
+  i:  Integer;
+begin
+If CheckIndex(Index) then
+  begin
+    For i := Index to Pred(HighIndex) do
+      fItems[i] := fItems[i + 1];
+    Dec(fCount);
+  end
+else raise EUNSIndexOutOfBoundsException.Create(Index,Self,'Delete');
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+procedure TUNSNodeList.Clear;
+begin
+fCount := 0;
+end;
+
+//******************************************************************************
 
 Function TUNSHashedNodeList.IndexForAddition(Name: TUNSHashedString): Integer;
 var
@@ -166,82 +284,35 @@ end;
 
 //==============================================================================
 
-destructor TUNSHashedNodeList.Destroy;
-begin
-Clear;
-inherited;
-end;
-
-//------------------------------------------------------------------------------
-
-Function TUNSHashedNodeList.LowIndex: Integer;
-begin
-Result := Low(fItems);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TUNSHashedNodeList.HighIndex: Integer;
-begin
-Result := Pred(fCount);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TUNSHashedNodeList.Find(Name: TUNSHashedString; out Node: TUNSNodeBase): Boolean;
-var
-  Index:  Integer;
-begin
-Index := IndexOf(Name);
-If CheckIndex(Index) then
-  begin
-    Node := fItems[Index].Node;
-    Result := True;
-  end
-else
-  begin
-    Node := nil;
-    Result := False;
-  end;
-end;
-
-//------------------------------------------------------------------------------
-
-Function TUNSHashedNodeList.Find(const Name: String; out Node: TUNSNodeBase): Boolean;
-begin
-Result := Find(UNSHashedString(Name),Node);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TUNSHashedNodeList.IndexOf(Node: TUNSNodeBase): Integer;
-var
-  i:  Integer;
-begin
-Result := -1;
-For i := LowIndex to HighIndex do
-  If fItems[i].Node = Node then
-    begin
-      Result := i;
-      Break{For i};
-    end;
-end;
-
-// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
 Function TUNSHashedNodeList.IndexOf(Name: TUNSHashedString): Integer;
+var
+  LowIdx:   Integer;
+  HighIdx:  Integer;
+  Index:    Integer;  
+  Temp:     Int64;
 begin
 If fCount > 8 then
-  Result := IndexOf_Bin(Name)
-else
-  Result := IndexOf_Iter(Name)
-end;
-
-// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-Function TUNSHashedNodeList.IndexOf(const Name: String): Integer;
-begin
-Result := IndexOf(UNSHashedString(Name));
+  begin
+    Result := -1;
+    LowIdx := LowIndex;
+    HighIdx := HighIndex;
+    while HighIdx >= LowIdx do
+      begin
+        Index := ((HighIdx - LowIdx) shr 1) + LowIdx;
+        Temp := Int64(fItems[Index].Name.Hash) - Int64(Name.Hash);
+        If Temp > 0 then
+          HighIdx := Index - 1
+        else If Temp < 0 then
+          LowIdx := Index + 1
+        else If UNSSameHashString(fItems[Index].Name,Name,True) then
+          begin
+            Result := Index;
+            Break{while};
+          end
+        else Break{while};  // return -1
+      end;
+  end
+else Result := inherited IndexOf(Name)
 end;
 
 //------------------------------------------------------------------------------
@@ -253,72 +324,16 @@ begin
 Result := IndexOf(Name);
 If not CheckIndex(Result) then
   begin
-    If Length(fItems) <= fCount then
-      SetLength(fItems,Length(fItems) + 32);
+    Grow;
     Result := IndexForAddition(Name);
     For i := HighIndex downto Result do
       fItems[i + 1] := fItems[i];
     fItems[Result].Name := Name;
-    fItems[Result].Node := Node;  
+    fItems[Result].Node := Node;
     Inc(fCount);
   end
 else If Node <> fItems[Result].Node then
   raise EUNSException.CreateFmt('Name "%s" is already registered for different node.',[Name.Str],Self,'Add');
-end;
-
-// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-Function TUNSHashedNodeList.Add(const Name: String; Node: TUNSNodeBase): Integer;
-begin
-Result := Add(UNSHashedString(Name),Node);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TUNSHashedNodeList.Remove(Node: TUNSNodeBase): Integer;
-begin
-Result := IndexOf(Node);
-If CheckIndex(Result) then
-  Delete(Result);
-end;
-
-// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-Function TUNSHashedNodeList.Remove(Name: TUNSHashedString): Integer;
-begin
-Result := IndexOf(Name);
-If CheckIndex(Result) then
-  Delete(Result);
-end;
-
-// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-Function TUNSHashedNodeList.Remove(const Name: String): Integer;
-begin
-Result := Remove(UNSHashedString(Name));
-end;
-
-//------------------------------------------------------------------------------
-
-procedure TUNSHashedNodeList.Delete(Index: Integer);
-var
-  i:  Integer;
-begin
-If CheckIndex(Index) then
-  begin
-    For i := Index to Pred(HighIndex) do
-      fItems[i] := fItems[i + 1];
-    Dec(fCount);
-  end
-else raise EUNSIndexOutOfBoundsException.Create(Index,Self,'Delete');
-end;
-
-// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-procedure TUNSHashedNodeList.Clear;
-begin
-fCount := 0;
-SetLength(fItems,0);
 end;
 
 end.

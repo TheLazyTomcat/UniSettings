@@ -15,6 +15,7 @@ type
     fName:          TUNSHashedString;
     fParentNode:    TUNSNodeBase;
     fMaster:        TObject;
+    fAdditionIdx:   Integer;
     fFlags:         TUNSValueFlags;
     fConvSettings:  TFormatSettings;
     fChanged:       Boolean;
@@ -52,6 +53,7 @@ type
     property NameStr: String read fName.Str write SetNodeNameStr;
     property ParentNode: TUNSNodeBase read fParentNode;
     property Master: TObject read fMaster write SetMaster;
+    property AdditionIndex: Integer read fAdditionIdx write fAdditionIdx;
     property NodeLevel: Integer read GetNodeLevel;
     property MaxNodeLevel: Integer read GetMaxNodeLevel;    
     property Flags: TUNSValueFlags read fFlags write fFlags;
@@ -64,7 +66,6 @@ Function UNSIsLeafNode(Node: TUNSNodeBase): Boolean;
 Function UNSIsLeafNodeOfValueType(Node: TUNSNodeBase; ValueType: TUNSValueType): Boolean;
 Function UNSCompatibleNodes(Node1,Node2: TUNSNodeBase): Boolean;
 Function UNSIsPrimitiveArrayNode(Node: TUNSNodeBase): Boolean;
-
 
 implementation
 
@@ -269,6 +270,7 @@ UniqueString(fName.Str);
 UNSHashString(fName);
 fParentNode := ParentNode;
 fMaster := nil;
+fAdditionIdx := -1;
 fFlags := [];
 FillChar(fConvSettings,SizeOf(fConvSettings),0);
 fConvSettings.DecimalSeparator := '.';
