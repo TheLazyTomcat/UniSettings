@@ -887,16 +887,22 @@ end;
 //------------------------------------------------------------------------------
 
 procedure TUniSettings.OnNodeChangeHandler(Sender: TObject; Node: TUNSNodeBase);
+var
+  TempStr:  String;
 begin
 fChanged := True;
 If (fChangeCounter <= 0) then
   begin
     If UNSIsLeafNode(Node) then
       begin
-        If Assigned(fOnValueChange) then
-          fOnValueChange(Self,Node.ReconstructFullName(False));
-        If Assigned(fOnValueChangeCB) then
-          fOnValueChangeCB(Self,Node.ReconstructFullName(False));
+        If Assigned(fOnValueChange) Or Assigned(fOnValueChangeCB) then
+          begin
+            TempStr := Node.ReconstructFullName(False);
+            If Assigned(fOnValueChange) then
+              fOnValueChange(Self,TempStr);
+            If Assigned(fOnValueChangeCB) then
+              fOnValueChangeCB(Self,TempStr);
+          end;
       end
     else
       begin
