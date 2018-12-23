@@ -17,7 +17,7 @@ Function UNSIsValidIdentifier(const Identifier: String): Boolean;
 
 Function UNSIsValidName(const Name: String): Boolean;
 
-Function UNSSameHashString(A,B: TUNSHashedString; FullEval: Boolean = False): Boolean;
+Function UNSSameHashString(A,B: TUNSHashedString; FullEval: Boolean = True): Boolean;
 
 procedure UNSHashString(var HashStr: TUNSHashedString);
 
@@ -108,7 +108,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function UNSSameHashString(A,B: TUNSHashedString; FullEval: Boolean = False): Boolean;
+Function UNSSameHashString(A,B: TUNSHashedString; FullEval: Boolean = True): Boolean;
 begin
 If SameCRC32(A.Hash,B.Hash) then
   begin
