@@ -1235,7 +1235,7 @@ var
   TempBuffer: TMemoryBuffer;
 {$ENDIF}
 begin
-ChangesPropagation(False);
+BeginChanging;
 try
   Clear(ValueKind);
 {$IFDEF UNS_NodeAoBuffer}
@@ -1256,7 +1256,7 @@ try
     Add(0,ValueKind);
   {$IFEND}
 finally
-  ChangesPropagation(True);
+  EndChanging;
 end;
 DoChange;
 end;

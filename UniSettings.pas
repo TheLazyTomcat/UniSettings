@@ -10,11 +10,12 @@ todo (* = completed):
 * TUniSettings copy constructor
 * make copies thread safe
 * integer can be 64bit...
-  per value change tracking (rework change system)
+* per value change tracking (rework change system)
 * remove flags from values (let's leave them there for now)
 * remove IS where possible, replace with node type checks
 * remove IsPrimitiveArray method
-  hashes (branch list, node list)
+* hashes (branch list, node list)
+  hashed node list in US
 * replace direct access to cd arrays with CDA_GetItemPtr
 * ToString/FromString - en(/de)code strings, do not do it in lexer
 
@@ -60,7 +61,10 @@ type
     fAdditionCounter:     Integer;
     fChangeCounter:       Integer;
     fChanged:             Boolean;
-    fOnChange:            TNotifyEvent;
+    fOnTreeChange:        TNotifyEvent;
+    fOnTreeChangeCB:      TNotifyCallback;
+    fOnValueChange:       TStringEvent;
+    fOnValueChangeCB:     TStringCallback;
     Function GetValueFormatSettings: TUNSValueFormatSettings;
     Function GetValueFormatSettingBool(Index: Integer): Boolean;
     procedure SetValueFormatSettingBool(Index: Integer; Value: Boolean);
@@ -80,9 +84,9 @@ type
     Function CheckedLeafNodeAccessIsArray(const NodeName, Caller: String; out Node: TUNSNodeLeaf; out ValueKind: TUNSValueKind; out Index: Integer): Boolean; virtual;
     Function CheckedLeafNodeTypeAccessIsArray(const NodeName: String; ValueType: TUNSValueType; const Caller: String; out Node: TUNSNodeLeaf; out ValueKind: TUNSValueKind; out Index: Integer): Boolean; virtual;
     procedure ConstructionInitialization; virtual;
-    procedure ChangingStart;
-    procedure ChangingEnd;
-    procedure OnChangeHandler(Sender: TObject); virtual;
+    procedure BeginChanging;
+    procedure EndChanging;
+    procedure OnNodeChangeHandler(Sender: TObject; Node: TUNSNodeBase); virtual;
     constructor Create(RootNode: TUNSNodeBranch); overload;
   public
     constructor Create; overload;
@@ -326,7 +330,12 @@ type
     property HexDateTime: Boolean index UNS_VALUEFORMATSETTING_INDEX_HEXDTTM
       read GetValueFormatSettingBool write SetValueFormatSettingBool;
     //--- Events ---------------------------------------------------------------
-    property OnChange: TNotifyEvent read fOnChange write fOnChange;
+    property OnTreeChange: TNotifyEvent read fOnTreeChange write fOnTreeChange;
+    property OnTreeChangeEvent: TNotifyEvent read fOnTreeChange write fOnTreeChange;
+    property OnTreeChangeCallback: TNotifyCallback read fOnTreeChangeCB write fOnTreeChangeCB;
+    property OnValueChange: TStringEvent read fOnValueChange write fOnValueChange;
+    property OnValueChangeEvent: TStringEvent read fOnValueChange write fOnValueChange;
+    property OnValueChangeCallback: TStringCallback read fOnValueChangeCB write fOnValueChangeCB;
   end;
 
 implementation
@@ -853,7 +862,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-procedure TUniSettings.ChangingStart;
+procedure TUniSettings.BeginChanging;
 begin
 Inc(fChangeCounter);
 fChanged := False;
@@ -861,24 +870,42 @@ end;
 
 //------------------------------------------------------------------------------
 
-procedure TUniSettings.ChangingEnd;
+procedure TUniSettings.EndChanging;
 begin
 Dec(fChangeCounter);
 If (fChangeCounter <= 0) and fChanged then
   begin
     fChangeCounter := 0;
-    OnChangeHandler(Self);
+    If Assigned(fOnTreeChange) then
+      fOnTreeChange(Self);
+    If Assigned(fOnTreeChangeCB) then
+      fOnTreeChangeCB(Self);
     fChanged := False;
   end;
 end;
 
 //------------------------------------------------------------------------------
 
-procedure TUniSettings.OnChangeHandler(Sender: TObject);
+procedure TUniSettings.OnNodeChangeHandler(Sender: TObject; Node: TUNSNodeBase);
 begin
 fChanged := True;
-If (fChangeCounter <= 0) and Assigned(fOnChange) then
-  fOnChange(Self);
+If (fChangeCounter <= 0) then
+  begin
+    If UNSIsLeafNode(Node) then
+      begin
+        If Assigned(fOnValueChange) then
+          fOnValueChange(Self,Node.ReconstructFullName(False));
+        If Assigned(fOnValueChangeCB) then
+          fOnValueChangeCB(Self,Node.ReconstructFullName(False));
+      end
+    else
+      begin
+        If Assigned(fOnTreeChange) then
+          fOnTreeChange(Self);
+        If Assigned(fOnTreeChangeCB) then
+          fOnTreeChangeCB(Self);
+      end;
+  end;
 end;
 
 //------------------------------------------------------------------------------
@@ -890,14 +917,17 @@ fValueFormatSettings := UNS_VALUEFORMATSETTINGS_DEFAULT;
 fSynchronizer := TMultiReadExclusiveWriteSynchronizer.Create;
 fRootNode := RootNode;
 fRootNode.Master := Self;
-fRootNode.OnChange := OnChangeHandler;
+fRootNode.OnChange := OnNodeChangeHandler;
 fWorkingBranch := '';
 fWorkingNode := fRootNode;
 fParser := TUNSParser.Create(AddNode);
 fAdditionCounter := 0;
 fChangeCounter := 0;
 fChanged := False;
-fOnChange := nil;
+fOnTreeChange := nil;
+fOnTreeChangeCB := nil;
+fOnValueChange := nil;
+fOnValueChangeCB := nil;
 end;
 
 //==============================================================================
@@ -1408,11 +1438,11 @@ Function TUniSettings.AddNoLock(const ValueName: String; ValueType: TUNSValueTyp
 var
   NewNode:  TUNSNodeLeaf;
 begin
-ChangingStart;
+BeginChanging;
 try
   Result := AddNode(ValueName,ValueType,NewNode);
 finally
-  ChangingEnd;
+  EndChanging;
 end;
 end;
 
@@ -1440,7 +1470,7 @@ begin
 Result := False;
 If UNSNameParts(ValueName,NameParts) > 0 then
   begin
-    ChangingStart;
+    BeginChanging;
     try
       If NameParts.EndsWithIndex then
         begin
@@ -1479,7 +1509,7 @@ If UNSNameParts(ValueName,NameParts) > 0 then
             Result := TUNSNodeBranch(Node.ParentNode).Remove(Node) >= 0;
         end;
     finally
-      ChangingEnd;
+      EndChanging;
     end;
   end;
 end;
@@ -1488,11 +1518,11 @@ end;
 
 procedure TUniSettings.ClearNoLock;
 begin
-ChangingStart;
+BeginChanging;
 try
   fWorkingNode.Clear;
 finally
-  ChangingEnd;
+  EndChanging;
 end;
 end;
 
@@ -1608,11 +1638,11 @@ end;
 
 procedure TUniSettings.ValueKindMoveNoLock(Src,Dest: TUNSValueKind);
 begin
-ChangingStart;
+BeginChanging;
 try
   fWorkingNode.ValueKindMove(Src,Dest);
 finally
-  ChangingEnd;
+  EndChanging;
 end;
 end;
 
@@ -1620,11 +1650,11 @@ end;
 
 procedure TUniSettings.ValueKindExchangeNoLock(ValA,ValB: TUNSValueKind);
 begin
-ChangingStart;
+BeginChanging;
 try
   fWorkingNode.ValueKindExchange(ValA,ValB);
 finally
-  ChangingEnd;
+  EndChanging;
 end;
 end;
 
@@ -1639,11 +1669,11 @@ end;
 
 procedure TUniSettings.ActualFromDefaultNoLock;
 begin
-ChangingStart;
+BeginChanging;
 try
   fWorkingNode.ActualFromDefault;
 finally
-  ChangingEnd;
+  EndChanging;
 end;
 end;
 
@@ -1651,11 +1681,11 @@ end;
 
 procedure TUniSettings.DefaultFromActualNoLock;
 begin
-ChangingStart;
+BeginChanging;
 try
   fWorkingNode.DefaultFromActual;
 finally
-  ChangingEnd;
+  EndChanging;
 end;
 end;
 
@@ -1663,11 +1693,11 @@ end;
 
 procedure TUniSettings.ExchangeActualAndDefaultNoLock;
 begin
-ChangingStart;
+BeginChanging;
 try
   fWorkingNode.ExchangeActualAndDefault;
 finally
-  ChangingEnd;
+  EndChanging;
 end;
 end;
 
@@ -1682,11 +1712,11 @@ end;
 
 procedure TUniSettings.SaveNoLock;
 begin
-ChangingStart;
+BeginChanging;
 try
   fWorkingNode.Save;
 finally
-  ChangingEnd;
+  EndChanging;
 end;
 end;
 
@@ -1694,11 +1724,11 @@ end;
 
 procedure TUniSettings.RestoreNoLock;
 begin
-ChangingStart;
+BeginChanging;
 try
   fWorkingNode.Restore;
 finally
-  ChangingEnd;
+  EndChanging;
 end;
 end;
 

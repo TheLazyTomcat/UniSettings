@@ -277,7 +277,7 @@ For i := LowIndex to HighIndex do
           Result := i;
           Break{For i}
         end
-      else raise EUNSException.CreateFmt('Hash collision for names %s and %s.',
+      else raise EUNSException.CreateFmt('Hash collision for names "%s" and "%s".',
         [Name.Str,fItems[i].Name.Str],Self,'IndexForAddition');
     end;
 end;

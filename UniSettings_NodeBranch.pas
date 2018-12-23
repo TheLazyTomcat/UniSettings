@@ -18,6 +18,7 @@ type
     procedure SetMaster(Value: TObject); override;
     Function GetMaxNodeLevel: Integer; override;
     Function CreateSubNodesList: TUNSNodeList; virtual;
+    procedure SubNodeChangeHandler(Sender: TObject; Node: TUNSNodeBase); virtual;
   public
     constructor Create(const Name: String; ParentNode: TUNSNodeBase);
     constructor CreateAsCopy(Source: TUNSNodeBase; const Name: String; ParentNode: TUNSNodeBase);
@@ -106,6 +107,14 @@ begin
 Result := TUNSHashedNodeList.Create;
 end;
 
+//------------------------------------------------------------------------------
+
+procedure TUNSNodeBranch.SubNodeChangeHandler(Sender: TObject; Node: TUNSNodeBase);
+begin
+If Assigned(fOnChange) then
+  fOnChange(Self,Node);
+end;
+
 //==============================================================================
 
 constructor TUNSNodeBranch.Create(const Name: String; ParentNode: TUNSNodeBase);
@@ -137,7 +146,7 @@ end;
 
 Function TUNSNodeBranch.LowIndex: Integer;
 begin
-Result := fSubNodes.LowIndex;;
+Result := fSubNodes.LowIndex;
 end;
 
 //------------------------------------------------------------------------------
@@ -181,12 +190,7 @@ Function TUNSNodeBranch.Add(Node: TUNSNodeBase): Integer;
 begin
 Result := fSubNodes.Add(Node.Name,Node);
 fSubNodes[Result].Node.Master := fMaster;
-{
-  The handler assigned here should be invariant for the entire lifetime of this
-  node, so there is no need for a redirection to a dynamic handler method that
-  will call actual fOnChange.
-}
-fSubNodes[Result].Node.OnChange := fOnChange;
+fSubNodes[Result].Node.OnChange := SubNodeChangeHandler;
 DoChange;
 end;
 

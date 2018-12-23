@@ -10,26 +10,30 @@ uses
   UniSettings_Common;
 
 type
+  TUNSNodeBase = class; // forward declaration for the following event type 
+
+  TUNSNodeChangeEvent = procedure(Sender: TObject; Node: TUNSNodeBase) of object;
+
   TUNSNodeBase = class(TCustomObject)
   protected
-    fName:          TUNSHashedString;
-    fParentNode:    TUNSNodeBase;
-    fMaster:        TObject;
-    fAdditionIdx:   Integer;
-    fFlags:         TUNSValueFlags;
-    fConvSettings:  TFormatSettings;
-    fChanged:       Boolean;
-    fChangesProp:   Boolean;
-    fOnChange:      TNotifyEvent;
+    fName:            TUNSHashedString;
+    fParentNode:      TUNSNodeBase;
+    fMaster:          TObject;
+    fAdditionIdx:     Integer;
+    fFlags:           TUNSValueFlags;
+    fConvSettings:    TFormatSettings;
+    fChanged:         Boolean;
+    fChangeCounter:   Integer;
+    fOnChange:        TUNSNodeChangeEvent;
     class Function GetNodeType: TUNSNodeType; virtual;
     procedure SetNodeNameStr(const Value: String); virtual;
     procedure SetMaster(Value: TObject); virtual;
     Function GetNodeLevel: Integer; virtual;
     Function GetMaxNodeLevel: Integer; virtual;
-    procedure SetChanged(Value: Boolean); virtual;
     Function ReconstructFullNameInternal(TopLevelCall: Boolean; IncludeRoot: Boolean): String; virtual;
     Function ValueFormatSettings: TUNSValueFormatSettings; virtual;
-    procedure ChangesPropagation(Enable: Boolean); virtual;
+    procedure BeginChanging; virtual;
+    procedure EndChanging; virtual;
     procedure DoChange; virtual;
   public
     constructor Create(const Name: String; ParentNode: TUNSNodeBase);
@@ -57,8 +61,7 @@ type
     property NodeLevel: Integer read GetNodeLevel;
     property MaxNodeLevel: Integer read GetMaxNodeLevel;    
     property Flags: TUNSValueFlags read fFlags write fFlags;
-    property Changed: Boolean read fChanged write SetChanged;
-    property OnChange: TNotifyEvent read fOnChange write fOnChange;
+    property OnChange: TUNSNodeChangeEvent read fOnChange write fOnChange;
   end;
 
 Function UNSIsBranchNode(Node: TUNSNodeBase): Boolean;
@@ -183,18 +186,6 @@ end;
 
 //------------------------------------------------------------------------------
 
-procedure TUNSNodeBase.SetChanged(Value: Boolean);
-begin
-If Value <> fChanged then
-  begin
-    fChanged := Value;
-    If Value and Assigned(fParentNode) then
-      fParentNode.Changed := Value;
-  end;
-end;
-
-//------------------------------------------------------------------------------
-
 Function TUNSNodeBase.ReconstructFullNameInternal(TopLevelCall: Boolean; IncludeRoot: Boolean): String;
 var
   TempStr:  String;
@@ -246,18 +237,33 @@ end;
 
 //------------------------------------------------------------------------------
 
-procedure TUNSNodeBase.ChangesPropagation(Enable: Boolean);
+procedure TUNSNodeBase.BeginChanging;
 begin
-fChangesProp := Enable;
+Inc(fChangeCounter);
+fChanged := False;
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TUNSNodeBase.EndChanging;
+begin
+Dec(fChangeCounter);
+If (fChangeCounter <= 0) and fChanged then
+  begin
+    fChangeCounter := 0;  
+    If Assigned(fOnChange) then
+      fOnChange(Self,Self);
+    fChanged := False;
+  end;
 end;
 
 //------------------------------------------------------------------------------
 
 procedure TUNSNodeBase.DoChange;
 begin
-SetChanged(True);
-If Assigned(fOnChange) and fChangesProp then
-  fOnChange(Self);
+fChanged := True;
+If Assigned(fOnChange) and (fChangeCounter <= 0) then
+  fOnChange(Self,Self);
 end;
 
 //==============================================================================
@@ -281,7 +287,7 @@ fConvSettings.LongTimeFormat := 'hh:nn:ss';
 fConvSettings.ShortTimeFormat := fConvSettings.LongTimeFormat;
 fConvSettings.TimeSeparator := ':';
 fChanged := False;
-fChangesProp := True;
+fChangeCounter := 0;
 fOnChange := nil;
 end;
 
