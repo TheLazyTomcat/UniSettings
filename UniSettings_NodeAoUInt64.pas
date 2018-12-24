@@ -30,7 +30,7 @@ implementation
 
 uses
   SysUtils,
-  BinaryStreaming,
+  BinaryStreaming, UInt64Utils,
   UniSettings_Exceptions;
 
 type
@@ -72,16 +72,16 @@ end;
 Function TUNSNodeClassType.ConvItemToStr(const Value: TUNSNodeValueItemType): String;
 begin
 If ValueFormatSettings.HexIntegers then
-  Result := '$' + IntToHex(Value,16)
+  Result := '$' + UInt64ToHex(Value)
 else
-  Result := IntToStr(Value);
+  Result := UInt64ToStr(Value);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TUNSNodeClassType.ConvItemFromStr(const Str: String): TUNSNodeValueItemType;
 begin
-Result := TUNSNodeValueItemType(StrToInt64(Str));
+Result := TUNSNodeValueItemType(StrToUInt64(Str));
 end;
 
 //------------------------------------------------------------------------------

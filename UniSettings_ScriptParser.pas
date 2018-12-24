@@ -32,10 +32,6 @@
   field_1
   ...
   field_n
-
--- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
-
-#property property_name new_property_value  
 *)
 unit UniSettings_ScriptParser;
 

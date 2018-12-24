@@ -157,13 +157,13 @@ type
     Function AddNoLock(const ValueName: String; ValueType: TUNSValueType): Boolean; virtual;
     Function RemoveNoLock(const ValueName: String): Boolean; virtual;
     procedure ClearNoLock; virtual;
-    Function ListValuesNoLock(Strings: TStrings; PreserveAdditionOrder: Boolean = False): Integer; virtual;
+    Function ListValuesNoLock(Strings: TStrings): Integer; virtual;
     //--- Values management (lock) ---------------------------------------------
     Function Exists(const ValueName: String): Boolean; virtual;
     Function Add(const ValueName: String; ValueType: TUNSValueType): Boolean; virtual;
     Function Remove(const ValueName: String): Boolean; virtual;
     procedure Clear; virtual;
-    Function ListValues(Strings: TStrings; PreserveAdditionOrder: Boolean = False): Integer; virtual;
+    Function ListValues(Strings: TStrings): Integer; virtual;
     //--- General value access (no lock) ---------------------------------------
     procedure ValueKindMoveNoLock(Src,Dest: TUNSValueKind); virtual;
     procedure ValueKindExchangeNoLock(ValA,ValB: TUNSValueKind); virtual;
@@ -1549,7 +1549,7 @@ end;
 
 //   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
 
-Function TUniSettings.ListValuesNoLock(Strings: TStrings; PreserveAdditionOrder: Boolean = False): Integer;
+Function TUniSettings.ListValuesNoLock(Strings: TStrings): Integer;
 var
   Sorter: TListQuickSorter;
 
@@ -1568,7 +1568,7 @@ var
 begin
 Strings.Clear;
 AddNodeToListing(fWorkingNode);
-If PreserveAdditionOrder and (Strings.Count > 0) then
+If Strings.Count > 1 then
   begin
     Sorter := TListQuickSorter.Create(Pointer(Strings),UNS_LV_Compare,UNS_LV_Exchange);
     try
@@ -1630,11 +1630,11 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function TUniSettings.ListValues(Strings: TStrings; PreserveAdditionOrder: Boolean = False): Integer;
+Function TUniSettings.ListValues(Strings: TStrings): Integer;
 begin
 ReadLock;
 try
-  Result := ListValuesNoLock(Strings,PreserveAdditionOrder);
+  Result := ListValuesNoLock(Strings);
 finally
   ReadUnlock;
 end;

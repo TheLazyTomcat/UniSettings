@@ -26,8 +26,8 @@ implementation
 
 uses
   SysUtils,
-  BinaryStreaming,
-  UniSettings_Exceptions, UniSettings_Utils;
+  BinaryStreaming, UInt64Utils,
+  UniSettings_Exceptions;
 
 type
   TUNSNodeClassType = TUNSNodeUInt64;
@@ -61,16 +61,16 @@ end;
 Function TUNSNodeClassType.ConvToStr(const Value: TUNSNodeValueType): String;
 begin
 If ValueFormatSettings.HexIntegers then
-  Result := '$' + IntToHex(Value,16)
+  Result := '$' + UInt64ToHex(Value)
 else
-  Result := UNSUInt64ToStr(Value);
+  Result := UInt64ToStr(Value);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TUNSNodeClassType.ConvFromStr(const Str: String): TUNSNodeValueType;
 begin
-Result := TUNSNodeValueType(UNSStrToUInt64(Str));
+Result := TUNSNodeValueType(StrToUInt64(Str));
 end;
 
 //==============================================================================
