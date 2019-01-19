@@ -19,8 +19,10 @@ type
   TUNSParserStruct = record
     Name:   String;
     Arr:    array of TUNSParserValue;
+    SigA:   UInt32;
     Count:  Integer;
     Data:   PtrInt;
+    SigB:   UInt32;
   end;
   PUNSParserStruct = ^TUNSParserStruct;
 
@@ -30,9 +32,17 @@ type
   TCDAArrayType = TUNSParserStruct;
   PCDAArrayType = PUNSParserStruct;
 
+{$DEFINE CDA_DisableFunc_ItemUnique}
+{$DEFINE CDA_HideFunc_CopyP}
+{$DEFINE CDA_HideFunc_Copy}
+
 {$DEFINE CDA_Interface}
 {$INCLUDE '.\CountedDynArrays.inc'}
 {$UNDEF CDA_Interface}
+
+// overridden functions
+Function CDA_Copy(const Src: TCDAArrayType; Index, Count: Integer): TCDAArrayType; overload;
+Function CDA_Copy(const Src: TCDAArrayType): TCDAArrayType; overload;
 
 implementation
 
@@ -40,9 +50,17 @@ uses
   SysUtils,
   ListSorters;
 
-Function CDA_CompareFunc(const A,B: TUNSParserValue): Integer;
+Function CDA_CompareFunc(const A,B: TUNSParserValue): Integer;{$IFDEF CanInline} inline; {$ENDIF}
 begin
 Result := -AnsiCompareText(A.Name,B.Name);
+end;
+
+//------------------------------------------------------------------------------
+
+procedure CDA_ItemUnique(var Item: TCDABaseType); {$IFDEF CanInline} inline; {$ENDIF}
+begin
+UniqueString(Item.Name);
+CDA_UniqueArray(Item.DefValStrs);
 end;
 
 //------------------------------------------------------------------------------
@@ -50,5 +68,23 @@ end;
 {$DEFINE CDA_Implementation}
 {$INCLUDE '.\CountedDynArrays.inc'}
 {$UNDEF CDA_Implementation}
+
+//------------------------------------------------------------------------------
+
+Function CDA_Copy(const Src: TCDAArrayType; Index, Count: Integer): TCDAArrayType;
+begin
+Result := _CDA_Copy(Src,Index,Count);
+Result.Name := Src.Name;
+UniqueString(Result.Name);
+end;
+
+//------------------------------------------------------------------------------
+
+Function CDA_Copy(const Src: TCDAArrayType): TCDAArrayType;
+begin
+Result := _CDA_Copy(Src);
+Result.Name := Src.Name;
+UniqueString(Result.Name);
+end;
 
 end.

@@ -15,8 +15,10 @@ uses
 type
   TTimeCountedDynArray = record
     Arr:    array of TTime;
+    SigA:   UInt32;
     Count:  Integer;
     Data:   PtrInt;
+    SigB:   UInt32;
   end;
   PTimeCountedDynArray = ^TTimeCountedDynArray;
 

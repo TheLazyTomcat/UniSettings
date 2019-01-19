@@ -154,7 +154,8 @@ var
   end;
 
 begin
-CDA_Clear(NameParts);
+CDA_Init(NameParts);
+NameParts.Valid := True; 
 If Length(Name) > 0 then
   begin
     Start := 1;
@@ -165,19 +166,27 @@ If Length(Name) > 0 then
 { - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -}
         If UNSCharInSet(Name[i],UNS_NAME_DELIMITERS) then
           begin
-            // last part was an (array) identifier
-            If CheckAndSetIdentifier(Copy(Name,Start,i - Start),TempPart.PartStr) then
+            If i < Length(Name) then
               begin
-                If Name[i] <> UNS_NAME_DELIMITER then
-                  TempPart.PartType := nptArrayIdentifier
-                else
-                  TempPart.PartType := nptIdentifier;
+                // last part was an (array) identifier
+                If CheckAndSetIdentifier(Copy(Name,Start,i - Start),TempPart.PartStr) then
+                  begin
+                    If UNSCharInSet(Name[i],UNS_NAME_BRACKETS_LEFT) then
+                      TempPart.PartType := nptArrayIdentifier
+                    else
+                      TempPart.PartType := nptIdentifier;
+                  end
+                else TempPart.PartType := nptInvalid;
+                TempPart.PartIndex := UNS_NAME_INDEX_DEFAULT;
+                CDA_Add(NameParts,TempPart);
+                PrevDelimiter := Name[i];
+                Start := i + 1;
               end
-            else TempPart.PartType := nptInvalid;
-            TempPart.PartIndex := UNS_NAME_INDEX_DEFAULT;
-            CDA_Add(NameParts,TempPart);
-            PrevDelimiter := Name[i];
-            Start := i + 1;
+            else
+              begin
+                NameParts.Valid := False;
+                Break{while i};
+              end;
           end
 { - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -}
         else If UNSCharInSet(Name[i],UNS_NAME_BRACKETS_RIGHT) then
@@ -196,7 +205,7 @@ If Length(Name) > 0 then
                     else
                       TempPart.PartType := nptInvalid;
                     end;
-                    // resolve to item number (not index!)
+                    // resolve the item number (not index!)
                     If (i - Start) = 2 then
                       case Name[Start + 1] of
                         '0','N','n':  TempPart.PartIndex := UNS_NAME_ARRAYITEM_NEW;
@@ -235,9 +244,10 @@ If Length(Name) > 0 then
             Start := i + 2; // delimiter is expected after the closing bracket
             Inc(i);
           end;
+{ - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -}
         Inc(i);
       end{while};
-{ - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -}
+
     // process last part if present (must be identifier, nothing else is allowed)
     If Start <= Length(Name) then
       begin
@@ -249,9 +259,8 @@ If Length(Name) > 0 then
         CDA_Add(NameParts,TempPart);
       end;
   end;
-{ - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -}
+
 // do sanity checks and set validity flag accordingly 
-NameParts.Valid := True;
 For i := CDA_Low(NameParts) to CDA_High(NameParts) do
   with CDA_GetItem(NameParts,i) do
     begin
@@ -262,7 +271,8 @@ For i := CDA_Low(NameParts) to CDA_High(NameParts) do
         nptArrayIdentifier:   // must be followed by index or item number, or must be last
           If i < CDA_Count(NameParts) then
             NameParts.Valid := CDA_GetItem(NameParts,i + 1).PartType in
-              [nptArrayIndex,nptArrayIndexSav,nptArrayIndexDef,nptArrayItem,nptArrayItemSav,nptArrayItemDef];
+                               [nptArrayIndex,nptArrayIndexSav,nptArrayIndexDef,
+                                nptArrayItem,nptArrayItemSav,nptArrayItemDef];
         nptArrayIndex,
         nptArrayIndexSav,
         nptArrayIndexDef,
@@ -279,11 +289,15 @@ For i := CDA_Low(NameParts) to CDA_High(NameParts) do
       If not NameParts.Valid then
         Break{For i};
     end;
+
+// set EndsWithIndex flag
 If CDA_Count(NameParts) > 0 then
   NameParts.EndsWithIndex := CDA_Last(NameParts).PartType in [nptArrayIndex,
     nptArrayIndexSav,nptArrayIndexDef,nptArrayItem,nptArrayItemSav,nptArrayItemDef]
 else
   NameParts.EndsWithIndex := False;
+
+// set function result
 If NameParts.Valid then
   Result := CDA_Count(NameParts)
 else

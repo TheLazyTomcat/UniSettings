@@ -13,12 +13,9 @@ type
     fArrayIndex:  Integer;
   protected
     class Function GetNodeType: TUNSNodeType; override;
-    procedure SetNodeNameStr(const Value: String); override;
-    procedure SetName(Value: TUNSHashedString); virtual;
     procedure SetArrayIndex(Value: Integer); virtual;
   public
     constructor Create(const Name: String; ParentNode: TUNSNodeBase);
-    property Name: TUNSHashedString read fName write SetName;
     property ArrayIndex: Integer read fArrayIndex write SetArrayIndex;
   end;
 
@@ -27,13 +24,6 @@ implementation
 uses
   SysUtils,
   UniSettings_Exceptions, UniSettings_Utils, UniSettings_NodeArray;
-
-procedure TUNSNodeArrayItem.SetName(Value: TUNSHashedString);
-begin
-// drop value
-end;
-
-//------------------------------------------------------------------------------
 
 procedure TUNSNodeArrayItem.SetArrayIndex(Value: Integer);
 begin
@@ -46,13 +36,6 @@ end;
 class Function TUNSNodeArrayItem.GetNodeType: TUNSNodeType;
 begin
 Result := ntArrayItem;
-end;
-
-//------------------------------------------------------------------------------
-
-procedure TUNSNodeArrayItem.SetNodeNameStr(const Value: String);
-begin
-// drop value
 end;
 
 //==============================================================================

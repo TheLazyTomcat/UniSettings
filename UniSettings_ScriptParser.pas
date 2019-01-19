@@ -52,8 +52,10 @@ type
 
   TUNSParserStructs = record
     Arr:    array of TUNSParserStruct;
+    SigA:   UInt32;
     Count:  Integer;
     Data:   PtrInt;
+    SigB:   UInt32;
   end;
   PUNSParserStructs = ^TUNSParserStructs;
 
@@ -62,6 +64,8 @@ type
 
   TCDAArrayType = TUNSParserStructs;
   PCDAArrayType = PUNSParserStructs;
+
+{$DEFINE CDA_DisableFunc_ItemUnique}
 
 {$DEFINE CDA_Interface}
 {$INCLUDE '.\CountedDynArrays.inc'}
@@ -123,9 +127,16 @@ uses
   UniSettings_Exceptions, UniSettings_Utils, UniSettings_NodePrimitiveArray,
   UniSettings_ScriptUtils;
 
-Function CDA_CompareFunc(const A,B: TUNSParserStruct): Integer;
+Function CDA_CompareFunc(const A,B: TUNSParserStruct): Integer; {$IFDEF CanInline} inline; {$ENDIF}
 begin
 Result := -AnsiCompareText(A.Name,B.Name);
+end;
+
+//------------------------------------------------------------------------------
+
+procedure CDA_ItemUnique(var Item: TCDABaseType); {$IFDEF CanInline} inline; {$ENDIF}
+begin
+CDA_UniqueArray(Item);
 end;
 
 //------------------------------------------------------------------------------
@@ -137,23 +148,11 @@ end;
 
 //******************************************************************************
 
-procedure UNSCopyParserValue(Src: TUNSParserValue; out Dest: TUNSParserValue);
+Function UNSCopyParserValue(const Src: TUNSParserValue): TUNSParserValue;
 begin
-Dest.Name := Src.Name;
-Dest.ValueType := Src.ValueType;
-Dest.DefValStrs := CDA_Copy(Src.DefValStrs);
-end;
-
-//------------------------------------------------------------------------------
-
-procedure UNSCopyParserStruct(Src: TUNSParserStruct; out Dest: TUNSParserStruct);
-var
-  i:  Integer;
-begin
-Dest := CDA_Copy(Src);
-For i := CDA_Low(Dest) to CDA_High(Dest) do
-  CDA_UniqueArray(CDA_GetItemPtr(Dest,i)^.DefValStrs);
-Dest.Name := Src.Name;
+Result.Name := Src.Name;
+Result.ValueType := Src.ValueType;
+Result.DefValStrs := CDA_Copy(Src.DefValStrs);
 end;
 
 //******************************************************************************
@@ -174,16 +173,12 @@ end;
 //------------------------------------------------------------------------------
 
 Function TUNSParser.StructAdd(Struct: TUNSParserStruct): Integer;
-var
-  NewItem:  TUNSParserStruct;
 begin
 Result := StructIndexOf(Struct.Name);
 If Result < 0 then
-  begin
-    UNSCopyParserStruct(Struct,NewItem);
-    Result := CDA_Add(fStructs,NewItem); 
-  end
-else raise EUNSParsingException.CreateFmt('Structure %s redeclared.',[Struct.Name],Self,'StructAdd','');
+  Result := CDA_Add(fStructs,CDA_Copy(Struct))
+else
+  raise EUNSParsingException.CreateFmt('Structure %s redeclared.',[Struct.Name],Self,'StructAdd','');
 end;
 
 //------------------------------------------------------------------------------
@@ -230,29 +225,29 @@ fPendingValue.ValueType := vtUndefined;
 CDA_Clear(fPendingValue.DefValStrs);
 If fLexer.Count >= 2 then
   begin
-    If fLexer[fLexer.LowIndex].LexemeType in [lxtIdentifier,lxtName,lxtUnparsedName] then
+    If fLexer[fLexer.LowIndex].TokenType in [ttIdentifier,ttName,ttUnparsedName] then
       begin
         // first token is alway a value name
-        If fLexer[fLexer.LowIndex].LexemeText[1] = UNS_SCRIPT_PREFIXAPPENDTAG then
+        If fLexer[fLexer.LowIndex].Lexeme[1] = UNS_SCRIPT_PREFIXAPPENDTAG then
           begin
             // prepend prefix... get prefix index from first char after the tag
-            PrefixIndex := StrToIntDef(fLexer[fLexer.LowIndex].LexemeText[2],-1);
+            PrefixIndex := StrToIntDef(fLexer[fLexer.LowIndex].Lexeme[2],-1);
             If PrefixIndex in UNS_SCRIPT_PREFIXRANGE then
               with fLexer[fLexer.LowIndex] do
-                fPendingValue.Name := fPrefixes[PrefixIndex] + Copy(LexemeText,3,Length(LexemeText) - 2)
+                fPendingValue.Name := fPrefixes[PrefixIndex] + Copy(Lexeme,3,Length(Lexeme) - 2)
             else
               raise EUNSParsingException.CreateFmt('Invalid prefix index (%d).',
                 [PrefixIndex],Self,'ParseValue',fLexer.Line);
           end
-        else fPendingValue.Name := fLexer[fLexer.LowIndex].LexemeText;
+        else fPendingValue.Name := fLexer[fLexer.LowIndex].Lexeme;
         // second token can be either value type identifier or expand subcommand
-        If UNSIsSubCommand(fLexer[fLexer.LowIndex + 1].LexemeText,sscExpand) then
+        If UNSIsSubCommand(fLexer[fLexer.LowIndex + 1].Lexeme,sscExpand) then
           Parsing_Value_Expand  // second token is an expand subcommand
         else
           Parsing_Value_Normal; // second token must be a type identifier
       end
     else raise EUNSParsingException.CreateFmt('Invalid value name (%s).',
-           [fLexer[fLexer.LowIndex].LexemeText],Self,'ParseValue',fLexer.Line);
+           [fLexer[fLexer.LowIndex].Lexeme],Self,'ParseValue',fLexer.Line);
   end
 else raise EUNSParsingException.CreateFmt('Token count (%d) too low.',
        [fLexer.Count],Self,'ParseValue',fLexer.Line);
@@ -265,13 +260,13 @@ var
   i:  Integer;
 begin
 // second token must be a type identifier
-fPendingValue.ValueType := UNSIdentifyValueType(fLexer[fLexer.LowIndex + 1].LexemeText);
+fPendingValue.ValueType := UNSIdentifyValueType(fLexer[fLexer.LowIndex + 1].Lexeme);
 If fPendingValue.ValueType <> vtUndefined then
   begin
     If fLexer.Count > 2 then
       begin
         // third token must be default value or defvalbegin subcommand
-        If UNSIsSubcommand(fLexer[fLexer.LowIndex + 2].LexemeText,sscDefValsBegin) then
+        If UNSIsSubcommand(fLexer[fLexer.LowIndex + 2].Lexeme,sscDefValsBegin) then
           begin
             // third token is a defvalbegin subcommand, value type must be an array
             If UNSIsArrayValueType(fPendingValue.ValueType) then
@@ -291,10 +286,10 @@ If fPendingValue.ValueType <> vtUndefined then
             If UNSIsArrayValueType(fPendingValue.ValueType) then
               // inline array of default values
               For i := (fLexer.LowIndex + 2) to Pred(fLexer.Count) do
-                CDA_Add(fPendingValue.DefValStrs,fLexer[fLexer.LowIndex + i].LexemeText)
+                CDA_Add(fPendingValue.DefValStrs,fLexer[fLexer.LowIndex + i].Lexeme)
             else
               // single default value
-              CDA_Add(fPendingValue.DefValStrs,fLexer[fLexer.LowIndex + 2].LexemeText);
+              CDA_Add(fPendingValue.DefValStrs,fLexer[fLexer.LowIndex + 2].Lexeme);
           end;
       end;
   end
@@ -313,12 +308,12 @@ begin
 // second token is an expand subcommand
 If fLexer.Count >= 3 then
   begin
-    If fLexer[fLexer.LowIndex + 2].LexemeType = lxtIdentifier then
+    If fLexer[fLexer.LowIndex + 2].TokenType = ttIdentifier then
       begin
-        StructIndex := StructIndexOf(fLexer[fLexer.LowIndex + 2].LexemeText);
+        StructIndex := StructIndexOf(fLexer[fLexer.LowIndex + 2].Lexeme);
         If StructIndex >= 0 then
           begin
-            UNSCopyParserStruct(CDA_GetItem(fStructs,StructIndex),fPendingExpansion);
+            fPendingExpansion := CDA_Copy(CDA_GetItem(fStructs,StructIndex));
             fPendingExpansion.Name := fPendingValue.Name;
             // expand names
             For i := CDA_Low(fPendingExpansion) to CDA_High(fPendingExpansion) do
@@ -328,7 +323,7 @@ If fLexer.Count >= 3 then
               begin
                 Parsing_Value_Expand_InitPendingDefVals;
                 // third token must be default value or defvalbegin subcommand
-                If UNSIsSubCommand(fLexer[fLexer.LowIndex + 3].LexemeText,sscDefValsBegin) then
+                If UNSIsSubCommand(fLexer[fLexer.LowIndex + 3].Lexeme,sscDefValsBegin) then
                   begin
                     // multiline default values
                     case fState of
@@ -344,11 +339,11 @@ If fLexer.Count >= 3 then
                     // inline default values
                     DefValsIdx := CDA_Low(fPendingDefVals);
                     For i := (fLexer.LowIndex + 3) to fLexer.HighIndex do
-                      If not UNSIsSubCommand(fLexer[i].LexemeText,sscOriginal) then
+                      If not UNSIsSubCommand(fLexer[i].Lexeme,sscOriginal) then
                         begin
                           If CDA_CheckIndex(fPendingDefVals,DefValsIdx) then
                             begin
-                              CDA_SetItem(fPendingDefVals,DefValsIdx,fLexer[i].LexemeText);
+                              CDA_SetItem(fPendingDefVals,DefValsIdx,fLexer[i].Lexeme);
                               Inc(DefValsIdx);
                             end
                           else Break{For i};
@@ -361,10 +356,10 @@ If fLexer.Count >= 3 then
             else  Parsing_Value_Expand_AddPendingExpansion(True); // add the expansion
           end
         else raise EUNSParsingException.CreateFmt('Undefined structure (%s).',
-               [fLexer[fLexer.LowIndex + 2].LexemeText],Self,'Parsing_ValueExpand',fLexer.Line);
+               [fLexer[fLexer.LowIndex + 2].Lexeme],Self,'Parsing_ValueExpand',fLexer.Line);
       end
     else raise EUNSParsingException.CreateFmt('Invalid structure name (%s).',
-           [fLexer[fLexer.LowIndex + 2].LexemeText],Self,'Parsing_ValueExpand',fLexer.Line);
+           [fLexer[fLexer.LowIndex + 2].Lexeme],Self,'Parsing_ValueExpand',fLexer.Line);
   end
 else raise EUNSParsingException.CreateFmt('Token count (%d) too low.',
        [fLexer.Count],Self,'Parsing_ValueExpand',fLexer.Line);
@@ -393,8 +388,8 @@ var
 begin
 PendingDefValsIdx := CDA_Low(fPendingDefVals);
 For ValIdx := CDA_Low(fPendingExpansion) to CDA_High(fPendingExpansion) do
-  For ValItemIdx := CDA_Low(CDA_GetItem(fPendingExpansion,ValIdx).DefValStrs) to
-                   CDA_High(CDA_GetItem(fPendingExpansion,ValIdx).DefValStrs) do
+  For ValItemIdx := CDA_Low(CDA_GetItemPtr(fPendingExpansion,ValIdx)^.DefValStrs) to
+                   CDA_High(CDA_GetItemPtr(fPendingExpansion,ValIdx)^.DefValStrs) do
     begin
       If PendingDefValsIdx <= CDA_High(fPendingDefVals) then
         begin
@@ -410,8 +405,7 @@ end;
 
 procedure TUNSParser.Parsing_Value_Expand_AddPendingExpansion(ResetState: Boolean);
 var
-  i:          Integer;
-  TempValue:  TUNSParserValue;
+  i:  Integer;
 begin
 case fState of
   psCommandAdd:
@@ -419,10 +413,7 @@ case fState of
       AddNewValue(CDA_GetItem(fPendingExpansion,i));
   psPendingStruct:
     For i := CDA_Low(fPendingExpansion) to CDA_High(fPendingExpansion) do
-      begin
-        UNSCopyParserValue(CDA_GetItem(fPendingExpansion,i),TempValue);
-        CDA_Add(fPendingStruct,TempValue);
-      end;
+      CDA_Add(fPendingStruct,UNSCopyParserValue(CDA_GetItem(fPendingExpansion,i)));
 else
   raise EUNSParsingException.CreateFmt('Invalid parser state (%d) for expansion.',
     [Ord(fState)],Self,'Parsing_ValueExpand_AddExpansion',fLexer.Line);
@@ -450,17 +441,17 @@ var
 begin
 If fLexer.Count >= 2 then
   begin
-    PrefixIndex := StrToIntDef(fLexer[fLexer.LowIndex].LexemeText,-1);
+    PrefixIndex := StrToIntDef(fLexer[fLexer.LowIndex].Lexeme,-1);
     If (PrefixIndex in UNS_SCRIPT_PREFIXRANGE) then
       begin
-        If fLexer[fLexer.LowIndex + 1].LexemeType in [lxtIdentifier,lxtName] then
-          fPrefixes[PrefixIndex] := fLexer[fLexer.LowIndex + 1].LexemeText
+        If fLexer[fLexer.LowIndex + 1].TokenType in [ttIdentifier,ttName] then
+          fPrefixes[PrefixIndex] := fLexer[fLexer.LowIndex + 1].Lexeme
         else
           raise EUNSParsingException.CreateFmt('Invalid prefix (%s)',
-            [fLexer[fLexer.LowIndex + 1].LexemeText],Self,'Parsing_CommandPrefix',fLexer.Line);
+            [fLexer[fLexer.LowIndex + 1].Lexeme],Self,'Parsing_CommandPrefix',fLexer.Line);
       end
     else raise EUNSParsingException.CreateFmt('Invalid prefix index (%s)',
-           [fLexer[fLexer.LowIndex].LexemeText],Self,'Parsing_CommandPrefix',fLexer.Line);
+           [fLexer[fLexer.LowIndex].Lexeme],Self,'Parsing_CommandPrefix',fLexer.Line);
   end
 else raise EUNSParsingException.CreateFmt('Token count (%d) too low.',
        [fLexer.Count],Self,'Parsing_CommandPrefix',fLexer.Line);
@@ -473,29 +464,24 @@ procedure TUNSParser.Parsing_CommandStruct;
 begin
 If fLexer.Count > 0 then
   begin
-    If fLexer[fLexer.LowIndex].LexemeType = lxtIdentifier then
+    If fLexer[fLexer.LowIndex].TokenType = ttIdentifier then
       begin
-        fPendingStruct.Name := fLexer[fLexer.LowIndex].LexemeText;
+        fPendingStruct.Name := fLexer[fLexer.LowIndex].Lexeme;
         fPendingStruct.Count := 0;
         fState := psPendingStruct;
       end
     else raise EUNSParsingException.CreateFmt('Invalid structure name (%s)',
-           [fLexer[fLexer.LowIndex].LexemeText],Self,'Parsing_CommandStruct',fLexer.Line);
+           [fLexer[fLexer.LowIndex].Lexeme],Self,'Parsing_CommandStruct',fLexer.Line);
   end;
 end;
 
 //------------------------------------------------------------------------------
 
 procedure TUNSParser.Parsing_PendingStruct;
-var
-  TempValue:  TUNSParserValue;
 begin
 Parsing_Value;
 If fState = psPendingStruct then
-  begin
-    UNSCopyParserValue(fPendingValue,TempValue);
-    CDA_Add(fPendingStruct,TempValue);
-  end
+  CDA_Add(fPendingStruct,UNSCopyParserValue(fPendingValue,))
 else If fState = psReset then
   fState := psPendingStruct;  
 end;
@@ -517,30 +503,27 @@ procedure TUNSParser.Parsing_AddPendingDefVals;
 begin
 If fLexer.Count > 0 then
   begin
-    If UNSIsSubCommand(fLexer[fLexer.LowIndex].LexemeText,sscDefValsEnd) then
+    If UNSIsSubCommand(fLexer[fLexer.LowIndex].Lexeme,sscDefValsEnd) then
       begin
         AddNewValue(fPendingValue);
         fState := psCommandAdd;
       end
-    else CDA_Add(fPendingValue.DefValStrs,fLexer[fLexer.LowIndex].LexemeText);
+    else CDA_Add(fPendingValue.DefValStrs,fLexer[fLexer.LowIndex].Lexeme);
   end;
 end;
 
 //------------------------------------------------------------------------------
 
 procedure TUNSParser.Parsing_StructPendingDefVals;
-var
-  TempValue:  TUNSParserValue;
 begin
 If fLexer.Count > 0 then
   begin
-    If UNSIsSubCommand(fLexer[fLexer.LowIndex].LexemeText,sscDefValsEnd) then
+    If UNSIsSubCommand(fLexer[fLexer.LowIndex].Lexeme,sscDefValsEnd) then
       begin
-        UNSCopyParserValue(fPendingValue,TempValue);
-        CDA_Add(fPendingStruct,TempValue);
+        CDA_Add(fPendingStruct,UNSCopyParserValue(fPendingValue));
         fState := psPendingStruct;
       end
-    else CDA_Add(fPendingValue.DefValStrs,fLexer[fLexer.LowIndex].LexemeText);
+    else CDA_Add(fPendingValue.DefValStrs,fLexer[fLexer.LowIndex].Lexeme);
   end;
 end;
 
@@ -550,7 +533,7 @@ procedure TUNSParser.Parsing_AddExpandPendingDefVals;
 begin
 If fLexer.Count > 0 then
   begin
-    If UNSIsSubCommand(fLexer[fLexer.LowIndex].LexemeText,sscDefValsEnd) then
+    If UNSIsSubCommand(fLexer[fLexer.LowIndex].Lexeme,sscDefValsEnd) then
       begin
         Parsing_Value_Expand_AssignPendingDefVals;
         fState := psCommandAdd;
@@ -558,9 +541,9 @@ If fLexer.Count > 0 then
       end
     else
       begin
-        If not UNSIsSubCommand(fLexer[fLexer.LowIndex].LexemeText,sscOriginal) and
+        If not UNSIsSubCommand(fLexer[fLexer.LowIndex].Lexeme,sscOriginal) and
           CDA_CheckIndex(fPendingDefVals,CDA_GetData(fPendingDefVals)) then
-            CDA_SetItem(fPendingDefVals,CDA_GetData(fPendingDefVals),fLexer[fLexer.LowIndex].LexemeText);
+            CDA_SetItem(fPendingDefVals,CDA_GetData(fPendingDefVals),fLexer[fLexer.LowIndex].Lexeme);
         CDA_SetData(fPendingDefVals,CDA_GetData(fPendingDefVals) + 1);
       end;
   end;
@@ -572,7 +555,7 @@ procedure TUNSParser.Parsing_StructExpandPendingDefVals;
 begin
 If fLexer.Count > 0 then
   begin
-    If UNSIsSubCommand(fLexer[fLexer.LowIndex].LexemeText,sscDefValsEnd) then
+    If UNSIsSubCommand(fLexer[fLexer.LowIndex].Lexeme,sscDefValsEnd) then
       begin
         Parsing_Value_Expand_AssignPendingDefVals;
         fState := psPendingStruct;
@@ -580,9 +563,9 @@ If fLexer.Count > 0 then
       end
     else
       begin
-        If not UNSIsSubCommand(fLexer[fLexer.LowIndex].LexemeText,sscOriginal) and
+        If not UNSIsSubCommand(fLexer[fLexer.LowIndex].Lexeme,sscOriginal) and
           CDA_CheckIndex(fPendingDefVals,CDA_GetData(fPendingDefVals)) then
-            CDA_SetItem(fPendingDefVals,CDA_GetData(fPendingDefVals),fLexer[fLexer.LowIndex].LexemeText);
+            CDA_SetItem(fPendingDefVals,CDA_GetData(fPendingDefVals),fLexer[fLexer.LowIndex].Lexeme);
         CDA_SetData(fPendingDefVals,CDA_GetData(fPendingDefVals) + 1);
       end;
   end;
@@ -595,9 +578,14 @@ begin
 inherited Create;
 fLexer := TUNSLexer.Create;
 fLexer.RemoveComments := True;
+CDA_Init(fStructs);
+fAddCounter := 0;
 fAddMethod := AddMethod;
 Initialize;
-fAddCounter := 0;
+CDA_Init(fPendingValue.DefValStrs);
+CDA_Init(fPendingStruct);
+CDA_Init(fPendingExpansion);
+CDA_Init(fPendingDefVals);
 end;
 
 //------------------------------------------------------------------------------
@@ -627,16 +615,16 @@ begin
 fLexer.ProcessLine(Line);
 If fLexer.Count > 0 then
   begin
-    If fLexer[fLexer.LowIndex].LexemeType = lxtCommand then
+    If fLexer[fLexer.LowIndex].TokenType = ttCommand then
       begin
         Parsing_PendingStruct_Close;
         with fLexer[fLexer.LowIndex] do
-          case UNSIndetifyCommand(Copy(LexemeText,2,Length(LexemeText) - 1)) of
+          case UNSIndetifyCommand(Copy(Lexeme,2,Length(Lexeme) - 1)) of
             scAdd:    fState := psCommandAdd;
             scPrefix: fState := psCommandPrefix;
             scStruct: fState := psCommandStruct;
           end;
-        fLexer.RemoveFirstLexeme;
+        fLexer.RemoveFirstToken;
       end;
     case fState of
       psReset:                      fState := psCommandAdd;

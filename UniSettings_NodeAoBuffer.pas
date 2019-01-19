@@ -15,8 +15,10 @@ uses
 type
   TBufferCountedDynArray = record
     Arr:    array of TMemoryBuffer;
+    SigA:   UInt32;
     Count:  Integer;
     Data:   PtrInt;
+    SigB:   UInt32;
   end;
   PBufferCountedDynArray = ^TBufferCountedDynArray;
 

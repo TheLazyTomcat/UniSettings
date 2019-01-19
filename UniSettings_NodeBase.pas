@@ -17,6 +17,7 @@ type
   TUNSNodeBase = class(TCustomObject)
   protected
     fName:            TUNSHashedString;
+    fFullName:        TUNSHashedString;
     fParentNode:      TUNSNodeBase;
     fMaster:          TObject;
     fAdditionIdx:     Integer;
@@ -26,7 +27,6 @@ type
     fChangeCounter:   Integer;
     fOnChange:        TUNSNodeChangeEvent;
     class Function GetNodeType: TUNSNodeType; virtual;
-    procedure SetNodeNameStr(const Value: String); virtual;
     procedure SetMaster(Value: TObject); virtual;
     Function GetNodeLevel: Integer; virtual;
     Function GetMaxNodeLevel: Integer; virtual;
@@ -53,8 +53,10 @@ type
     procedure Save; overload; virtual;
     procedure Restore; overload; virtual;
     property NodeType: TUNSNodeType read GetNodeType;
-    property Name: TUNSHashedString read fName write fName;       
-    property NameStr: String read fName.Str write SetNodeNameStr;
+    property Name: TUNSHashedString read fName;
+    property NameStr: String read fName.Str;
+    property FullName: TUNSHashedString read fFullName;
+    property FullNameStr: String read fFullName.Str;
     property ParentNode: TUNSNodeBase read fParentNode;
     property Master: TObject read fMaster write SetMaster;
     property AdditionIndex: Integer read fAdditionIdx write fAdditionIdx;
@@ -143,21 +145,9 @@ end;
 
 //==============================================================================
 
-type
-  TUNSNodeClass = class of TUNSNodeBase;
-
 class Function TUNSNodeBase.GetNodeType: TUNSNodeType;
 begin
 Result := ntUndefined;
-end;
-
-//------------------------------------------------------------------------------
-
-procedure TUNSNodeBase.SetNodeNameStr(const Value: String);
-begin
-fName.Str := Value;
-UniqueString(fName.Str);
-UNSHashString(fName);
 end;
 
 //------------------------------------------------------------------------------
@@ -274,6 +264,8 @@ inherited Create;
 fName.Str := Name;
 UniqueString(fName.Str);
 UNSHashString(fName);
+fFullName.Str := ReconstructFullNameInternal(True,False);
+UNSHashString(fFullName); 
 fParentNode := ParentNode;
 fMaster := nil;
 fAdditionIdx := -1;
@@ -305,6 +297,8 @@ end;
 //------------------------------------------------------------------------------
 
 Function TUNSNodeBase.CreateCopy(const Name: String; ParentNode: TUNSNodeBase): TUNSNodeBase;
+type
+  TUNSNodeClass = class of TUNSNodeBase;
 begin
 Result := TUNSNodeClass(Self.ClassType).CreateAsCopy(Self,Name,ParentNode);
 end;

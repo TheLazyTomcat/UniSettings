@@ -17,7 +17,7 @@ type
     class Function GetNodeType: TUNSNodeType; override;
     procedure SetMaster(Value: TObject); override;
     Function GetMaxNodeLevel: Integer; override;
-    Function CreateSubNodesList: TUNSNodeList; virtual;
+    class Function CreateSubNodesList: TUNSNodeList; virtual;
     procedure SubNodeChangeHandler(Sender: TObject; Node: TUNSNodeBase); virtual;
   public
     constructor Create(const Name: String; ParentNode: TUNSNodeBase);
@@ -102,7 +102,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function TUNSNodeBranch.CreateSubNodesList: TUNSNodeList;
+class Function TUNSNodeBranch.CreateSubNodesList: TUNSNodeList;
 begin
 Result := TUNSHashedNodeList.Create;
 end;

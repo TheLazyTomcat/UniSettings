@@ -14,7 +14,7 @@ type
     Function GetItem(Index: Integer): TUNSNodeArrayItem;
   protected
     class Function GetNodeType: TUNSNodeType; override;
-    Function CreateSubNodesList: TUNSNodeList; override;
+    class Function CreateSubNodesList: TUNSNodeList; override;
     procedure ReindexItems; virtual;
   public
     Function Add(Node: TUNSNodeBase): Integer; override;
@@ -42,7 +42,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function TUNSNodeArray.CreateSubNodesList: TUNSNodeList;
+class Function TUNSNodeArray.CreateSubNodesList: TUNSNodeList;
 begin
 Result := TUNSNodeList.Create;
 end;

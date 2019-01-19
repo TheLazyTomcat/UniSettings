@@ -110,8 +110,10 @@ type
 
   TUNSNameParts = record
     Arr:            array of TUNSNamePart;
+    SigA:           UInt32;
     Count:          Integer;
     Data:           PtrInt;
+    SigB:           UInt32;
     EndsWithIndex:  Boolean;
     Valid:          Boolean;
   end;

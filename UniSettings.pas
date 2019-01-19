@@ -16,8 +16,10 @@ todo (* = completed):
 * remove IsPrimitiveArray method
 * hashes (branch list, node list)
   hashed node list in US
+  invariant node names
 * replace direct access to cd arrays with CDA_GetItemPtr
 * ToString/FromString - en(/de)code strings, do not do it in lexer
+* rework Us settings
 
 * nodes
 
@@ -42,7 +44,7 @@ interface
 
 uses
   SysUtils, Classes,
-  AuxTypes, AuxClasses, MemoryBuffer,
+  AuxTypes, AuxClasses, MemoryBuffer, IniFileEx,
   UniSettings_Common, UniSettings_NodeBase, UniSettings_NodeLeaf,
   UniSettings_NodePrimitiveArray, UniSettings_NodeBranch,
   UniSettings_ScriptParser;
@@ -84,6 +86,7 @@ type
     Function CheckedLeafNodeAccessIsArray(const NodeName, Caller: String; out Node: TUNSNodeLeaf; out ValueKind: TUNSValueKind; out Index: Integer): Boolean; virtual;
     Function CheckedLeafNodeTypeAccessIsArray(const NodeName: String; ValueType: TUNSValueType; const Caller: String; out Node: TUNSNodeLeaf; out ValueKind: TUNSValueKind; out Index: Integer): Boolean; virtual;
     procedure ConstructionInitialization; virtual;
+    procedure ListValuesWithNodes(List: TStrings; WorkingNodeInNames: Boolean); virtual;
     procedure BeginChanging;
     procedure EndChanging;
     procedure OnNodeChangeHandler(Sender: TObject; Node: TUNSNodeBase); virtual;
@@ -139,31 +142,27 @@ type
     procedure AppendFromResource(const ResourceName: String); virtual;
     procedure AppendFromCompressedResource(const ResourceName: String); virtual;
     //--- IO operations (no lock) ----------------------------------------------
-    (*
-    SaveToIniNoLock
-    LoadFromIniNoLock
-    SaveToRegistryNoLock
-    LoadFromRegistryNoLock
-    *)
+    procedure SaveToIniNoLock(Ini: TIniFileEx); virtual;
+    procedure LoadFromIniNoLock(Ini: TIniFileEx); virtual;
+    //procedure SaveToRegistryNoLock
+    //procedure LoadFromRegistryNoLock
     //--- IO operations (lock) -------------------------------------------------
-    (*
-    SaveToIni
-    LoadFromIni
-    SaveToRegistry
-    LoadFromRegistry
-    *)
+    procedure SaveToIni(Ini: TIniFileEx); virtual;
+    procedure LoadFromIni(Ini: TIniFileEx); virtual;
+    //SaveToRegistry
+    //LoadFromRegistry
     //--- Values management (no lock) ------------------------------------------
     Function ExistsNoLock(const ValueName: String): Boolean; virtual;
     Function AddNoLock(const ValueName: String; ValueType: TUNSValueType): Boolean; virtual;
     Function RemoveNoLock(const ValueName: String): Boolean; virtual;
     procedure ClearNoLock; virtual;
-    Function ListValuesNoLock(Strings: TStrings): Integer; virtual;
+    Function ListValuesNoLock(Strings: TStrings; WorkingNodeInNames: Boolean = False): Integer; virtual;
     //--- Values management (lock) ---------------------------------------------
     Function Exists(const ValueName: String): Boolean; virtual;
     Function Add(const ValueName: String; ValueType: TUNSValueType): Boolean; virtual;
     Function Remove(const ValueName: String): Boolean; virtual;
     procedure Clear; virtual;
-    Function ListValues(Strings: TStrings): Integer; virtual;
+    Function ListValues(Strings: TStrings; WorkingNodeInNames: Boolean = False): Integer; virtual;
     //--- General value access (no lock) ---------------------------------------
     procedure ValueKindMoveNoLock(Src,Dest: TUNSValueKind); virtual;
     procedure ValueKindExchangeNoLock(ValA,ValB: TUNSValueKind); virtual;
@@ -322,13 +321,13 @@ type
     //--- Format settings properties -------------------------------------------
     property ValueFormatSettings: TUNSValueFormatSettings read GetValueFormatSettings;
     property NumericBools: Boolean index UNS_VALUEFORMATSETTING_INDEX_NUMBOOL
-      read GetValueFormatSettingBool write SetValueFormatSettingBool;
+              read GetValueFormatSettingBool write SetValueFormatSettingBool;
     property HexIntegers: Boolean index UNS_VALUEFORMATSETTING_INDEX_HEXINTS
-      read GetValueFormatSettingBool write SetValueFormatSettingBool;
+              read GetValueFormatSettingBool write SetValueFormatSettingBool;
     property HexFloats: Boolean index UNS_VALUEFORMATSETTING_INDEX_HEXFLTS
-      read GetValueFormatSettingBool write SetValueFormatSettingBool;
+              read GetValueFormatSettingBool write SetValueFormatSettingBool;
     property HexDateTime: Boolean index UNS_VALUEFORMATSETTING_INDEX_HEXDTTM
-      read GetValueFormatSettingBool write SetValueFormatSettingBool;
+              read GetValueFormatSettingBool write SetValueFormatSettingBool;
     //--- Events ---------------------------------------------------------------
     property OnTreeChange: TNotifyEvent read fOnTreeChange write fOnTreeChange;
     property OnTreeChangeEvent: TNotifyEvent read fOnTreeChange write fOnTreeChange;
@@ -381,6 +380,21 @@ uses
   // branch nodes
   UniSettings_NodeArray,
   UniSettings_NodeArrayItem;
+
+Function UNS_LV_Compare(Context: Pointer; Index1,Index2: Integer): Integer;
+begin
+Result := TUNSNodeBase(TStrings(Context).Objects[Index2]).AdditionIndex -
+          TUNSNodeBase(TStrings(Context).Objects[Index1]).AdditionIndex;
+end;
+
+//------------------------------------------------------------------------------
+
+procedure UNS_LV_Exchange(Context: Pointer; Index1,Index2: Integer);
+begin
+TStrings(Context).Exchange(Index1,Index2);
+end;
+
+//==============================================================================
 
 type
   TUNSUniSettingsClass = class of TUniSettings;
@@ -831,7 +845,8 @@ If UNSNameParts(NodeName,NameParts) > 0 then
         else
           raise EUNSValueNotFoundException.Create(NodeName,Self,Caller);
       end;
-  end;
+  end
+else raise EUNSException.CreateFmt('Invalid value name ("%s").',[NodeName],Self,Caller);
 end;
 
 //------------------------------------------------------------------------------
@@ -858,6 +873,46 @@ procedure TUniSettings.ConstructionInitialization;
 begin
 ClearNoLock;
 fParser.Initialize;
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TUniSettings.ListValuesWithNodes(List: TStrings; WorkingNodeInNames: Boolean);
+var
+  Sorter: TListQuickSorter;
+
+  procedure AddNodeToListing(Node: TUNSNode);
+  var
+    i:        Integer;
+    TempStr:  String;
+  begin
+    If UNSIsBranchNode(Node) then
+      begin
+        For i := TUNSNodeBranch(Node).LowIndex to TUNSNodeBranch(Node).HighIndex do
+          AddNodeToListing(TUNSNodeBranch(Node)[i]);
+      end
+    else
+      begin
+        TempStr := Node.ReconstructFullName(False);
+        If WorkingNodeInNames or (Length(fWorkingBranch) <= 0) then
+          List.AddObject(TempStr,Node)
+        else
+          List.AddObject(Copy(TempStr,Length(fWorkingBranch) + 2,Length(TempStr)),Node)
+      end;
+  end;
+
+begin
+List.Clear;
+AddNodeToListing(fWorkingNode);
+If List.Count > 1 then
+  begin
+    Sorter := TListQuickSorter.Create(Pointer(List),UNS_LV_Compare,UNS_LV_Exchange);
+    try
+      Sorter.Sort(0,Pred(List.Count));
+    finally
+      Sorter.Free;
+    end;
+  end;
 end;
 
 //------------------------------------------------------------------------------
@@ -1393,6 +1448,53 @@ end;
 
 //------------------------------------------------------------------------------
 
+procedure TUniSettings.SaveToIniNoLock(Ini: TIniFileEx);
+var
+  NodeList: TStringList;
+begin
+{$message 'implement'}
+NodeList := TStringList.Create;
+try
+  ListValuesWithNodes(NodeList,False);
+  
+finally
+  NodeList.Free;
+end;
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TUniSettings.LoadFromIniNoLock(Ini: TIniFileEx);
+begin
+{$message 'implement'}
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TUniSettings.SaveToIni(Ini: TIniFileEx);
+begin
+ReadLock;
+try
+  SaveToIniNoLock(Ini);
+finally
+  ReadUnlock;
+end;
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TUniSettings.LoadFromIni(Ini: TIniFileEx);
+begin
+WriteLock;
+try
+  LoadFromIniNoLock(Ini);
+finally
+  WriteUnlock;
+end;
+end;
+
+//------------------------------------------------------------------------------
+
 Function TUniSettings.ExistsNoLock(const ValueName: String): Boolean;
 var
   NameParts:  TUNSNameParts;
@@ -1534,49 +1636,13 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function UNS_LV_Compare(Context: Pointer; Index1,Index2: Integer): Integer;
-begin
-Result := TUNSNodeBase(TStrings(Context).Objects[Index2]).AdditionIndex -
-          TUNSNodeBase(TStrings(Context).Objects[Index1]).AdditionIndex;
-end;
-
-//   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
-
-procedure UNS_LV_Exchange(Context: Pointer; Index1,Index2: Integer);
-begin
-TStrings(Context).Exchange(Index1,Index2);
-end;
-
-//   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---   ---
-
-Function TUniSettings.ListValuesNoLock(Strings: TStrings): Integer;
+Function TUniSettings.ListValuesNoLock(Strings: TStrings; WorkingNodeInNames: Boolean = False): Integer;
 var
-  Sorter: TListQuickSorter;
-
-  procedure AddNodeToListing(Node: TUNSNode);
-  var
-    i:  Integer;
-  begin
-    If UNSIsBranchNode(Node) then
-      begin
-        For i := TUNSNodeBranch(Node).LowIndex to TUNSNodeBranch(Node).HighIndex do
-          AddNodeToListing(TUNSNodeBranch(Node)[i]);
-      end
-    else Strings.AddObject(Node.ReconstructFullName(False),Node);
-  end;
-
+  i:  Integer;
 begin
-Strings.Clear;
-AddNodeToListing(fWorkingNode);
-If Strings.Count > 1 then
-  begin
-    Sorter := TListQuickSorter.Create(Pointer(Strings),UNS_LV_Compare,UNS_LV_Exchange);
-    try
-      Sorter.Sort(0,Pred(Strings.Count));
-    finally
-      Sorter.Free;
-    end;
-  end;
+ListValuesWithNodes(Strings,WorkingNodeInNames);
+For i := 0 to Pred(Strings.Count) do
+  Strings.Objects[i] := nil;
 Result := Strings.Count;
 end;
 
@@ -1630,11 +1696,11 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function TUniSettings.ListValues(Strings: TStrings): Integer;
+Function TUniSettings.ListValues(Strings: TStrings; WorkingNodeInNames: Boolean = False): Integer;
 begin
 ReadLock;
 try
-  Result := ListValuesNoLock(Strings);
+  Result := ListValuesNoLock(Strings,WorkingNodeInNames);
 finally
   ReadUnlock;
 end;
