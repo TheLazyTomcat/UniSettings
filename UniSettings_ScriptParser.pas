@@ -388,8 +388,8 @@ var
 begin
 PendingDefValsIdx := CDA_Low(fPendingDefVals);
 For ValIdx := CDA_Low(fPendingExpansion) to CDA_High(fPendingExpansion) do
-  For ValItemIdx := CDA_Low(CDA_GetItemPtr(fPendingExpansion,ValIdx)^.DefValStrs) to
-                   CDA_High(CDA_GetItemPtr(fPendingExpansion,ValIdx)^.DefValStrs) do
+  For ValItemIdx := CDA_Low(CDA_GetItem(fPendingExpansion,ValIdx).DefValStrs) to
+                   CDA_High(CDA_GetItem(fPendingExpansion,ValIdx).DefValStrs) do
     begin
       If PendingDefValsIdx <= CDA_High(fPendingDefVals) then
         begin

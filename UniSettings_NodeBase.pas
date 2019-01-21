@@ -17,8 +17,8 @@ type
   TUNSNodeBase = class(TCustomObject)
   protected
     fName:            TUNSHashedString;
-    fFullName:        TUNSHashedString;
     fParentNode:      TUNSNodeBase;
+    fFullName:        TUNSHashedString;
     fMaster:          TObject;
     fAdditionIdx:     Integer;
     fFlags:           TUNSValueFlags;
@@ -264,9 +264,9 @@ inherited Create;
 fName.Str := Name;
 UniqueString(fName.Str);
 UNSHashString(fName);
+fParentNode := ParentNode; // must be before reconstructing full name
 fFullName.Str := ReconstructFullNameInternal(True,False);
-UNSHashString(fFullName); 
-fParentNode := ParentNode;
+UNSHashString(fFullName);
 fMaster := nil;
 fAdditionIdx := -1;
 fFlags := [];

@@ -15,8 +15,8 @@ todo (* = completed):
 * remove IS where possible, replace with node type checks
 * remove IsPrimitiveArray method
 * hashes (branch list, node list)
-  hashed node list in US
-  invariant node names
+* hashed node list in US (cannot do due to indexing in array branches)
+* invariant node names
 * replace direct access to cd arrays with CDA_GetItemPtr
 * ToString/FromString - en(/de)code strings, do not do it in lexer
 * rework Us settings
@@ -381,6 +381,12 @@ uses
   UniSettings_NodeArray,
   UniSettings_NodeArrayItem;
 
+
+{
+  UNS_LV_Compare and UNS_LV_Exchange are used when sorting value list by
+  addition index.
+}
+
 Function UNS_LV_Compare(Context: Pointer; Index1,Index2: Integer): Integer;
 begin
 Result := TUNSNodeBase(TStrings(Context).Objects[Index2]).AdditionIndex -
@@ -457,6 +463,7 @@ begin
 ReadLock;
 try
   Result := fWorkingBranch;
+  UniqueString(Result);
 finally
   ReadUnlock;
 end;
@@ -569,7 +576,6 @@ case NodeNamePart.PartType of
             If CanCreateArrayItem then
               begin
                 Node := TUNSNodeArrayItem.Create('',Branch);
-                TUNSNodeArrayItem(Node).ArrayIndex := Branch.Count;
                 Branch.Add(Node);
               end;
           UNS_NAME_ARRAYITEM_LOW:
@@ -1182,7 +1188,7 @@ var
 begin
 FileStream := TFileStream.Create(StrToRTL(FileName),fmOpenRead or fmShareDenyWrite);
 try
-  ConstructFromStreamNoLock(FileStream);
+  AppendFromStreamNoLock(FileStream);
 finally
   FileStream.Free;
 end;
@@ -1196,7 +1202,7 @@ var
 begin
 FileStream := TFileStream.Create(StrToRTL(FileName),fmOpenRead or fmShareDenyWrite);
 try
-  ConstructFromCompressedStreamNoLock(FileStream);
+  AppendFromCompressedStreamNoLock(FileStream);
 finally
   FileStream.Free;
 end;
@@ -1210,7 +1216,7 @@ var
 begin
 ResourceStream := TResourceStream.Create(hInstance,StrToRTL(ResourceName),PChar(10){RT_RCDATA});
 try
-  ConstructFromStreamNoLock(ResourceStream);
+  AppendFromStreamNoLock(ResourceStream);
 finally
   ResourceStream.Free;
 end;
@@ -1224,7 +1230,7 @@ var
 begin
 ResourceStream := TResourceStream.Create(hInstance,StrToRTL(ResourceName),PChar(10){RT_RCDATA});
 try
-  ConstructFromCompressedStreamNoLock(ResourceStream);
+  AppendFromCompressedStreamNoLock(ResourceStream);
 finally
   ResourceStream.Free;
 end;

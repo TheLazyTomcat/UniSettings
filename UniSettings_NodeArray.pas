@@ -63,8 +63,8 @@ Function TUNSNodeArray.Add(Node: TUNSNodeBase): Integer;
 begin
 If Node.NodeType = ntArrayItem then
   begin
+    TUNSNodeArrayItem(Node).ArrayIndex := Count;
     Result := inherited Add(Node);
-    TUNSNodeArrayItem(Node).ArrayIndex := Result;
   end
 else raise EUNSException.Create('Added node is not of type ntArrayItem.',Self,'Add');
 end;
