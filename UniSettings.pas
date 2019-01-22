@@ -60,7 +60,7 @@ type
     fWorkingBranch:       String;
     fWorkingNode:         TUNSNodeBranch;
     fParser:              TUNSParser;
-    fAdditionCounter:     Integer;
+    fCreationCounter:     Integer;
     fChangeCounter:       Integer;
     fChanged:             Boolean;
     fOnTreeChange:        TNotifyEvent;
@@ -341,7 +341,7 @@ implementation
 
 uses
   StrRect, ListSorters,
-  UniSettings_Utils, UniSettings_Exceptions,
+  UniSettings_Utils, UniSettings_Exceptions, UniSettings_NodeUtils,
   // leaf nodes
   UniSettings_NodeBlank,
   UniSettings_NodeBool,
@@ -389,8 +389,8 @@ uses
 
 Function UNS_LV_Compare(Context: Pointer; Index1,Index2: Integer): Integer;
 begin
-Result := TUNSNodeBase(TStrings(Context).Objects[Index2]).AdditionIndex -
-          TUNSNodeBase(TStrings(Context).Objects[Index1]).AdditionIndex;
+Result := TUNSNodeBase(TStrings(Context).Objects[Index2]).CreationIndex -
+          TUNSNodeBase(TStrings(Context).Objects[Index1]).CreationIndex;
 end;
 
 //------------------------------------------------------------------------------
@@ -538,8 +538,8 @@ else
  {vtUndefined}
   raise EUNSException.CreateFmt('Invalid node value type (%d).',[Ord(ValueType)],Self,'CreateLeafNode');
 end;
-Result.AdditionIndex := fAdditionCounter;
-Inc(fAdditionCounter);
+Result.CreationIndex := fCreationCounter;
+Inc(fCreationCounter);
 end;
 
 //------------------------------------------------------------------------------
@@ -988,7 +988,7 @@ fRootNode.OnChange := OnNodeChangeHandler;
 fWorkingBranch := '';
 fWorkingNode := fRootNode;
 fParser := TUNSParser.Create(AddNode);
-fAdditionCounter := 0;
+fCreationCounter := 0;
 fChangeCounter := 0;
 fChanged := False;
 fOnTreeChange := nil;

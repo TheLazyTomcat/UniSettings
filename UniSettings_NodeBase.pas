@@ -20,7 +20,7 @@ type
     fParentNode:      TUNSNodeBase;
     fFullName:        TUNSHashedString;
     fMaster:          TObject;
-    fAdditionIdx:     Integer;
+    fCreationIndex:   Integer;
     fFlags:           TUNSValueFlags;
     fConvSettings:    TFormatSettings;
     fChanged:         Boolean;
@@ -59,91 +59,19 @@ type
     property FullNameStr: String read fFullName.Str;
     property ParentNode: TUNSNodeBase read fParentNode;
     property Master: TObject read fMaster write SetMaster;
-    property AdditionIndex: Integer read fAdditionIdx write fAdditionIdx;
+    property CreationIndex: Integer read fCreationIndex write fCreationIndex;
     property NodeLevel: Integer read GetNodeLevel;
     property MaxNodeLevel: Integer read GetMaxNodeLevel;    
     property Flags: TUNSValueFlags read fFlags write fFlags;
     property OnChange: TUNSNodeChangeEvent read fOnChange write fOnChange;
   end;
 
-Function UNSIsBranchNode(Node: TUNSNodeBase): Boolean;
-Function UNSIsLeafNode(Node: TUNSNodeBase): Boolean;
-Function UNSIsLeafNodeOfValueType(Node: TUNSNodeBase; ValueType: TUNSValueType): Boolean;
-Function UNSCompatibleNodes(Node1,Node2: TUNSNodeBase): Boolean;
-Function UNSIsPrimitiveArrayNode(Node: TUNSNodeBase): Boolean;
-
 implementation
 
 uses
   UniSettings_Utils, UniSettings_Exceptions, UniSettings_NodeLeaf,
   UniSettings_NodeBranch, UniSettings_NodeArray, UniSettings_NodeArrayItem,
-  UniSettings;
-
-Function UNSIsBranchNode(Node: TUNSNodeBase): Boolean;
-begin
-If Assigned(Node) then
-  Result := Node.NodeType in [ntBranch,ntArray,ntArrayItem]
-else
-  Result := False;
-end;
-
-//------------------------------------------------------------------------------
-
-Function UNSIsLeafNode(Node: TUNSNodeBase): Boolean;
-begin
-If Assigned(Node) then
-  Result := Node.NodeType in [ntLeaf,ntLeafArray]
-else
-  Result := False;
-end;
-
-//------------------------------------------------------------------------------
-
-Function UNSIsLeafNodeOfValueType(Node: TUNSNodeBase; ValueType: TUNSValueType): Boolean;
-begin
-If Assigned(Node) then
-  begin
-    If UNSIsLeafNode(Node) then
-      Result := TUNSNodeLeaf(Node).ValueType = ValueType
-    else
-      Result := False;
-  end
-else Result := False;
-end;
-
-//------------------------------------------------------------------------------
-
-Function UNSCompatibleNodes(Node1,Node2: TUNSNodeBase): Boolean;
-begin
-If Assigned(Node1) and Assigned(Node2) then
-  begin
-    If UNSIsLeafNode(Node1) then
-      begin
-        If Node1.NodeType = Node2.NodeType then
-          Result := TUNSNodeLeaf(Node1).ValueType = TUNSNodeLeaf(Node2).ValueType
-        else
-          Result := False;
-      end
-    else Result := Node1.NodeType = Node2.NodeType;
-  end
-else Result := False;
-end;
-
-//------------------------------------------------------------------------------
-
-Function UNSIsPrimitiveArrayNode(Node: TUNSNodeBase): Boolean;
-begin
-If Assigned(Node) then
-  begin
-    If UNSIsLeafNode(Node) then
-      Result := UNSIsArrayValueType(TUNSNodeLeaf(Node).ValueType)
-    else
-      Result := False;
-  end
-else Result := False;
-end;
-
-//==============================================================================
+  UniSettings_NodeUtils, UniSettings;
 
 class Function TUNSNodeBase.GetNodeType: TUNSNodeType;
 begin
@@ -268,7 +196,7 @@ fParentNode := ParentNode; // must be before reconstructing full name
 fFullName.Str := ReconstructFullNameInternal(True,False);
 UNSHashString(fFullName);
 fMaster := nil;
-fAdditionIdx := -1;
+fCreationIndex := -1;
 fFlags := [];
 FillChar(fConvSettings,SizeOf(fConvSettings),0);
 fConvSettings.DecimalSeparator := '.';

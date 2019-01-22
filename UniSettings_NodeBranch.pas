@@ -50,7 +50,7 @@ implementation
 
 uses
   SysUtils,
-  UniSettings_Exceptions, UniSettings_Utils;
+  UniSettings_Exceptions, UniSettings_Utils, UniSettings_NodeUtils;
 
 Function TUNSNodeBranch.GetCount: Integer;
 begin
