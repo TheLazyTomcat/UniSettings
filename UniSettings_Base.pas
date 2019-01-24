@@ -36,10 +36,8 @@ type
     procedure SetWorkingBranch(const Branch: String);
   protected
     Function CreateLeafNode(ValueType: TUNSValueType; const NodeName: String; ParentNode: TUNSNodeBranch): TUNSNodeLeaf; virtual;
-    Function GetSubNode(NodeNamePart: TUNSNamePart; Branch: TUNSNodeBranch; out Node: TUNSNodeBase; CanCreateArrayItem: Boolean): Boolean; virtual;
     Function ConstructBranch(NodeNameParts: TUNSNameParts): TUNSNodeBranch; virtual;
     Function AddNode(const NodeName: String; ValueType: TUNSValueType; out Node: TUNSNodeLeaf): Boolean; virtual;
-
     Function FindNode(NodeNameParts: TUNSNameParts): TUNSNodeBase; virtual;
     Function FindLeafNode(NodeNameParts: TUNSNameParts; out Node: TUNSNodeBase): Boolean; overload; virtual;
     Function FindLeafNode(const NodeName: String; out Node: TUNSNodeBase): Boolean; overload; virtual;
@@ -361,59 +359,6 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function TUniSettingsBase.GetSubNode(NodeNamePart: TUNSNamePart; Branch: TUNSNodeBranch; out Node: TUNSNodeBase; CanCreateArrayItem: Boolean): Boolean;
-begin
-Node := nil;
-case NodeNamePart.PartType of
-  nptIdentifier,
-  nptArrayIdentifier:
-    begin
-      Result := Branch.FindNode(NodeNamePart.PartStr,Node);
-      Exit;
-    end;
-{- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - }
-  nptArrayIndex,
-  nptArrayIndexSav,
-  nptArrayIndexDef:
-    If Branch.NodeType = ntArray then
-      begin
-        If TUNSNodeArray(Branch).CheckIndex(NodeNamePart.PartIndex) then
-          Node := TUNSNodeArray(Branch)[NodeNamePart.PartIndex];
-      end
-    else raise EUNSException.CreateFmt('Invalid name part type (%d) for a given node branch class (%s).',
-                 [Ord(NodeNamePart.PartType),Branch.ClassName],Self,'GetSubNode');
-{- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - }
-  nptArrayItem,
-  nptArrayItemSav,
-  nptArrayItemDef:
-    begin
-      If Branch.NodeType = ntArray then
-        case NodeNamePart.PartIndex of
-          UNS_NAME_ARRAYITEM_NEW:
-            If CanCreateArrayItem then
-              begin
-                Node := TUNSNodeArrayItem.Create('',Branch);
-                Branch.Add(Node);
-              end;
-          UNS_NAME_ARRAYITEM_LOW:
-            If TUNSNodeArray(Branch).Count > 0 then
-              Node := TUNSNodeArray(Branch)[TUNSNodeArray(Branch).LowIndex];
-          UNS_NAME_ARRAYITEM_HIGH:
-            If TUNSNodeArray(Branch).Count > 0 then
-              Node := TUNSNodeArray(Branch)[TUNSNodeArray(Branch).HighIndex];
-        end
-      else raise EUNSException.CreateFmt('Invalid name part type (%d) for a given node branch class (%s).',
-                   [Ord(NodeNamePart.PartType),Branch.ClassName],Self,'GetSubNode');
-    end;
-{- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - }
-else
-  raise EUNSException.CreateFmt('Invalid name part type (%d).',[Ord(NodeNamePart.PartType)],Self,'GetSubNode');
-end;
-Result := Assigned(Node);
-end;
-
-//------------------------------------------------------------------------------
-
 Function TUniSettingsBase.ConstructBranch(NodeNameParts: TUNSNameParts): TUNSNodeBranch;
 var
   CurrentBranch:  TUNSNodeBranch;
@@ -429,7 +374,8 @@ If CDA_Count(NodeNameParts) > 0 then
         CurrentBranch := fWorkingNode;
         For i := CDA_Low(NodeNameParts) to CDA_High(NodeNameParts) do
           begin
-            NodeFound := GetSubNode(CDA_GetItem(NodeNameParts,i),CurrentBranch,NextNode,True);
+            // this can also create new array item nodes
+            NodeFound := CurrentBranch.FindNode(CDA_GetItem(NodeNameParts,i),NextNode);
             If UNSIsLeafNodeOfValueType(NextNode,vtBlank) then
               begin
                 CurrentBranch.Remove(NextNode);
@@ -456,7 +402,7 @@ If CDA_Count(NodeNameParts) > 0 then
                     NextNode := TUNSNodeArray.Create(CDA_GetItem(NodeNameParts,i).PartStr.Str,CurrentBranch);
                   nptArrayIndex,nptArrayIndexSav,nptArrayIndexDef,
                   nptArrayItem,nptArrayItemSav,nptArrayItemDef:
-                    Exit; // array items can only be created in GetSubNode trough the use of [#N] (new array item), so return nil
+                    Exit; // array items can only be created in Node.FindNode trough the use of [#N] (new array item), so return nil
                 else
                   raise EUNSException.CreateFmt('Invalid name part type (%d).',
                     [Ord(CDA_GetItem(NodeNameParts,i).PartType)],Self,'ConstructBranch');

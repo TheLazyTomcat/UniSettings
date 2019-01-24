@@ -247,8 +247,6 @@ uses
   UniSettings_NodeAoBuffer;
 
 
-//------------------------------------------------------------------------------
-
 Function TUniSettings.ValueFullNameNoLock(const ValueName: String): String;
 begin
 Result := AccessLeafNode(ValueName,'ValueFullNameNoLock').ReconstructFullName(False);
