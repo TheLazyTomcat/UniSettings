@@ -171,49 +171,49 @@ end.
 
 Function TUniSettings.DateValueFirstNoLock(const ValueName: String; ValueKind: TUNSValueKind = vkActual): TDate;
 begin
-Result := TUNSNodeAoDate(CheckedLeafNodeTypeAccess(ValueName,vtAoDate,'DateValueFirstNoLock')).First(ValueKind);
+Result := TUNSNodeAoDate(AccessLeafNodeType(ValueName,vtAoDate,'DateValueFirstNoLock')).First(ValueKind);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TUniSettings.DateValueLastNoLock(const ValueName: String; ValueKind: TUNSValueKind = vkActual): TDate;
 begin
-Result := TUNSNodeAoDate(CheckedLeafNodeTypeAccess(ValueName,vtAoDate,'DateValueLastNoLock')).Last(ValueKind);
+Result := TUNSNodeAoDate(AccessLeafNodeType(ValueName,vtAoDate,'DateValueLastNoLock')).Last(ValueKind);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TUniSettings.DateValueIndexOfNoLock(const ValueName: String; const Value: TDate; ValueKind: TUNSValueKind = vkActual): Integer;
 begin
-Result := TUNSNodeAoDate(CheckedLeafNodeTypeAccess(ValueName,vtAoDate,'DateValueIndexOfNoLock')).IndexOf(Value,ValueKind);
+Result := TUNSNodeAoDate(AccessLeafNodeType(ValueName,vtAoDate,'DateValueIndexOfNoLock')).IndexOf(Value,ValueKind);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TUniSettings.DateValueAddNoLock(const ValueName: String; const Value: TDate; ValueKind: TUNSValueKind = vkActual): Integer;
 begin
-Result := TUNSNodeAoDate(CheckedLeafNodeTypeAccess(ValueName,vtAoDate,'DateValueAddNoLock')).Add(Value,ValueKind);
+Result := TUNSNodeAoDate(AccessLeafNodeType(ValueName,vtAoDate,'DateValueAddNoLock')).Add(Value,ValueKind);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TUniSettings.DateValueAppendNoLock(const ValueName: String; const Values: array of TDate; ValueKind: TUNSValueKind = vkActual): Integer;
 begin
-Result := TUNSNodeAoDate(CheckedLeafNodeTypeAccess(ValueName,vtAoDate,'DateValueAppendNoLock')).Append(Values,ValueKind);
+Result := TUNSNodeAoDate(AccessLeafNodeType(ValueName,vtAoDate,'DateValueAppendNoLock')).Append(Values,ValueKind);
 end;
 
 //------------------------------------------------------------------------------
 
 procedure TUniSettings.DateValueInsertNoLock(const ValueName: String; Index: Integer; const Value: TDate; ValueKind: TUNSValueKind = vkActual);
 begin
-TUNSNodeAoDate(CheckedLeafNodeTypeAccess(ValueName,vtAoDate,'DateValueInsertNoLock')).Insert(Index,Value,ValueKind);
+TUNSNodeAoDate(AccessLeafNodeType(ValueName,vtAoDate,'DateValueInsertNoLock')).Insert(Index,Value,ValueKind);
 end;
  
 //------------------------------------------------------------------------------
 
 Function TUniSettings.DateValueRemoveNoLock(const ValueName: String; const Value: TDate; ValueKind: TUNSValueKind = vkActual): Integer;
 begin
-Result := TUNSNodeAoDate(CheckedLeafNodeTypeAccess(ValueName,vtAoDate,'DateValueRemoveNoLock')).Remove(Value,ValueKind);
+Result := TUNSNodeAoDate(AccessLeafNodeType(ValueName,vtAoDate,'DateValueRemoveNoLock')).Remove(Value,ValueKind);
 end;
 
 //------------------------------------------------------------------------------
@@ -304,7 +304,7 @@ end;
 
 Function TUniSettings.DateValueItemGetNoLock(const ValueName: String; Index: Integer; ValueKind: TUNSValueKind = vkActual): TDate;
 begin
-with TUNSNodeAoDate(CheckedLeafNodeTypeAccess(ValueName,vtAoDate,'DateValueItemGetNoLock')) do
+with TUNSNodeAoDate(AccessLeafNodeType(ValueName,vtAoDate,'DateValueItemGetNoLock')) do
   case ValueKind of
     vkActual:   Result := Items[Index];
     vkSaved:    Result := SavedItems[Index];
@@ -318,7 +318,7 @@ end;
 
 procedure TUniSettings.DateValueItemSetNoLock(const ValueName: String; Index: Integer; const NewValue: TDate; ValueKind: TUNSValueKind = vkActual);
 begin
-with TUNSNodeAoDate(CheckedLeafNodeTypeAccess(ValueName,vtAoDate,'DateValueItemSetNoLock')) do
+with TUNSNodeAoDate(AccessLeafNodeType(ValueName,vtAoDate,'DateValueItemSetNoLock')) do
   case ValueKind of
     vkActual:   Items[Index] := NewValue;
     vkSaved:    SavedItems[Index] := NewValue;

@@ -155,7 +155,9 @@ var
 
 begin
 CDA_Init(NameParts);
-NameParts.Valid := True; 
+NameParts.FullName := Name;
+NameParts.Valid := True;
+NameParts.ArrItemCreate := False;
 If Length(Name) > 0 then
   begin
     Start := 1;
@@ -208,7 +210,10 @@ If Length(Name) > 0 then
                     // resolve the item number (not index!)
                     If (i - Start) = 2 then
                       case Name[Start + 1] of
-                        '0','N','n':  TempPart.PartIndex := UNS_NAME_ARRAYITEM_NEW;
+                        '0','N','n':  begin
+                                        TempPart.PartIndex := UNS_NAME_ARRAYITEM_NEW;
+                                        NameParts.ArrItemCreate := True;
+                                      end;
                         '1','L','l':  TempPart.PartIndex := UNS_NAME_ARRAYITEM_LOW;
                         '2','H','h':  TempPart.PartIndex := UNS_NAME_ARRAYITEM_HIGH;
                       else

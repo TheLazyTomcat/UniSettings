@@ -114,8 +114,10 @@ type
     Count:          Integer;
     Data:           PtrInt;
     SigB:           UInt32;
+    FullName:       String;
     EndsWithIndex:  Boolean;
     Valid:          Boolean;
+    ArrItemCreate:  Boolean;
   end;
   PUNSNameParts = ^TUNSNameParts;
 

@@ -121,7 +121,7 @@ var
   TempValueKind:  TUNSValueKind;
   TempIndex:      Integer;
 begin
-If CheckedLeafNodeTypeAccessIsArray(ValueName,vtDate,'DateValueGetNoLock',TempNode,TempValueKind,TempIndex) then
+If AccessLeafNodeTypeIsArray(ValueName,vtDate,'DateValueGetNoLock',TempNode,TempValueKind,TempIndex) then
   case TempValueKind of
     vkActual:   Result := TUNSNodeAoDate(TempNode).Items[TempIndex];
     vkSaved:    Result := TUNSNodeAoDate(TempNode).SavedItems[TempIndex];
@@ -147,7 +147,7 @@ var
   TempValueKind:  TUNSValueKind;
   TempIndex:      Integer;
 begin
-If CheckedLeafNodeTypeAccessIsArray(ValueName,vtBool,'DateValueSetNoLock',TempNode,TempValueKind,TempIndex) then
+If AccessLeafNodeTypeIsArray(ValueName,vtBool,'DateValueSetNoLock',TempNode,TempValueKind,TempIndex) then
   case TempValueKind of
     vkActual:   TUNSNodeAoDate(TempNode).Items[TempIndex] := NewValue;
     vkSaved:    TUNSNodeAoDate(TempNode).SavedItems[TempIndex] := NewValue;

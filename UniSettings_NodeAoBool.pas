@@ -127,49 +127,49 @@ end.
 
 Function TUniSettings.BooleanValueFirstNoLock(const ValueName: String; ValueKind: TUNSValueKind = vkActual): Boolean;
 begin
-Result := TUNSNodeAoBool(CheckedLeafNodeTypeAccess(ValueName,vtAoBool,'BooleanValueFirstNoLock')).First(ValueKind);
+Result := TUNSNodeAoBool(AccessLeafNodeType(ValueName,vtAoBool,'BooleanValueFirstNoLock')).First(ValueKind);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TUniSettings.BooleanValueLastNoLock(const ValueName: String; ValueKind: TUNSValueKind = vkActual): Boolean;
 begin
-Result := TUNSNodeAoBool(CheckedLeafNodeTypeAccess(ValueName,vtAoBool,'BooleanValueLastNoLock')).Last(ValueKind);
+Result := TUNSNodeAoBool(AccessLeafNodeType(ValueName,vtAoBool,'BooleanValueLastNoLock')).Last(ValueKind);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TUniSettings.BooleanValueIndexOfNoLock(const ValueName: String; const Value: Boolean; ValueKind: TUNSValueKind = vkActual): Integer;
 begin
-Result := TUNSNodeAoBool(CheckedLeafNodeTypeAccess(ValueName,vtAoBool,'BooleanValueIndexOfNoLock')).IndexOf(Value,ValueKind);
+Result := TUNSNodeAoBool(AccessLeafNodeType(ValueName,vtAoBool,'BooleanValueIndexOfNoLock')).IndexOf(Value,ValueKind);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TUniSettings.BooleanValueAddNoLock(const ValueName: String; const Value: Boolean; ValueKind: TUNSValueKind = vkActual): Integer;
 begin
-Result := TUNSNodeAoBool(CheckedLeafNodeTypeAccess(ValueName,vtAoBool,'BooleanValueAddNoLock')).Add(Value,ValueKind);
+Result := TUNSNodeAoBool(AccessLeafNodeType(ValueName,vtAoBool,'BooleanValueAddNoLock')).Add(Value,ValueKind);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TUniSettings.BooleanValueAppendNoLock(const ValueName: String; const Values: array of Boolean; ValueKind: TUNSValueKind = vkActual): Integer;
 begin
-Result := TUNSNodeAoBool(CheckedLeafNodeTypeAccess(ValueName,vtAoBool,'BooleanValueAppendNoLock')).Append(Values,ValueKind);
+Result := TUNSNodeAoBool(AccessLeafNodeType(ValueName,vtAoBool,'BooleanValueAppendNoLock')).Append(Values,ValueKind);
 end;
 
 //------------------------------------------------------------------------------
 
 procedure TUniSettings.BooleanValueInsertNoLock(const ValueName: String; Index: Integer; const Value: Boolean; ValueKind: TUNSValueKind = vkActual);
 begin
-TUNSNodeAoBool(CheckedLeafNodeTypeAccess(ValueName,vtAoBool,'BooleanValueInsertNoLock')).Insert(Index,Value,ValueKind);
+TUNSNodeAoBool(AccessLeafNodeType(ValueName,vtAoBool,'BooleanValueInsertNoLock')).Insert(Index,Value,ValueKind);
 end;
  
 //------------------------------------------------------------------------------
 
 Function TUniSettings.BooleanValueRemoveNoLock(const ValueName: String; const Value: Boolean; ValueKind: TUNSValueKind = vkActual): Integer;
 begin
-Result := TUNSNodeAoBool(CheckedLeafNodeTypeAccess(ValueName,vtAoBool,'BooleanValueRemoveNoLock')).Remove(Value,ValueKind);
+Result := TUNSNodeAoBool(AccessLeafNodeType(ValueName,vtAoBool,'BooleanValueRemoveNoLock')).Remove(Value,ValueKind);
 end;
 
 //------------------------------------------------------------------------------
@@ -260,7 +260,7 @@ end;
 
 Function TUniSettings.BooleanValueItemGetNoLock(const ValueName: String; Index: Integer; ValueKind: TUNSValueKind = vkActual): Boolean;
 begin
-with TUNSNodeAoBool(CheckedLeafNodeTypeAccess(ValueName,vtAoBool,'BooleanValueItemGetNoLock')) do
+with TUNSNodeAoBool(AccessLeafNodeType(ValueName,vtAoBool,'BooleanValueItemGetNoLock')) do
   case ValueKind of
     vkActual:   Result := Items[Index];
     vkSaved:    Result := SavedItems[Index];
@@ -274,7 +274,7 @@ end;
 
 procedure TUniSettings.BooleanValueItemSetNoLock(const ValueName: String; Index: Integer; const NewValue: Boolean; ValueKind: TUNSValueKind = vkActual);
 begin
-with TUNSNodeAoBool(CheckedLeafNodeTypeAccess(ValueName,vtAoBool,'BooleanValueItemSetNoLock')) do
+with TUNSNodeAoBool(AccessLeafNodeType(ValueName,vtAoBool,'BooleanValueItemSetNoLock')) do
   case ValueKind of
     vkActual:   Items[Index] := NewValue;
     vkSaved:    SavedItems[Index] := NewValue;

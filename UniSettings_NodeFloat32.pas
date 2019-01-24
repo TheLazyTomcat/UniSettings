@@ -121,7 +121,7 @@ var
   TempValueKind:  TUNSValueKind;
   TempIndex:      Integer;
 begin
-If CheckedLeafNodeTypeAccessIsArray(ValueName,vtFloat32,'Float32ValueGetNoLock',TempNode,TempValueKind,TempIndex) then
+If AccessLeafNodeTypeIsArray(ValueName,vtFloat32,'Float32ValueGetNoLock',TempNode,TempValueKind,TempIndex) then
   case TempValueKind of
     vkActual:   Result := TUNSNodeAoFloat32(TempNode).Items[TempIndex];
     vkSaved:    Result := TUNSNodeAoFloat32(TempNode).SavedItems[TempIndex];
@@ -147,7 +147,7 @@ var
   TempValueKind:  TUNSValueKind;
   TempIndex:      Integer;
 begin
-If CheckedLeafNodeTypeAccessIsArray(ValueName,vtBool,'Float32ValueSetNoLock',TempNode,TempValueKind,TempIndex) then
+If AccessLeafNodeTypeIsArray(ValueName,vtBool,'Float32ValueSetNoLock',TempNode,TempValueKind,TempIndex) then
   case TempValueKind of
     vkActual:   TUNSNodeAoFloat32(TempNode).Items[TempIndex] := NewValue;
     vkSaved:    TUNSNodeAoFloat32(TempNode).SavedItems[TempIndex] := NewValue;

@@ -127,49 +127,49 @@ end.
 
 Function TUniSettings.UInt16ValueFirstNoLock(const ValueName: String; ValueKind: TUNSValueKind = vkActual): UInt16;
 begin
-Result := TUNSNodeAoUInt16(CheckedLeafNodeTypeAccess(ValueName,vtAoUInt16,'UInt16ValueFirstNoLock')).First(ValueKind);
+Result := TUNSNodeAoUInt16(AccessLeafNodeType(ValueName,vtAoUInt16,'UInt16ValueFirstNoLock')).First(ValueKind);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TUniSettings.UInt16ValueLastNoLock(const ValueName: String; ValueKind: TUNSValueKind = vkActual): UInt16;
 begin
-Result := TUNSNodeAoUInt16(CheckedLeafNodeTypeAccess(ValueName,vtAoUInt16,'UInt16ValueLastNoLock')).Last(ValueKind);
+Result := TUNSNodeAoUInt16(AccessLeafNodeType(ValueName,vtAoUInt16,'UInt16ValueLastNoLock')).Last(ValueKind);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TUniSettings.UInt16ValueIndexOfNoLock(const ValueName: String; const Value: UInt16; ValueKind: TUNSValueKind = vkActual): Integer;
 begin
-Result := TUNSNodeAoUInt16(CheckedLeafNodeTypeAccess(ValueName,vtAoUInt16,'UInt16ValueIndexOfNoLock')).IndexOf(Value,ValueKind);
+Result := TUNSNodeAoUInt16(AccessLeafNodeType(ValueName,vtAoUInt16,'UInt16ValueIndexOfNoLock')).IndexOf(Value,ValueKind);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TUniSettings.UInt16ValueAddNoLock(const ValueName: String; const Value: UInt16; ValueKind: TUNSValueKind = vkActual): Integer;
 begin
-Result := TUNSNodeAoUInt16(CheckedLeafNodeTypeAccess(ValueName,vtAoUInt16,'UInt16ValueAddNoLock')).Add(Value,ValueKind);
+Result := TUNSNodeAoUInt16(AccessLeafNodeType(ValueName,vtAoUInt16,'UInt16ValueAddNoLock')).Add(Value,ValueKind);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TUniSettings.UInt16ValueAppendNoLock(const ValueName: String; const Values: array of UInt16; ValueKind: TUNSValueKind = vkActual): Integer;
 begin
-Result := TUNSNodeAoUInt16(CheckedLeafNodeTypeAccess(ValueName,vtAoUInt16,'UInt16ValueAppendNoLock')).Append(Values,ValueKind);
+Result := TUNSNodeAoUInt16(AccessLeafNodeType(ValueName,vtAoUInt16,'UInt16ValueAppendNoLock')).Append(Values,ValueKind);
 end;
 
 //------------------------------------------------------------------------------
 
 procedure TUniSettings.UInt16ValueInsertNoLock(const ValueName: String; Index: Integer; const Value: UInt16; ValueKind: TUNSValueKind = vkActual);
 begin
-TUNSNodeAoUInt16(CheckedLeafNodeTypeAccess(ValueName,vtAoUInt16,'UInt16ValueInsertNoLock')).Insert(Index,Value,ValueKind);
+TUNSNodeAoUInt16(AccessLeafNodeType(ValueName,vtAoUInt16,'UInt16ValueInsertNoLock')).Insert(Index,Value,ValueKind);
 end;
  
 //------------------------------------------------------------------------------
 
 Function TUniSettings.UInt16ValueRemoveNoLock(const ValueName: String; const Value: UInt16; ValueKind: TUNSValueKind = vkActual): Integer;
 begin
-Result := TUNSNodeAoUInt16(CheckedLeafNodeTypeAccess(ValueName,vtAoUInt16,'UInt16ValueRemoveNoLock')).Remove(Value,ValueKind);
+Result := TUNSNodeAoUInt16(AccessLeafNodeType(ValueName,vtAoUInt16,'UInt16ValueRemoveNoLock')).Remove(Value,ValueKind);
 end;
 
 //------------------------------------------------------------------------------
@@ -260,7 +260,7 @@ end;
 
 Function TUniSettings.UInt16ValueItemGetNoLock(const ValueName: String; Index: Integer; ValueKind: TUNSValueKind = vkActual): UInt16;
 begin
-with TUNSNodeAoUInt16(CheckedLeafNodeTypeAccess(ValueName,vtAoUInt16,'UInt16ValueItemGetNoLock')) do
+with TUNSNodeAoUInt16(AccessLeafNodeType(ValueName,vtAoUInt16,'UInt16ValueItemGetNoLock')) do
   case ValueKind of
     vkActual:   Result := Items[Index];
     vkSaved:    Result := SavedItems[Index];
@@ -274,7 +274,7 @@ end;
 
 procedure TUniSettings.UInt16ValueItemSetNoLock(const ValueName: String; Index: Integer; const NewValue: UInt16; ValueKind: TUNSValueKind = vkActual);
 begin
-with TUNSNodeAoUInt16(CheckedLeafNodeTypeAccess(ValueName,vtAoUInt16,'UInt16ValueItemSetNoLock')) do
+with TUNSNodeAoUInt16(AccessLeafNodeType(ValueName,vtAoUInt16,'UInt16ValueItemSetNoLock')) do
   case ValueKind of
     vkActual:   Items[Index] := NewValue;
     vkSaved:    SavedItems[Index] := NewValue;

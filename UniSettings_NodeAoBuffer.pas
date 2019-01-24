@@ -247,7 +247,7 @@ Function TUniSettings.BufferValueFirstNoLock(const ValueName: String; ValueKind:
 var
   TempBuffer: TMemoryBuffer;
 begin
-TempBuffer := TUNSNodeAoBuffer(CheckedLeafNodeTypeAccess(ValueName,vtAoBuffer,'BufferValueFirstNoLock')).First(ValueKind);
+TempBuffer := TUNSNodeAoBuffer(AccessLeafNodeType(ValueName,vtAoBuffer,'BufferValueFirstNoLock')).First(ValueKind);
 If CreateCopy then
   CopyBuffer(TempBuffer,Result)
 else
@@ -260,7 +260,7 @@ Function TUniSettings.BufferValueLastNoLock(const ValueName: String; ValueKind: 
 var
   TempBuffer: TMemoryBuffer;
 begin
-TempBuffer := TUNSNodeAoBuffer(CheckedLeafNodeTypeAccess(ValueName,vtAoBuffer,'BufferValueLastNoLock')).Last(ValueKind);
+TempBuffer := TUNSNodeAoBuffer(AccessLeafNodeType(ValueName,vtAoBuffer,'BufferValueLastNoLock')).Last(ValueKind);
 If CreateCopy then
   CopyBuffer(TempBuffer,Result)
 else
@@ -271,35 +271,35 @@ end;
 
 Function TUniSettings.BufferValueIndexOfNoLock(const ValueName: String; const Value: TMemoryBuffer; ValueKind: TUNSValueKind = vkActual): Integer;
 begin
-Result := TUNSNodeAoBuffer(CheckedLeafNodeTypeAccess(ValueName,vtAoBuffer,'BufferValueIndexOfNoLock')).IndexOf(Value,ValueKind);
+Result := TUNSNodeAoBuffer(AccessLeafNodeType(ValueName,vtAoBuffer,'BufferValueIndexOfNoLock')).IndexOf(Value,ValueKind);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TUniSettings.BufferValueAddNoLock(const ValueName: String; const Value: TMemoryBuffer; ValueKind: TUNSValueKind = vkActual): Integer;
 begin
-Result := TUNSNodeAoBuffer(CheckedLeafNodeTypeAccess(ValueName,vtAoBuffer,'BufferValueAddNoLock')).Add(Value,ValueKind);
+Result := TUNSNodeAoBuffer(AccessLeafNodeType(ValueName,vtAoBuffer,'BufferValueAddNoLock')).Add(Value,ValueKind);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TUniSettings.BufferValueAppendNoLock(const ValueName: String; const Values: array of TMemoryBuffer; ValueKind: TUNSValueKind = vkActual): Integer;
 begin
-Result := TUNSNodeAoBuffer(CheckedLeafNodeTypeAccess(ValueName,vtAoBuffer,'BufferValueAppendNoLock')).Append(Values,ValueKind);
+Result := TUNSNodeAoBuffer(AccessLeafNodeType(ValueName,vtAoBuffer,'BufferValueAppendNoLock')).Append(Values,ValueKind);
 end;
 
 //------------------------------------------------------------------------------
 
 procedure TUniSettings.BufferValueInsertNoLock(const ValueName: String; Index: Integer; const Value: TMemoryBuffer; ValueKind: TUNSValueKind = vkActual);
 begin
-TUNSNodeAoBuffer(CheckedLeafNodeTypeAccess(ValueName,vtAoBuffer,'BufferValueInsertNoLock')).Insert(Index,Value,ValueKind);
+TUNSNodeAoBuffer(AccessLeafNodeType(ValueName,vtAoBuffer,'BufferValueInsertNoLock')).Insert(Index,Value,ValueKind);
 end;
  
 //------------------------------------------------------------------------------
 
 Function TUniSettings.BufferValueRemoveNoLock(const ValueName: String; const Value: TMemoryBuffer; ValueKind: TUNSValueKind = vkActual): Integer;
 begin
-Result := TUNSNodeAoBuffer(CheckedLeafNodeTypeAccess(ValueName,vtAoBuffer,'BufferValueRemoveNoLock')).Remove(Value,ValueKind);
+Result := TUNSNodeAoBuffer(AccessLeafNodeType(ValueName,vtAoBuffer,'BufferValueRemoveNoLock')).Remove(Value,ValueKind);
 end;
 
 //------------------------------------------------------------------------------
@@ -392,7 +392,7 @@ Function TUniSettings.BufferValueItemGetNoLock(const ValueName: String; Index: I
 var
   TempBuffer: TMemoryBuffer;
 begin
-with TUNSNodeAoBuffer(CheckedLeafNodeTypeAccess(ValueName,vtAoBuffer,'BufferValueItemGetNoLock')) do
+with TUNSNodeAoBuffer(AccessLeafNodeType(ValueName,vtAoBuffer,'BufferValueItemGetNoLock')) do
   case ValueKind of
     vkActual:   TempBuffer := Items[Index];
     vkSaved:    TempBuffer := SavedItems[Index];
@@ -410,7 +410,7 @@ end;
 
 procedure TUniSettings.BufferValueItemSetNoLock(const ValueName: String; Index: Integer; const NewValue: TMemoryBuffer; ValueKind: TUNSValueKind = vkActual);
 begin
-with TUNSNodeAoBuffer(CheckedLeafNodeTypeAccess(ValueName,vtAoBuffer,'BufferValueItemSetNoLock')) do
+with TUNSNodeAoBuffer(AccessLeafNodeType(ValueName,vtAoBuffer,'BufferValueItemSetNoLock')) do
   case ValueKind of
     vkActual:   Items[Index] := NewValue;
     vkSaved:    SavedItems[Index] := NewValue;

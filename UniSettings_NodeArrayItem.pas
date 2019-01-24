@@ -25,6 +25,13 @@ uses
   SysUtils,
   UniSettings_Exceptions, UniSettings_Utils, UniSettings_NodeArray;
 
+class Function TUNSNodeArrayItem.GetNodeType: TUNSNodeType;
+begin
+Result := ntArrayItem;
+end;
+
+//------------------------------------------------------------------------------
+
 procedure TUNSNodeArrayItem.SetArrayIndex(Value: Integer);
 begin
 fArrayIndex := Value;
@@ -33,18 +40,10 @@ end;
 
 //==============================================================================
 
-class Function TUNSNodeArrayItem.GetNodeType: TUNSNodeType;
-begin
-Result := ntArrayItem;
-end;
-
-//==============================================================================
-
 constructor TUNSNodeArrayItem.Create(const Name: String; ParentNode: TUNSNodeBase);
 begin
 inherited Create(Name,ParentNode);
-fArrayIndex := -1;
-fName := UNSHashedString(IntToStr(fArrayIndex));
+ArrayIndex := -1;
 If ParentNode.NodeType <> ntArray then
   raise EUNSException.Create('Parent node is not of type ntArray.',Self,'Create');
 end;

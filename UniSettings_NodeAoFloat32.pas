@@ -134,49 +134,49 @@ end.
 
 Function TUniSettings.Float32ValueFirstNoLock(const ValueName: String; ValueKind: TUNSValueKind = vkActual): Float32;
 begin
-Result := TUNSNodeAoFloat32(CheckedLeafNodeTypeAccess(ValueName,vtAoFloat32,'Float32ValueFirstNoLock')).First(ValueKind);
+Result := TUNSNodeAoFloat32(AccessLeafNodeType(ValueName,vtAoFloat32,'Float32ValueFirstNoLock')).First(ValueKind);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TUniSettings.Float32ValueLastNoLock(const ValueName: String; ValueKind: TUNSValueKind = vkActual): Float32;
 begin
-Result := TUNSNodeAoFloat32(CheckedLeafNodeTypeAccess(ValueName,vtAoFloat32,'Float32ValueLastNoLock')).Last(ValueKind);
+Result := TUNSNodeAoFloat32(AccessLeafNodeType(ValueName,vtAoFloat32,'Float32ValueLastNoLock')).Last(ValueKind);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TUniSettings.Float32ValueIndexOfNoLock(const ValueName: String; const Value: Float32; ValueKind: TUNSValueKind = vkActual): Integer;
 begin
-Result := TUNSNodeAoFloat32(CheckedLeafNodeTypeAccess(ValueName,vtAoFloat32,'Float32ValueIndexOfNoLock')).IndexOf(Value,ValueKind);
+Result := TUNSNodeAoFloat32(AccessLeafNodeType(ValueName,vtAoFloat32,'Float32ValueIndexOfNoLock')).IndexOf(Value,ValueKind);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TUniSettings.Float32ValueAddNoLock(const ValueName: String; const Value: Float32; ValueKind: TUNSValueKind = vkActual): Integer;
 begin
-Result := TUNSNodeAoFloat32(CheckedLeafNodeTypeAccess(ValueName,vtAoFloat32,'Float32ValueAddNoLock')).Add(Value,ValueKind);
+Result := TUNSNodeAoFloat32(AccessLeafNodeType(ValueName,vtAoFloat32,'Float32ValueAddNoLock')).Add(Value,ValueKind);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TUniSettings.Float32ValueAppendNoLock(const ValueName: String; const Values: array of Float32; ValueKind: TUNSValueKind = vkActual): Integer;
 begin
-Result := TUNSNodeAoFloat32(CheckedLeafNodeTypeAccess(ValueName,vtAoFloat32,'Float32ValueAppendNoLock')).Append(Values,ValueKind);
+Result := TUNSNodeAoFloat32(AccessLeafNodeType(ValueName,vtAoFloat32,'Float32ValueAppendNoLock')).Append(Values,ValueKind);
 end;
 
 //------------------------------------------------------------------------------
 
 procedure TUniSettings.Float32ValueInsertNoLock(const ValueName: String; Index: Integer; const Value: Float32; ValueKind: TUNSValueKind = vkActual);
 begin
-TUNSNodeAoFloat32(CheckedLeafNodeTypeAccess(ValueName,vtAoFloat32,'Float32ValueInsertNoLock')).Insert(Index,Value,ValueKind);
+TUNSNodeAoFloat32(AccessLeafNodeType(ValueName,vtAoFloat32,'Float32ValueInsertNoLock')).Insert(Index,Value,ValueKind);
 end;
  
 //------------------------------------------------------------------------------
 
 Function TUniSettings.Float32ValueRemoveNoLock(const ValueName: String; const Value: Float32; ValueKind: TUNSValueKind = vkActual): Integer;
 begin
-Result := TUNSNodeAoFloat32(CheckedLeafNodeTypeAccess(ValueName,vtAoFloat32,'Float32ValueRemoveNoLock')).Remove(Value,ValueKind);
+Result := TUNSNodeAoFloat32(AccessLeafNodeType(ValueName,vtAoFloat32,'Float32ValueRemoveNoLock')).Remove(Value,ValueKind);
 end;
 
 //------------------------------------------------------------------------------
@@ -267,7 +267,7 @@ end;
 
 Function TUniSettings.Float32ValueItemGetNoLock(const ValueName: String; Index: Integer; ValueKind: TUNSValueKind = vkActual): Float32;
 begin
-with TUNSNodeAoFloat32(CheckedLeafNodeTypeAccess(ValueName,vtAoFloat32,'Float32ValueItemGetNoLock')) do
+with TUNSNodeAoFloat32(AccessLeafNodeType(ValueName,vtAoFloat32,'Float32ValueItemGetNoLock')) do
   case ValueKind of
     vkActual:   Result := Items[Index];
     vkSaved:    Result := SavedItems[Index];
@@ -281,7 +281,7 @@ end;
 
 procedure TUniSettings.Float32ValueItemSetNoLock(const ValueName: String; Index: Integer; const NewValue: Float32; ValueKind: TUNSValueKind = vkActual);
 begin
-with TUNSNodeAoFloat32(CheckedLeafNodeTypeAccess(ValueName,vtAoFloat32,'Float32ValueItemSetNoLock')) do
+with TUNSNodeAoFloat32(AccessLeafNodeType(ValueName,vtAoFloat32,'Float32ValueItemSetNoLock')) do
   case ValueKind of
     vkActual:   Items[Index] := NewValue;
     vkSaved:    SavedItems[Index] := NewValue;

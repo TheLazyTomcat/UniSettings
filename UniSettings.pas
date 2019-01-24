@@ -50,8 +50,6 @@ uses
   UniSettings_ScriptParser;
 
 type
-  TUNSNode = TUNSNodeBase;
-
   TUniSettings = class(TObject)
   private
     fValueFormatSettings: TUNSValueFormatSettings;
@@ -74,23 +72,29 @@ type
     procedure SetWorkingBranch(const Branch: String);
   protected
     Function CreateLeafNode(ValueType: TUNSValueType; const NodeName: String; ParentNode: TUNSNodeBranch): TUNSNodeLeaf; virtual;
-    Function GetSubNode(NodeNamePart: TUNSNamePart; Branch: TUNSNodeBranch; out Node: TUNSNode; CanCreateArrayItem: Boolean): Boolean; virtual;
+    Function GetSubNode(NodeNamePart: TUNSNamePart; Branch: TUNSNodeBranch; out Node: TUNSNodeBase; CanCreateArrayItem: Boolean): Boolean; virtual;
     Function ConstructBranch(NodeNameParts: TUNSNameParts): TUNSNodeBranch; virtual;
     Function AddNode(const NodeName: String; ValueType: TUNSValueType; out Node: TUNSNodeLeaf): Boolean; virtual;
-    Function FindNode(NodeNameParts: TUNSNameParts): TUNSNode; virtual;    
-    Function FindLeafNode(const NodeName: String; out Node: TUNSNodeLeaf): Boolean; overload; virtual;
-    Function FindLeafNode(const NodeName: String; ValueType: TUNSValueType; out Node: TUNSNodeLeaf): Boolean; overload; virtual;
-    Function CheckedLeafNodeAccess(const NodeName, Caller: String): TUNSNodeLeaf; virtual;
-    Function CheckedLeafArrayNodeAccess(const NodeName, Caller: String): TUNSNodePrimitiveArray; virtual;
-    Function CheckedLeafNodeTypeAccess(const NodeName: String; ValueType: TUNSValueType; const Caller: String): TUNSNodeLeaf; virtual;
-    Function CheckedLeafNodeAccessIsArray(const NodeName, Caller: String; out Node: TUNSNodeLeaf; out ValueKind: TUNSValueKind; out Index: Integer): Boolean; virtual;
-    Function CheckedLeafNodeTypeAccessIsArray(const NodeName: String; ValueType: TUNSValueType; const Caller: String; out Node: TUNSNodeLeaf; out ValueKind: TUNSValueKind; out Index: Integer): Boolean; virtual;
+
+    Function FindNode(NodeNameParts: TUNSNameParts): TUNSNodeBase; virtual;
+    
+    Function FindLeafNode(NodeNameParts: TUNSNameParts; out Node: TUNSNodeBase): Boolean; overload; virtual;
+    Function FindLeafNode(const NodeName: String; out Node: TUNSNodeBase): Boolean; overload; virtual;
+    Function FindLeafNode(const NodeName: String; ValueType: TUNSValueType; out Node: TUNSNodeBase): Boolean; overload; virtual;
+    
+    Function AccessLeafNode(const NodeName, Caller: String): TUNSNodeLeaf; virtual;
+    Function AccessLeafNodeType(const NodeName: String; ValueType: TUNSValueType; const Caller: String): TUNSNodeLeaf; virtual;
+    Function AccessArrayLeafNode(const NodeName, Caller: String): TUNSNodePrimitiveArray; virtual;
+
+    Function AccessLeafNodeIsArray(const NodeName, Caller: String; out Node: TUNSNodeLeaf; out ValueKind: TUNSValueKind; out Index: Integer): Boolean; virtual;
+    Function AccessLeafNodeTypeIsArray(const NodeName: String; ValueType: TUNSValueType; const Caller: String; out Node: TUNSNodeLeaf; out ValueKind: TUNSValueKind; out Index: Integer): Boolean; virtual;
+
     procedure ConstructionInitialization; virtual;
     procedure ListValuesWithNodes(List: TStrings; WorkingNodeInNames: Boolean); virtual;
     procedure BeginChanging;
     procedure EndChanging;
     procedure OnNodeChangeHandler(Sender: TObject; Node: TUNSNodeBase); virtual;
-    constructor Create(RootNode: TUNSNodeBranch); overload;
+    constructor CreateInternal(RootNode: TUNSNodeBranch); overload;
   public
     constructor Create; overload;
     constructor CreateAsCopy(Source: TUniSettings);
@@ -173,6 +177,7 @@ type
     Function ActualEqualsDefaultNoLock: Boolean; virtual;
     procedure SaveNoLock; virtual;
     procedure RestoreNoLock; virtual;
+
     Function ValueFullNameNoLock(const ValueName: String): String; virtual;
     Function ValueTypeNoLock(const ValueName: String): TUNSValueType; virtual;
     Function ValueSizeNoLock(const ValueName: String; ValueKind: TUNSValueKind = vkActual): TMemSize; virtual;
@@ -194,11 +199,13 @@ type
     procedure ValueToBufferNoLock(const ValueName: String; Buffer: TMemoryBuffer; ValueKind: TUNSValueKind = vkActual); virtual;
     procedure ValueFromBufferNoLock(const ValueName: String; Buffer: TMemoryBuffer; ValueKind: TUNSValueKind = vkActual); virtual;
     Function ValueAsBufferNoLock(const ValueName: String; ValueKind: TUNSValueKind = vkActual): TMemoryBuffer; virtual;
+
     Function ValueCountNoLock(const ValueName: String; ValueKind: TUNSValueKind = vkActual): Integer; virtual;
     Function ValueItemSizeNoLock(const ValueName: String; Index: Integer; ValueKind: TUNSValueKind = vkActual): TMemSize; virtual;
     procedure ValueValueKindMoveNoLock(const ValueName: String; Index: Integer; Src,Dest: TUNSValueKind); overload; virtual;
     procedure ValueValueKindExchangeNoLock(const ValueName: String; Index: Integer; ValA,ValB: TUNSValueKind); overload; virtual;
     Function ValueValueKindCompareNoLock(const ValueName: String; Index: Integer; ValA,ValB: TUNSValueKind): Boolean; overload; virtual;
+
     procedure ValueItemActualFromDefaultNoLock(const ValueName: String; Index: Integer); virtual;
     procedure ValueItemDefaultFromActualNoLock(const ValueName: String; Index: Integer); virtual;
     procedure ValueItemExchangeActualAndDefaultNoLock(const ValueName: String; Index: Integer); virtual;
@@ -214,6 +221,7 @@ type
     procedure ValueItemToBufferNoLock(const ValueName: String; Index: Integer; Buffer: TMemoryBuffer; ValueKind: TUNSValueKind = vkActual); virtual;
     procedure ValueItemFromBufferNoLock(const ValueName: String; Index: Integer; Buffer: TMemoryBuffer; ValueKind: TUNSValueKind = vkActual); virtual;
     Function ValueItemAsBufferNoLock(const ValueName: String; Index: Integer; ValueKind: TUNSValueKind = vkActual): TMemoryBuffer; virtual;
+
     Function ValueLowIndexNoLock(const ValueName: String; ValueKind: TUNSValueKind = vkActual): Integer; virtual;
     Function ValueHighIndexNoLock(const ValueName: String; ValueKind: TUNSValueKind = vkActual): Integer; virtual;
     Function ValueCheckIndexNoLock(const ValueName: String; Index: Integer; ValueKind: TUNSValueKind = vkActual): Boolean; virtual;
@@ -231,6 +239,7 @@ type
     Function ActualEqualsDefault: Boolean; virtual;
     procedure Save; virtual;
     procedure Restore; virtual;
+
     Function ValueFullName(const ValueName: String): String; virtual;
     Function ValueType(const ValueName: String): TUNSValueType; virtual;
     Function ValueSize(const ValueName: String; ValueKind: TUNSValueKind = vkActual): TMemSize; virtual;
@@ -252,11 +261,13 @@ type
     procedure ValueToBuffer(const ValueName: String; Buffer: TMemoryBuffer; ValueKind: TUNSValueKind = vkActual); virtual;
     procedure ValueFromBuffer(const ValueName: String; Buffer: TMemoryBuffer; ValueKind: TUNSValueKind = vkActual); virtual;
     Function ValueAsBuffer(const ValueName: String; ValueKind: TUNSValueKind = vkActual): TMemoryBuffer; virtual;
+
     Function ValueCount(const ValueName: String; ValueKind: TUNSValueKind = vkActual): Integer; virtual;
     Function ValueItemSize(const ValueName: String; Index: Integer; ValueKind: TUNSValueKind = vkActual): TMemSize; virtual;
     procedure ValueValueKindMove(const ValueName: String; Index: Integer; Src,Dest: TUNSValueKind); overload; virtual;
     procedure ValueValueKindExchange(const ValueName: String; Index: Integer; ValA,ValB: TUNSValueKind); overload; virtual;
     Function ValueValueKindCompare(const ValueName: String; Index: Integer; ValA,ValB: TUNSValueKind): Boolean; overload; virtual;
+
     procedure ValueItemActualFromDefault(const ValueName: String; Index: Integer); virtual;
     procedure ValueItemDefaultFromActual(const ValueName: String; Index: Integer); virtual;
     procedure ValueItemExchangeActualAndDefault(const ValueName: String; Index: Integer); virtual;
@@ -272,6 +283,7 @@ type
     procedure ValueItemToBuffer(const ValueName: String; Index: Integer; Buffer: TMemoryBuffer; ValueKind: TUNSValueKind = vkActual); virtual;
     procedure ValueItemFromBuffer(const ValueName: String; Index: Integer; Buffer: TMemoryBuffer; ValueKind: TUNSValueKind = vkActual); virtual;
     Function ValueItemAsBuffer(const ValueName: String; Index: Integer; ValueKind: TUNSValueKind = vkActual): TMemoryBuffer; virtual;
+
     Function ValueLowIndex(const ValueName: String; ValueKind: TUNSValueKind = vkActual): Integer; virtual;
     Function ValueHighIndex(const ValueName: String; ValueKind: TUNSValueKind = vkActual): Integer; virtual;
     Function ValueCheckIndex(const ValueName: String; Index: Integer; ValueKind: TUNSValueKind = vkActual): Boolean; virtual;
@@ -279,6 +291,7 @@ type
     procedure ValueMove(const ValueName: String; SrcIndex,DstIndex: Integer; ValueKind: TUNSValueKind = vkActual); virtual;
     procedure ValueDelete(const ValueName: String; Index: Integer; ValueKind: TUNSValueKind = vkActual); virtual;
     procedure ValueClear(const ValueName: String; ValueKind: TUNSValueKind = vkActual); virtual;
+
     //--- Type-specific value access -------------------------------------------
   {$DEFINE UNS_Included}{$DEFINE UNS_Include_Declaration}
     // simple types
@@ -387,7 +400,7 @@ uses
   addition index.
 }
 
-Function UNS_LV_Compare(Context: Pointer; Index1,Index2: Integer): Integer;
+Function UNS_LV_CompareFunc(Context: Pointer; Index1,Index2: Integer): Integer;
 begin
 Result := TUNSNodeBase(TStrings(Context).Objects[Index2]).CreationIndex -
           TUNSNodeBase(TStrings(Context).Objects[Index1]).CreationIndex;
@@ -395,15 +408,12 @@ end;
 
 //------------------------------------------------------------------------------
 
-procedure UNS_LV_Exchange(Context: Pointer; Index1,Index2: Integer);
+procedure UNS_LV_ExchangeFunc(Context: Pointer; Index1,Index2: Integer);
 begin
 TStrings(Context).Exchange(Index1,Index2);
 end;
 
 //==============================================================================
-
-type
-  TUNSUniSettingsClass = class of TUniSettings;
 
 Function TUniSettings.GetValueFormatSettings: TUNSValueFormatSettings;
 begin
@@ -474,7 +484,7 @@ end;
 procedure TUniSettings.SetWorkingBranch(const Branch: String);
 var
   NameParts:  TUNSNameParts;
-  Node:       TUNSNode;
+  Node:       TUNSNodeBase;
 begin
 WriteLock;
 try
@@ -544,14 +554,14 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function TUniSettings.GetSubNode(NodeNamePart: TUNSNamePart; Branch: TUNSNodeBranch; out Node: TUNSNode; CanCreateArrayItem: Boolean): Boolean;
+Function TUniSettings.GetSubNode(NodeNamePart: TUNSNamePart; Branch: TUNSNodeBranch; out Node: TUNSNodeBase; CanCreateArrayItem: Boolean): Boolean;
 begin
 Node := nil;
 case NodeNamePart.PartType of
   nptIdentifier,
   nptArrayIdentifier:
     begin
-      Result := Branch.FindNode(NodeNamePart.PartStr,Node,False);
+      Result := Branch.FindNode(NodeNamePart.PartStr,Node);
       Exit;
     end;
 {- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - }
@@ -600,7 +610,7 @@ end;
 Function TUniSettings.ConstructBranch(NodeNameParts: TUNSNameParts): TUNSNodeBranch;
 var
   CurrentBranch:  TUNSNodeBranch;
-  NextNode:       TUNSNode;
+  NextNode:       TUNSNodeBase;
   i:              Integer;
   NodeFound:      Boolean;
 begin
@@ -699,73 +709,76 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function TUniSettings.FindNode(NodeNameParts: TUNSNameParts): TUNSNode;
-var
-  CurrentNode:  TUNSNode;
-  i:            Integer;
+Function TUniSettings.FindNode(NodeNameParts: TUNSNameParts): TUNSNodeBase;
 begin
 Result := nil;
-If NodeNameParts.Valid and (CDA_Count(NodeNameParts) > 0) then
-  begin
-    CurrentNode := fWorkingNode;
-    For i := CDA_Low(NodeNameParts) to CDA_High(NodeNameParts) do
-      begin
-        If UNSIsBranchNode(CurrentNode) then
-          begin
-            If not GetSubNode(CDA_GetItem(NodeNameParts,i),TUNSNodeBranch(CurrentNode),CurrentNode,False) then
-              Exit;
-          end
-        else Exit;
-      end;
-    Result := CurrentNode;
-  end;
+If NodeNameParts.Valid and not NodeNameParts.ArrItemCreate and (CDA_Count(NodeNameParts) > 0) then
+  If not fWorkingNode.FindNode(NodeNameParts,CDA_Low(NodeNameParts),Result) then
+    Result := nil;
 end;
 
 //------------------------------------------------------------------------------
 
-Function TUniSettings.FindLeafNode(const NodeName: String; out Node: TUNSNodeLeaf): Boolean;
+Function TUniSettings.FindLeafNode(NodeNameParts: TUNSNameParts; out Node: TUNSNodeBase): Boolean;
+begin
+Result := False;
+Node := nil;
+If NodeNameParts.Valid then
+  begin
+    Node := FindNode(NodeNameParts);
+    Result := UNSIsLeafNode(Node);
+  end;
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function TUniSettings.FindLeafNode(const NodeName: String; out Node: TUNSNodeBase): Boolean;
 var
   NameParts:  TUNSNameParts;
-  FoundNode:  TUNSNode;
 begin
 Result := False;
 Node := nil;
 If UNSNameParts(NodeName,NameParts) > 0 then
-  begin
-    FoundNode := FindNode(NameParts);
-    If UNSIsLeafNode(FoundNode) then
-      begin
-        Node := TUNSNodeLeaf(FoundNode);
-        Result := True;
-      end;
-  end;
+  Result := FindLeafNode(NameParts,Node);
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function TUniSettings.FindLeafNode(const NodeName: String; ValueType: TUNSValueType; out Node: TUNSNodeLeaf): Boolean;
+Function TUniSettings.FindLeafNode(const NodeName: String; ValueType: TUNSValueType; out Node: TUNSNodeBase): Boolean;
 begin
 If FindLeafNode(NodeName,Node) then
-  Result := Node.ValueType = ValueType
+  Result := TUNSNodeLeaf(Node).ValueType = ValueType
 else
   Result := False;
 end;
 
 //------------------------------------------------------------------------------
 
-Function TUniSettings.CheckedLeafNodeAccess(const NodeName, Caller: String): TUNSNodeLeaf;
+Function TUniSettings.AccessLeafNode(const NodeName, Caller: String): TUNSNodeLeaf;
 begin
-If not FindLeafNode(NodeName,Result) then
+If not FindLeafNode(NodeName,TUNSNodeBase(Result)) then
   raise EUNSValueNotFoundException.Create(NodeName,Self,Caller);
 end;
 
 //------------------------------------------------------------------------------
 
-Function TUniSettings.CheckedLeafArrayNodeAccess(const NodeName, Caller: String): TUNSNodePrimitiveArray;
+Function TUniSettings.AccessLeafNodeType(const NodeName: String; ValueType: TUNSValueType; const Caller: String): TUNSNodeLeaf;
+begin
+If FindLeafNode(NodeName,TUNSNodeBase(Result)) then
+  begin
+    If Result.ValueType <> ValueType then
+      raise EUNSValueTypeNotFoundException.Create(NodeName,ValueType,Self,Caller);
+  end
+else raise EUNSValueNotFoundException.Create(NodeName,Self,Caller);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TUniSettings.AccessArrayLeafNode(const NodeName, Caller: String): TUNSNodePrimitiveArray;
 var
   Node: TUNSNodeLeaf;
 begin
-If FindLeafNode(NodeName,Node) then
+If FindLeafNode(NodeName,TUNSNodeBase(Node)) then
   begin
     If UNSIsPrimitiveArrayNode(Node) then
       Result := TUNSNodePrimitiveArray(Node)
@@ -777,22 +790,10 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function TUniSettings.CheckedLeafNodeTypeAccess(const NodeName: String; ValueType: TUNSValueType; const Caller: String): TUNSNodeLeaf;
-begin
-If FindLeafNode(NodeName,Result) then
-  begin
-    If Result.ValueType <> ValueType then
-      raise EUNSValueTypeNotFoundException.Create(NodeName,ValueType,Self,Caller);
-  end
-else raise EUNSValueNotFoundException.Create(NodeName,Self,Caller);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TUniSettings.CheckedLeafNodeAccessIsArray(const NodeName, Caller: String; out Node: TUNSNodeLeaf; out ValueKind: TUNSValueKind; out Index: Integer): Boolean;
+Function TUniSettings.AccessLeafNodeIsArray(const NodeName, Caller: String; out Node: TUNSNodeLeaf; out ValueKind: TUNSValueKind; out Index: Integer): Boolean;
 var
   NameParts:  TUNSNameParts;
-  FoundNode:  TUNSNode;
+  FoundNode:  TUNSNodeBase;
 begin
 Result := False;
 Index := -1;
@@ -845,10 +846,7 @@ If UNSNameParts(NodeName,NameParts) > 0 then
       end
     else
       begin
-        FoundNode := FindNode(NameParts);
-        If UNSIsLeafNode(FoundNode) then
-          Node := TUNSNodeLeaf(FoundNode)
-        else
+        If not FindLeafNode(NameParts,TUNSNodeBase(Node)) then
           raise EUNSValueNotFoundException.Create(NodeName,Self,Caller);
       end;
   end
@@ -857,9 +855,9 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function TUniSettings.CheckedLeafNodeTypeAccessIsArray(const NodeName: String; ValueType: TUNSValueType; const Caller: String; out Node: TUNSNodeLeaf; out ValueKind: TUNSValueKind; out Index: Integer): Boolean;
+Function TUniSettings.AccessLeafNodeTypeIsArray(const NodeName: String; ValueType: TUNSValueType; const Caller: String; out Node: TUNSNodeLeaf; out ValueKind: TUNSValueKind; out Index: Integer): Boolean;
 begin
-If CheckedLeafNodeAccessIsArray(NodeName,Caller,Node,ValueKind,Index) then
+If AccessLeafNodeIsArray(NodeName,Caller,Node,ValueKind,Index) then
   begin
     If TUNSNodePrimitiveArray(Node).ItemValueType <> ValueType then
       raise EUNSValueTypeNotFoundException.Create(NodeName,ValueType,Self,Caller);
@@ -887,7 +885,7 @@ procedure TUniSettings.ListValuesWithNodes(List: TStrings; WorkingNodeInNames: B
 var
   Sorter: TListQuickSorter;
 
-  procedure AddNodeToListing(Node: TUNSNode);
+  procedure AddNodeToListing(Node: TUNSNodeBase);
   var
     i:        Integer;
     TempStr:  String;
@@ -900,7 +898,7 @@ var
     else
       begin
         TempStr := Node.ReconstructFullName(False);
-        If WorkingNodeInNames or (Length(fWorkingBranch) <= 0) then
+        If WorkingNodeInNames or (fWorkingNode = fRootNode) then
           List.AddObject(TempStr,Node)
         else
           List.AddObject(Copy(TempStr,Length(fWorkingBranch) + 2,Length(TempStr)),Node)
@@ -912,7 +910,7 @@ List.Clear;
 AddNodeToListing(fWorkingNode);
 If List.Count > 1 then
   begin
-    Sorter := TListQuickSorter.Create(Pointer(List),UNS_LV_Compare,UNS_LV_Exchange);
+    Sorter := TListQuickSorter.Create(Pointer(List),UNS_LV_CompareFunc,UNS_LV_ExchangeFunc);
     try
       Sorter.Sort(0,Pred(List.Count));
     finally
@@ -948,22 +946,16 @@ end;
 //------------------------------------------------------------------------------
 
 procedure TUniSettings.OnNodeChangeHandler(Sender: TObject; Node: TUNSNodeBase);
-var
-  TempStr:  String;
 begin
 fChanged := True;
 If (fChangeCounter <= 0) then
   begin
     If UNSIsLeafNode(Node) then
       begin
-        If Assigned(fOnValueChange) Or Assigned(fOnValueChangeCB) then
-          begin
-            TempStr := Node.ReconstructFullName(False);
-            If Assigned(fOnValueChange) then
-              fOnValueChange(Self,TempStr);
-            If Assigned(fOnValueChangeCB) then
-              fOnValueChangeCB(Self,TempStr);
-          end;
+        If Assigned(fOnValueChange) then
+          fOnValueChange(Self,Node.FullNameStr);
+        If Assigned(fOnValueChangeCB) then
+          fOnValueChangeCB(Self,Node.FullNameStr);
       end
     else
       begin
@@ -977,7 +969,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-constructor TUniSettings.Create(RootNode: TUNSNodeBranch);
+constructor TUniSettings.CreateInternal(RootNode: TUNSNodeBranch);
 begin
 inherited Create;
 fValueFormatSettings := UNS_VALUEFORMATSETTINGS_DEFAULT;
@@ -987,7 +979,7 @@ fRootNode.Master := Self;
 fRootNode.OnChange := OnNodeChangeHandler;
 fWorkingBranch := '';
 fWorkingNode := fRootNode;
-fParser := TUNSParser.Create(AddNode);
+fParser := TUNSParser.Create(Self.AddNode);
 fCreationCounter := 0;
 fChangeCounter := 0;
 fChanged := False;
@@ -1001,14 +993,14 @@ end;
 
 constructor TUniSettings.Create;
 begin
-Create(TUNSNodeBranch.Create(UNS_NAME_ROOTNODE,nil));
+CreateInternal(TUNSNodeBranch.Create(UNS_NAME_ROOTNODE,nil));
 end;
 
 //------------------------------------------------------------------------------
 
 constructor TUniSettings.CreateAsCopy(Source: TUniSettings);
 begin
-Create(TUNSNodeBranch.CreateAsCopy(Source.fRootNode,UNS_NAME_ROOTNODE,nil));
+CreateInternal(TUNSNodeBranch.CreateAsCopy(Source.fRootNode,UNS_NAME_ROOTNODE,nil));
 fValueFormatSettings := Source.ValueFormatSettings;
 SetWorkingBranch(Source.WorkingBranch);
 end;
@@ -1016,6 +1008,8 @@ end;
 //------------------------------------------------------------------------------
 
 Function TUniSettings.CreateCopy: TUniSettings;
+type
+  TUNSUniSettingsClass = class of TUniSettings;
 begin
 Result := TUNSUniSettingsClass(Self.ClassType).CreateAsCopy(Self);
 end;
@@ -1504,7 +1498,7 @@ end;
 Function TUniSettings.ExistsNoLock(const ValueName: String): Boolean;
 var
   NameParts:  TUNSNameParts;
-  Node:       TUNSNode;
+  Node:       TUNSNodeBase;
 begin
 Result := False;
 If UNSNameParts(ValueName,NameParts) > 0 then
@@ -1538,11 +1532,7 @@ If UNSNameParts(ValueName,NameParts) > 0 then
                 Result := TUNSNodePrimitiveArray(Node).DefaultCount > 0;
           end;
       end
-    else
-      begin
-        Node := FindNode(NameParts);
-        Result := UNSIsLeafNode(Node);
-      end;
+    else Result := FindLeafNode(NameParts,Node);
   end;
 end;
 
@@ -1565,7 +1555,7 @@ end;
 Function TUniSettings.RemoveNoLock(const ValueName: String): Boolean;
 var
   NameParts:  TUNSNameParts;
-  Node:       TUNSNode;
+  Node:       TUNSNodeBase;
 
   Function ArrayItemRemove(ArrayNode: TUNSNodePrimitiveArray; PartIndex: Integer; ValueKind: TUNSValueKind): Boolean;
   begin
@@ -1618,9 +1608,9 @@ If UNSNameParts(ValueName,NameParts) > 0 then
         end
       else
         begin
-          Node := FindNode(NameParts);
-          If UNSIsBranchNode(Node.ParentNode) then
-            Result := TUNSNodeBranch(Node.ParentNode).Remove(Node) >= 0;
+          If FindLeafNode(NameParts,Node) then
+            If UNSIsBranchNode(Node.ParentNode) then
+              Result := TUNSNodeBranch(Node.ParentNode).Remove(Node) >= 0;
         end;
     finally
       EndChanging;
@@ -1647,6 +1637,7 @@ var
   i:  Integer;
 begin
 ListValuesWithNodes(Strings,WorkingNodeInNames);
+// remove node references, they are not needed
 For i := 0 to Pred(Strings.Count) do
   Strings.Objects[i] := nil;
 Result := Strings.Count;
@@ -1814,7 +1805,7 @@ end;
 
 Function TUniSettings.ValueFullNameNoLock(const ValueName: String): String;
 begin
-Result := CheckedLeafNodeAccess(ValueName,'ValueFullNameNoLock').ReconstructFullName(False);
+Result := AccessLeafNode(ValueName,'ValueFullNameNoLock').ReconstructFullName(False);
 end;
 
 //------------------------------------------------------------------------------
@@ -1825,7 +1816,7 @@ var
   TempValueKind:  TUNSValueKind;
   TempIndex:      Integer;
 begin
-If CheckedLeafNodeAccessIsArray(ValueName,'ValueTypeNoLock',TempNode,TempValueKind,TempIndex) then
+If AccessLeafNodeIsArray(ValueName,'ValueTypeNoLock',TempNode,TempValueKind,TempIndex) then
   Result := TUNSNodePrimitiveArray(TempNode).ItemValueType
 else
   Result := TempNode.ValueType;
@@ -1839,7 +1830,7 @@ var
   TempValueKind:  TUNSValueKind;
   TempIndex:      Integer;
 begin
-If CheckedLeafNodeAccessIsArray(ValueName,'ValueSizeNoLock',TempNode,TempValueKind,TempIndex) then
+If AccessLeafNodeIsArray(ValueName,'ValueSizeNoLock',TempNode,TempValueKind,TempIndex) then
   Result := TUNSNodePrimitiveArray(TempNode).ObtainItemSize(TempIndex,TempValueKind)
 else
   Result := TempNode.ValueSize;
@@ -1853,7 +1844,7 @@ var
   TempValueKind:  TUNSValueKind;
   TempIndex:      Integer;
 begin
-If CheckedLeafNodeAccessIsArray(ValueName,'ValueValueKindMoveNoLock',TempNode,TempValueKind,TempIndex) then
+If AccessLeafNodeIsArray(ValueName,'ValueValueKindMoveNoLock',TempNode,TempValueKind,TempIndex) then
   TUNSNodePrimitiveArray(TempNode).ValueKindMove(TempIndex,Src,Dest)
 else
   TempNode.ValueKindMove(Src,Dest);
@@ -1867,7 +1858,7 @@ var
   TempValueKind:  TUNSValueKind;
   TempIndex:      Integer;
 begin
-If CheckedLeafNodeAccessIsArray(ValueName,'ValueValueKindExchangeNoLock',TempNode,TempValueKind,TempIndex) then
+If AccessLeafNodeIsArray(ValueName,'ValueValueKindExchangeNoLock',TempNode,TempValueKind,TempIndex) then
   TUNSNodePrimitiveArray(TempNode).ValueKindExchange(TempIndex,ValA,ValB)
 else
   TempNode.ValueKindExchange(ValA,ValB);
@@ -1881,7 +1872,7 @@ var
   TempValueKind:  TUNSValueKind;
   TempIndex:      Integer;
 begin
-If CheckedLeafNodeAccessIsArray(ValueName,'ValueValueKindCompareNoLock',TempNode,TempValueKind,TempIndex) then
+If AccessLeafNodeIsArray(ValueName,'ValueValueKindCompareNoLock',TempNode,TempValueKind,TempIndex) then
   Result := TUNSNodePrimitiveArray(TempNode).ValueKindCompare(TempIndex,ValA,ValB)
 else
   Result := TempNode.ValueKindCompare(ValA,ValB);
@@ -1895,7 +1886,7 @@ var
   TempValueKind:  TUNSValueKind;
   TempIndex:      Integer;
 begin
-If CheckedLeafNodeAccessIsArray(ValueName,'ValueActualFromDefaultNoLock',TempNode,TempValueKind,TempIndex) then
+If AccessLeafNodeIsArray(ValueName,'ValueActualFromDefaultNoLock',TempNode,TempValueKind,TempIndex) then
   TUNSNodePrimitiveArray(TempNode).ActualFromDefault(TempIndex)
 else
   TempNode.ActualFromDefault;
@@ -1909,7 +1900,7 @@ var
   TempValueKind:  TUNSValueKind;
   TempIndex:      Integer;
 begin
-If CheckedLeafNodeAccessIsArray(ValueName,'ValueDefaultFromActualNoLock',TempNode,TempValueKind,TempIndex) then
+If AccessLeafNodeIsArray(ValueName,'ValueDefaultFromActualNoLock',TempNode,TempValueKind,TempIndex) then
   TUNSNodePrimitiveArray(TempNode).DefaultFromActual(TempIndex)
 else
   TempNode.DefaultFromActual;
@@ -1923,7 +1914,7 @@ var
   TempValueKind:  TUNSValueKind;
   TempIndex:      Integer;
 begin
-If CheckedLeafNodeAccessIsArray(ValueName,'ValueExchangeActualAndDefaultNoLock',TempNode,TempValueKind,TempIndex) then
+If AccessLeafNodeIsArray(ValueName,'ValueExchangeActualAndDefaultNoLock',TempNode,TempValueKind,TempIndex) then
   TUNSNodePrimitiveArray(TempNode).ExchangeActualAndDefault(TempIndex)
 else
   TempNode.ExchangeActualAndDefault;
@@ -1937,7 +1928,7 @@ var
   TempValueKind:  TUNSValueKind;
   TempIndex:      Integer;
 begin
-If CheckedLeafNodeAccessIsArray(ValueName,'ValueActualEqualsDefaultNoLock',TempNode,TempValueKind,TempIndex) then
+If AccessLeafNodeIsArray(ValueName,'ValueActualEqualsDefaultNoLock',TempNode,TempValueKind,TempIndex) then
   Result := TUNSNodePrimitiveArray(TempNode).ActualEqualsDefault(TempIndex)
 else
   Result := TempNode.ActualEqualsDefault;
@@ -1951,7 +1942,7 @@ var
   TempValueKind:  TUNSValueKind;
   TempIndex:      Integer;
 begin
-If CheckedLeafNodeAccessIsArray(ValueName,'ValueSaveNoLock',TempNode,TempValueKind,TempIndex) then
+If AccessLeafNodeIsArray(ValueName,'ValueSaveNoLock',TempNode,TempValueKind,TempIndex) then
   TUNSNodePrimitiveArray(TempNode).Save(TempIndex)
 else
   TempNode.Save;
@@ -1965,7 +1956,7 @@ var
   TempValueKind:  TUNSValueKind;
   TempIndex:      Integer;
 begin
-If CheckedLeafNodeAccessIsArray(ValueName,'ValueRestoreNoLock',TempNode,TempValueKind,TempIndex) then
+If AccessLeafNodeIsArray(ValueName,'ValueRestoreNoLock',TempNode,TempValueKind,TempIndex) then
   TUNSNodePrimitiveArray(TempNode).Restore(TempIndex)
 else
   TempNode.Restore;
@@ -1979,7 +1970,7 @@ var
   TempValueKind:  TUNSValueKind;
   TempIndex:      Integer;
 begin
-If CheckedLeafNodeAccessIsArray(ValueName,'ValueAddressNoLock',TempNode,TempValueKind,TempIndex) then
+If AccessLeafNodeIsArray(ValueName,'ValueAddressNoLock',TempNode,TempValueKind,TempIndex) then
   Result := TUNSNodePrimitiveArray(TempNode).Address(TempIndex,TempValueKind)
 else
   Result := TempNode.Address(ValueKind);
@@ -1993,7 +1984,7 @@ var
   TempValueKind:  TUNSValueKind;
   TempIndex:      Integer;
 begin
-If CheckedLeafNodeAccessIsArray(ValueName,'ValueAsStringNoLock',TempNode,TempValueKind,TempIndex) then
+If AccessLeafNodeIsArray(ValueName,'ValueAsStringNoLock',TempNode,TempValueKind,TempIndex) then
   Result := TUNSNodePrimitiveArray(TempNode).AsString(TempIndex,TempValueKind)
 else
   Result := TempNode.AsString(ValueKind);
@@ -2007,7 +1998,7 @@ var
   TempValueKind:  TUNSValueKind;
   TempIndex:      Integer;
 begin
-If CheckedLeafNodeAccessIsArray(ValueName,'ValueFromStringNoLock',TempNode,TempValueKind,TempIndex) then
+If AccessLeafNodeIsArray(ValueName,'ValueFromStringNoLock',TempNode,TempValueKind,TempIndex) then
   TUNSNodePrimitiveArray(TempNode).FromString(TempIndex,Str,TempValueKind)
 else
   TempNode.FromString(Str,ValueKind);
@@ -2021,7 +2012,7 @@ var
   TempValueKind:  TUNSValueKind;
   TempIndex:      Integer;
 begin
-If CheckedLeafNodeAccessIsArray(ValueName,'ValueToStreamNoLock',TempNode,TempValueKind,TempIndex) then
+If AccessLeafNodeIsArray(ValueName,'ValueToStreamNoLock',TempNode,TempValueKind,TempIndex) then
   TUNSNodePrimitiveArray(TempNode).ToStream(TempIndex,Stream,TempValueKind)
 else
   TempNode.ToStream(Stream,ValueKind);
@@ -2035,7 +2026,7 @@ var
   TempValueKind:  TUNSValueKind;
   TempIndex:      Integer;
 begin
-If CheckedLeafNodeAccessIsArray(ValueName,'ValueFromStreamNoLock',TempNode,TempValueKind,TempIndex) then
+If AccessLeafNodeIsArray(ValueName,'ValueFromStreamNoLock',TempNode,TempValueKind,TempIndex) then
   TUNSNodePrimitiveArray(TempNode).FromStream(TempIndex,Stream,TempValueKind)
 else
   TempNode.FromStream(Stream,ValueKind);
@@ -2049,7 +2040,7 @@ var
   TempValueKind:  TUNSValueKind;
   TempIndex:      Integer;
 begin
-If CheckedLeafNodeAccessIsArray(ValueName,'ValueAsStreamNoLock',TempNode,TempValueKind,TempIndex) then
+If AccessLeafNodeIsArray(ValueName,'ValueAsStreamNoLock',TempNode,TempValueKind,TempIndex) then
   Result := TUNSNodePrimitiveArray(TempNode).AsStream(TempIndex,TempValueKind)
 else
   Result := TempNode.AsStream(ValueKind);
@@ -2063,7 +2054,7 @@ var
   TempValueKind:  TUNSValueKind;
   TempIndex:      Integer;
 begin
-If CheckedLeafNodeAccessIsArray(ValueName,'ValueToBufferNoLock',TempNode,TempValueKind,TempIndex) then
+If AccessLeafNodeIsArray(ValueName,'ValueToBufferNoLock',TempNode,TempValueKind,TempIndex) then
   TUNSNodePrimitiveArray(TempNode).ToBuffer(TempIndex,Buffer,TempValueKind)
 else
   TempNode.ToBuffer(Buffer,ValueKind);
@@ -2077,7 +2068,7 @@ var
   TempValueKind:  TUNSValueKind;
   TempIndex:      Integer;
 begin
-If CheckedLeafNodeAccessIsArray(ValueName,'ValueFromBufferNoLock',TempNode,TempValueKind,TempIndex) then
+If AccessLeafNodeIsArray(ValueName,'ValueFromBufferNoLock',TempNode,TempValueKind,TempIndex) then
   TUNSNodePrimitiveArray(TempNode).FromBuffer(TempIndex,Buffer,TempValueKind)
 else
   TempNode.FromBuffer(Buffer,ValueKind);
@@ -2091,7 +2082,7 @@ var
   TempValueKind:  TUNSValueKind;
   TempIndex:      Integer;
 begin
-If CheckedLeafNodeAccessIsArray(ValueName,'ValueAsBufferNoLock',TempNode,TempValueKind,TempIndex) then
+If AccessLeafNodeIsArray(ValueName,'ValueAsBufferNoLock',TempNode,TempValueKind,TempIndex) then
   Result := TUNSNodePrimitiveArray(TempNode).AsBuffer(TempIndex,TempValueKind)
 else
   Result := TempNode.AsBuffer(ValueKind);
@@ -2101,189 +2092,189 @@ end;
 
 Function TUniSettings.ValueCountNoLock(const ValueName: String; ValueKind: TUNSValueKind = vkActual): Integer;
 begin
-Result := CheckedLeafArrayNodeAccess(ValueName,'ValueCountNoLock').ObtainCount(ValueKind);
+Result := AccessArrayLeafNode(ValueName,'ValueCountNoLock').ObtainCount(ValueKind);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TUniSettings.ValueItemSizeNoLock(const ValueName: String; Index: Integer; ValueKind: TUNSValueKind = vkActual): TMemSize;
 begin
-Result := CheckedLeafArrayNodeAccess(ValueName,'ValueItemSizeNoLock').ObtainItemSize(Index,ValueKind);
+Result := AccessArrayLeafNode(ValueName,'ValueItemSizeNoLock').ObtainItemSize(Index,ValueKind);
 end;
 
 //------------------------------------------------------------------------------
 
 procedure TUniSettings.ValueValueKindMoveNoLock(const ValueName: String; Index: Integer; Src,Dest: TUNSValueKind);
 begin
-CheckedLeafArrayNodeAccess(ValueName,'ValueValueKindMoveNoLock').ValueKindMove(Index,Src,Dest);
+AccessArrayLeafNode(ValueName,'ValueValueKindMoveNoLock').ValueKindMove(Index,Src,Dest);
 end;
 
 //------------------------------------------------------------------------------
 
 procedure TUniSettings.ValueValueKindExchangeNoLock(const ValueName: String; Index: Integer; ValA,ValB: TUNSValueKind);
 begin
-CheckedLeafArrayNodeAccess(ValueName,'ValueValueKindExchangeNoLock').ValueKindExchange(Index,ValA,ValB);
+AccessArrayLeafNode(ValueName,'ValueValueKindExchangeNoLock').ValueKindExchange(Index,ValA,ValB);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TUniSettings.ValueValueKindCompareNoLock(const ValueName: String; Index: Integer; ValA,ValB: TUNSValueKind): Boolean;
 begin
-Result := CheckedLeafArrayNodeAccess(ValueName,'ValueValueKindCompareNoLock').ValueKindCompare(Index,ValA,ValB);
+Result := AccessArrayLeafNode(ValueName,'ValueValueKindCompareNoLock').ValueKindCompare(Index,ValA,ValB);
 end;
 
 //------------------------------------------------------------------------------
 
 procedure TUniSettings.ValueItemActualFromDefaultNoLock(const ValueName: String; Index: Integer);
 begin
-CheckedLeafArrayNodeAccess(ValueName,'ValueItemActualFromDefaultNoLock').ActualFromDefault(Index);
+AccessArrayLeafNode(ValueName,'ValueItemActualFromDefaultNoLock').ActualFromDefault(Index);
 end;
 
 //------------------------------------------------------------------------------
 
 procedure TUniSettings.ValueItemDefaultFromActualNoLock(const ValueName: String; Index: Integer);
 begin
-CheckedLeafArrayNodeAccess(ValueName,'ValueItemDefaultFromActualNoLock').DefaultFromActual(Index);
+AccessArrayLeafNode(ValueName,'ValueItemDefaultFromActualNoLock').DefaultFromActual(Index);
 end;
 
 //------------------------------------------------------------------------------
 
 procedure TUniSettings.ValueItemExchangeActualAndDefaultNoLock(const ValueName: String; Index: Integer);
 begin
-CheckedLeafArrayNodeAccess(ValueName,'ValueItemExchangeActualAndDefaultNoLock').ExchangeActualAndDefault(Index);
+AccessArrayLeafNode(ValueName,'ValueItemExchangeActualAndDefaultNoLock').ExchangeActualAndDefault(Index);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TUniSettings.ValueItemActualEqualsDefaultNoLock(const ValueName: String; Index: Integer): Boolean;
 begin
-Result := CheckedLeafArrayNodeAccess(ValueName,'ValueItemActualEqualsDefaultNoLock').ActualEqualsDefault(Index);
+Result := AccessArrayLeafNode(ValueName,'ValueItemActualEqualsDefaultNoLock').ActualEqualsDefault(Index);
 end;
 
 //------------------------------------------------------------------------------
 
 procedure TUniSettings.ValueItemSaveNoLock(const ValueName: String; Index: Integer);
 begin
-CheckedLeafArrayNodeAccess(ValueName,'ValueItemSaveNoLock').Save(Index);
+AccessArrayLeafNode(ValueName,'ValueItemSaveNoLock').Save(Index);
 end;
 
 //------------------------------------------------------------------------------
 
 procedure TUniSettings.ValueItemRestoreNoLock(const ValueName: String; Index: Integer);
 begin
-CheckedLeafArrayNodeAccess(ValueName,'ValueItemRestoreNoLock').Restore(Index);
+AccessArrayLeafNode(ValueName,'ValueItemRestoreNoLock').Restore(Index);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TUniSettings.ValueItemAddressNoLock(const ValueName: String; Index: Integer; ValueKind: TUNSValueKind = vkActual): Pointer;
 begin
-Result := CheckedLeafArrayNodeAccess(ValueName,'ValueItemAddressNoLock').Address(Index,ValueKind);
+Result := AccessArrayLeafNode(ValueName,'ValueItemAddressNoLock').Address(Index,ValueKind);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TUniSettings.ValueItemAsStringNoLock(const ValueName: String; Index: Integer; ValueKind: TUNSValueKind = vkActual): String;
 begin
-Result := CheckedLeafArrayNodeAccess(ValueName,'ValueItemAsStringNoLock').AsString(Index,ValueKind);
+Result := AccessArrayLeafNode(ValueName,'ValueItemAsStringNoLock').AsString(Index,ValueKind);
 end;
 
 //------------------------------------------------------------------------------
 
 procedure TUniSettings.ValueItemFromStringNoLock(const ValueName: String; Index: Integer; const Str: String; ValueKind: TUNSValueKind = vkActual);
 begin
-CheckedLeafArrayNodeAccess(ValueName,'ValueItemFromStringNoLock').FromString(Index,Str,ValueKind);
+AccessArrayLeafNode(ValueName,'ValueItemFromStringNoLock').FromString(Index,Str,ValueKind);
 end;
 
 //------------------------------------------------------------------------------
 
 procedure TUniSettings.ValueItemToStreamNoLock(const ValueName: String; Index: Integer; Stream: TStream; ValueKind: TUNSValueKind = vkActual);
 begin
-CheckedLeafArrayNodeAccess(ValueName,'ValueItemToStreamNoLock').ToStream(Index,Stream,ValueKind);
+AccessArrayLeafNode(ValueName,'ValueItemToStreamNoLock').ToStream(Index,Stream,ValueKind);
 end;
 
 //------------------------------------------------------------------------------
 
 procedure TUniSettings.ValueItemFromStreamNoLock(const ValueName: String; Index: Integer; Stream: TStream; ValueKind: TUNSValueKind = vkActual);
 begin
-CheckedLeafArrayNodeAccess(ValueName,'ValueItemFromStreamNoLock').FromStream(Index,Stream,ValueKind);
+AccessArrayLeafNode(ValueName,'ValueItemFromStreamNoLock').FromStream(Index,Stream,ValueKind);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TUniSettings.ValueItemAsStreamNoLock(const ValueName: String; Index: Integer; ValueKind: TUNSValueKind = vkActual): TMemoryStream;
 begin
-Result := CheckedLeafArrayNodeAccess(ValueName,'ValueItemAsStreamNoLock').AsStream(Index,ValueKind);
+Result := AccessArrayLeafNode(ValueName,'ValueItemAsStreamNoLock').AsStream(Index,ValueKind);
 end;
 
 //------------------------------------------------------------------------------
 
 procedure TUniSettings.ValueItemToBufferNoLock(const ValueName: String; Index: Integer; Buffer: TMemoryBuffer; ValueKind: TUNSValueKind = vkActual);
 begin
-CheckedLeafArrayNodeAccess(ValueName,'ValueItemToBufferNoLock').ToBuffer(Index,Buffer,ValueKind);
+AccessArrayLeafNode(ValueName,'ValueItemToBufferNoLock').ToBuffer(Index,Buffer,ValueKind);
 end; 
 
 //------------------------------------------------------------------------------
 
 procedure TUniSettings.ValueItemFromBufferNoLock(const ValueName: String; Index: Integer; Buffer: TMemoryBuffer; ValueKind: TUNSValueKind = vkActual);
 begin
-CheckedLeafArrayNodeAccess(ValueName,'ValueItemFromBufferNoLock').FromBuffer(Index,Buffer,ValueKind);
+AccessArrayLeafNode(ValueName,'ValueItemFromBufferNoLock').FromBuffer(Index,Buffer,ValueKind);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TUniSettings.ValueItemAsBufferNoLock(const ValueName: String; Index: Integer; ValueKind: TUNSValueKind = vkActual): TMemoryBuffer;
 begin
-Result := CheckedLeafArrayNodeAccess(ValueName,'ValueItemAsBufferNoLock').AsBuffer(Index,ValueKind);
+Result := AccessArrayLeafNode(ValueName,'ValueItemAsBufferNoLock').AsBuffer(Index,ValueKind);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TUniSettings.ValueLowIndexNoLock(const ValueName: String; ValueKind: TUNSValueKind = vkActual): Integer;
 begin
-Result := CheckedLeafArrayNodeAccess(ValueName,'ValueLowIndexNoLock').LowIndex(ValueKind);
+Result := AccessArrayLeafNode(ValueName,'ValueLowIndexNoLock').LowIndex(ValueKind);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TUniSettings.ValueHighIndexNoLock(const ValueName: String; ValueKind: TUNSValueKind = vkActual): Integer;
 begin
-Result := CheckedLeafArrayNodeAccess(ValueName,'ValueHighIndexNoLock').HighIndex(ValueKind);
+Result := AccessArrayLeafNode(ValueName,'ValueHighIndexNoLock').HighIndex(ValueKind);
 end;
  
 //------------------------------------------------------------------------------
 
 Function TUniSettings.ValueCheckIndexNoLock(const ValueName: String; Index: Integer; ValueKind: TUNSValueKind = vkActual): Boolean;
 begin
-Result := CheckedLeafArrayNodeAccess(ValueName,'ValueCheckIndexNoLock').CheckIndex(Index,ValueKind);
+Result := AccessArrayLeafNode(ValueName,'ValueCheckIndexNoLock').CheckIndex(Index,ValueKind);
 end;
 
 //------------------------------------------------------------------------------
 
 procedure TUniSettings.ValueExchangeNoLock(const ValueName: String; Index1,Index2: Integer; ValueKind: TUNSValueKind = vkActual);
 begin
-CheckedLeafArrayNodeAccess(ValueName,'ValueExchangeNoLock').Exchange(Index1,Index2,ValueKind);
+AccessArrayLeafNode(ValueName,'ValueExchangeNoLock').Exchange(Index1,Index2,ValueKind);
 end;
 
 //------------------------------------------------------------------------------
 
 procedure TUniSettings.ValueMoveNoLock(const ValueName: String; SrcIndex,DstIndex: Integer; ValueKind: TUNSValueKind = vkActual);
 begin
-CheckedLeafArrayNodeAccess(ValueName,'ValueMoveNoLock').Move(SrcIndex,DstIndex,ValueKind);
+AccessArrayLeafNode(ValueName,'ValueMoveNoLock').Move(SrcIndex,DstIndex,ValueKind);
 end;
 
 //------------------------------------------------------------------------------
 
 procedure TUniSettings.ValueDeleteNoLock(const ValueName: String; Index: Integer; ValueKind: TUNSValueKind = vkActual);
 begin
-CheckedLeafArrayNodeAccess(ValueName,'ValueDeleteNoLock').Delete(Index,ValueKind);
+AccessArrayLeafNode(ValueName,'ValueDeleteNoLock').Delete(Index,ValueKind);
 end;
  
 //------------------------------------------------------------------------------
 
 procedure TUniSettings.ValueClearNoLock(const ValueName: String; ValueKind: TUNSValueKind = vkActual);
 begin
-CheckedLeafArrayNodeAccess(ValueName,'ValueClearNoLock').Clear(ValueKind);
+AccessArrayLeafNode(ValueName,'ValueClearNoLock').Clear(ValueKind);
 end;
 
 //------------------------------------------------------------------------------

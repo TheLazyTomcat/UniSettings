@@ -127,49 +127,49 @@ end.
 
 Function TUniSettings.UInt8ValueFirstNoLock(const ValueName: String; ValueKind: TUNSValueKind = vkActual): UInt8;
 begin
-Result := TUNSNodeAoUInt8(CheckedLeafNodeTypeAccess(ValueName,vtAoUInt8,'UInt8ValueFirstNoLock')).First(ValueKind);
+Result := TUNSNodeAoUInt8(AccessLeafNodeType(ValueName,vtAoUInt8,'UInt8ValueFirstNoLock')).First(ValueKind);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TUniSettings.UInt8ValueLastNoLock(const ValueName: String; ValueKind: TUNSValueKind = vkActual): UInt8;
 begin
-Result := TUNSNodeAoUInt8(CheckedLeafNodeTypeAccess(ValueName,vtAoUInt8,'UInt8ValueLastNoLock')).Last(ValueKind);
+Result := TUNSNodeAoUInt8(AccessLeafNodeType(ValueName,vtAoUInt8,'UInt8ValueLastNoLock')).Last(ValueKind);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TUniSettings.UInt8ValueIndexOfNoLock(const ValueName: String; const Value: UInt8; ValueKind: TUNSValueKind = vkActual): Integer;
 begin
-Result := TUNSNodeAoUInt8(CheckedLeafNodeTypeAccess(ValueName,vtAoUInt8,'UInt8ValueIndexOfNoLock')).IndexOf(Value,ValueKind);
+Result := TUNSNodeAoUInt8(AccessLeafNodeType(ValueName,vtAoUInt8,'UInt8ValueIndexOfNoLock')).IndexOf(Value,ValueKind);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TUniSettings.UInt8ValueAddNoLock(const ValueName: String; const Value: UInt8; ValueKind: TUNSValueKind = vkActual): Integer;
 begin
-Result := TUNSNodeAoUInt8(CheckedLeafNodeTypeAccess(ValueName,vtAoUInt8,'UInt8ValueAddNoLock')).Add(Value,ValueKind);
+Result := TUNSNodeAoUInt8(AccessLeafNodeType(ValueName,vtAoUInt8,'UInt8ValueAddNoLock')).Add(Value,ValueKind);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TUniSettings.UInt8ValueAppendNoLock(const ValueName: String; const Values: array of UInt8; ValueKind: TUNSValueKind = vkActual): Integer;
 begin
-Result := TUNSNodeAoUInt8(CheckedLeafNodeTypeAccess(ValueName,vtAoUInt8,'UInt8ValueAppendNoLock')).Append(Values,ValueKind);
+Result := TUNSNodeAoUInt8(AccessLeafNodeType(ValueName,vtAoUInt8,'UInt8ValueAppendNoLock')).Append(Values,ValueKind);
 end;
 
 //------------------------------------------------------------------------------
 
 procedure TUniSettings.UInt8ValueInsertNoLock(const ValueName: String; Index: Integer; const Value: UInt8; ValueKind: TUNSValueKind = vkActual);
 begin
-TUNSNodeAoUInt8(CheckedLeafNodeTypeAccess(ValueName,vtAoUInt8,'UInt8ValueInsertNoLock')).Insert(Index,Value,ValueKind);
+TUNSNodeAoUInt8(AccessLeafNodeType(ValueName,vtAoUInt8,'UInt8ValueInsertNoLock')).Insert(Index,Value,ValueKind);
 end;
  
 //------------------------------------------------------------------------------
 
 Function TUniSettings.UInt8ValueRemoveNoLock(const ValueName: String; const Value: UInt8; ValueKind: TUNSValueKind = vkActual): Integer;
 begin
-Result := TUNSNodeAoUInt8(CheckedLeafNodeTypeAccess(ValueName,vtAoUInt8,'UInt8ValueRemoveNoLock')).Remove(Value,ValueKind);
+Result := TUNSNodeAoUInt8(AccessLeafNodeType(ValueName,vtAoUInt8,'UInt8ValueRemoveNoLock')).Remove(Value,ValueKind);
 end;
 
 //------------------------------------------------------------------------------
@@ -260,7 +260,7 @@ end;
 
 Function TUniSettings.UInt8ValueItemGetNoLock(const ValueName: String; Index: Integer; ValueKind: TUNSValueKind = vkActual): UInt8;
 begin
-with TUNSNodeAoUInt8(CheckedLeafNodeTypeAccess(ValueName,vtAoUInt8,'UInt8ValueItemGetNoLock')) do
+with TUNSNodeAoUInt8(AccessLeafNodeType(ValueName,vtAoUInt8,'UInt8ValueItemGetNoLock')) do
   case ValueKind of
     vkActual:   Result := Items[Index];
     vkSaved:    Result := SavedItems[Index];
@@ -274,7 +274,7 @@ end;
 
 procedure TUniSettings.UInt8ValueItemSetNoLock(const ValueName: String; Index: Integer; const NewValue: UInt8; ValueKind: TUNSValueKind = vkActual);
 begin
-with TUNSNodeAoUInt8(CheckedLeafNodeTypeAccess(ValueName,vtAoUInt8,'UInt8ValueItemSetNoLock')) do
+with TUNSNodeAoUInt8(AccessLeafNodeType(ValueName,vtAoUInt8,'UInt8ValueItemSetNoLock')) do
   case ValueKind of
     vkActual:   Items[Index] := NewValue;
     vkSaved:    SavedItems[Index] := NewValue;

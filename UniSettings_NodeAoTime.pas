@@ -171,49 +171,49 @@ end.
 
 Function TUniSettings.TimeValueFirstNoLock(const ValueName: String; ValueKind: TUNSValueKind = vkActual): TTime;
 begin
-Result := TUNSNodeAoTime(CheckedLeafNodeTypeAccess(ValueName,vtAoTime,'TimeValueFirstNoLock')).First(ValueKind);
+Result := TUNSNodeAoTime(AccessLeafNodeType(ValueName,vtAoTime,'TimeValueFirstNoLock')).First(ValueKind);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TUniSettings.TimeValueLastNoLock(const ValueName: String; ValueKind: TUNSValueKind = vkActual): TTime;
 begin
-Result := TUNSNodeAoTime(CheckedLeafNodeTypeAccess(ValueName,vtAoTime,'TimeValueLastNoLock')).Last(ValueKind);
+Result := TUNSNodeAoTime(AccessLeafNodeType(ValueName,vtAoTime,'TimeValueLastNoLock')).Last(ValueKind);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TUniSettings.TimeValueIndexOfNoLock(const ValueName: String; const Value: TTime; ValueKind: TUNSValueKind = vkActual): Integer;
 begin
-Result := TUNSNodeAoTime(CheckedLeafNodeTypeAccess(ValueName,vtAoTime,'TimeValueIndexOfNoLock')).IndexOf(Value,ValueKind);
+Result := TUNSNodeAoTime(AccessLeafNodeType(ValueName,vtAoTime,'TimeValueIndexOfNoLock')).IndexOf(Value,ValueKind);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TUniSettings.TimeValueAddNoLock(const ValueName: String; const Value: TTime; ValueKind: TUNSValueKind = vkActual): Integer;
 begin
-Result := TUNSNodeAoTime(CheckedLeafNodeTypeAccess(ValueName,vtAoTime,'TimeValueAddNoLock')).Add(Value,ValueKind);
+Result := TUNSNodeAoTime(AccessLeafNodeType(ValueName,vtAoTime,'TimeValueAddNoLock')).Add(Value,ValueKind);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TUniSettings.TimeValueAppendNoLock(const ValueName: String; const Values: array of TTime; ValueKind: TUNSValueKind = vkActual): Integer;
 begin
-Result := TUNSNodeAoTime(CheckedLeafNodeTypeAccess(ValueName,vtAoTime,'TimeValueAppendNoLock')).Append(Values,ValueKind);
+Result := TUNSNodeAoTime(AccessLeafNodeType(ValueName,vtAoTime,'TimeValueAppendNoLock')).Append(Values,ValueKind);
 end;
 
 //------------------------------------------------------------------------------
 
 procedure TUniSettings.TimeValueInsertNoLock(const ValueName: String; Index: Integer; const Value: TTime; ValueKind: TUNSValueKind = vkActual);
 begin
-TUNSNodeAoTime(CheckedLeafNodeTypeAccess(ValueName,vtAoTime,'TimeValueInsertNoLock')).Insert(Index,Value,ValueKind);
+TUNSNodeAoTime(AccessLeafNodeType(ValueName,vtAoTime,'TimeValueInsertNoLock')).Insert(Index,Value,ValueKind);
 end;
  
 //------------------------------------------------------------------------------
 
 Function TUniSettings.TimeValueRemoveNoLock(const ValueName: String; const Value: TTime; ValueKind: TUNSValueKind = vkActual): Integer;
 begin
-Result := TUNSNodeAoTime(CheckedLeafNodeTypeAccess(ValueName,vtAoTime,'TimeValueRemoveNoLock')).Remove(Value,ValueKind);
+Result := TUNSNodeAoTime(AccessLeafNodeType(ValueName,vtAoTime,'TimeValueRemoveNoLock')).Remove(Value,ValueKind);
 end;
 
 //------------------------------------------------------------------------------
@@ -304,7 +304,7 @@ end;
 
 Function TUniSettings.TimeValueItemGetNoLock(const ValueName: String; Index: Integer; ValueKind: TUNSValueKind = vkActual): TTime;
 begin
-with TUNSNodeAoTime(CheckedLeafNodeTypeAccess(ValueName,vtAoTime,'TimeValueItemGetNoLock')) do
+with TUNSNodeAoTime(AccessLeafNodeType(ValueName,vtAoTime,'TimeValueItemGetNoLock')) do
   case ValueKind of
     vkActual:   Result := Items[Index];
     vkSaved:    Result := SavedItems[Index];
@@ -318,7 +318,7 @@ end;
 
 procedure TUniSettings.TimeValueItemSetNoLock(const ValueName: String; Index: Integer; const NewValue: TTime; ValueKind: TUNSValueKind = vkActual);
 begin
-with TUNSNodeAoTime(CheckedLeafNodeTypeAccess(ValueName,vtAoTime,'TimeValueItemSetNoLock')) do
+with TUNSNodeAoTime(AccessLeafNodeType(ValueName,vtAoTime,'TimeValueItemSetNoLock')) do
   case ValueKind of
     vkActual:   Items[Index] := NewValue;
     vkSaved:    SavedItems[Index] := NewValue;

@@ -19,6 +19,7 @@ type
   public
     Function Add(Node: TUNSNodeBase): Integer; override;
     procedure Delete(Index: Integer); override;
+    Function FindNode(NamePart: TUNSNamePart; out Node: TUNSNodeBase): Boolean; override;
     property Items[Index: Integer]: TUNSNodeArrayItem read GetItem; default;
   end;
 
@@ -75,6 +76,35 @@ procedure TUNSNodeArray.Delete(Index: Integer);
 begin
 inherited Delete(Index);
 ReindexItems;
+end;
+
+//------------------------------------------------------------------------------
+
+Function TUNSNodeArray.FindNode(NamePart: TUNSNamePart; out Node: TUNSNodeBase): Boolean;
+begin
+Node := nil;
+case NamePart.PartType of
+  nptArrayIndex,nptArrayIndexSav,nptArrayIndexDef:
+    If CheckIndex(NamePart.PartIndex) then
+      Node := Items[NamePart.PartIndex];
+  nptArrayItem,nptArrayItemSav,nptArrayItemDef:
+    case NamePart.PartIndex of
+      UNS_NAME_ARRAYITEM_NEW:
+        begin
+          Node := TUNSNodeArrayItem.Create('',Self);
+          Add(Node);
+        end;
+      UNS_NAME_ARRAYITEM_LOW:
+        If Count > 0 then
+          Node := Items[LowIndex];
+      UNS_NAME_ARRAYITEM_HIGH:
+        If Count > 0 then
+          Node := Items[HighIndex];
+    end;
+else
+  inherited FindNode(NamePart,Node);
+end;
+Result := Assigned(Node);
 end;
 
 end.

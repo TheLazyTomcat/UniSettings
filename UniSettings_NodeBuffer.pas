@@ -133,7 +133,7 @@ var
   TempIndex:      Integer;
   TempBuffer:     TMemoryBuffer;
 begin
-If CheckedLeafNodeTypeAccessIsArray(ValueName,vtBuffer,'BufferValueGetNoLock',TempNode,TempValueKind,TempIndex) then
+If AccessLeafNodeTypeIsArray(ValueName,vtBuffer,'BufferValueGetNoLock',TempNode,TempValueKind,TempIndex) then
   case TempValueKind of
     vkActual:   TempBuffer := TUNSNodeAoBuffer(TempNode).Items[TempIndex];
     vkSaved:    TempBuffer := TUNSNodeAoBuffer(TempNode).SavedItems[TempIndex];
@@ -163,7 +163,7 @@ var
   TempValueKind:  TUNSValueKind;
   TempIndex:      Integer;
 begin
-If CheckedLeafNodeTypeAccessIsArray(ValueName,vtBuffer,'BufferValueSetNoLock',TempNode,TempValueKind,TempIndex) then
+If AccessLeafNodeTypeIsArray(ValueName,vtBuffer,'BufferValueSetNoLock',TempNode,TempValueKind,TempIndex) then
   case TempValueKind of
     vkActual:   TUNSNodeAoBuffer(TempNode).Items[TempIndex] := NewValue;
     vkSaved:    TUNSNodeAoBuffer(TempNode).SavedItems[TempIndex] := NewValue;

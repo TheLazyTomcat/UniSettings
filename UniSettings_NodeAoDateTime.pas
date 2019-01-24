@@ -134,49 +134,49 @@ end.
 
 Function TUniSettings.DateTimeValueFirstNoLock(const ValueName: String; ValueKind: TUNSValueKind = vkActual): TDateTime;
 begin
-Result := TUNSNodeAoDateTime(CheckedLeafNodeTypeAccess(ValueName,vtAoDateTime,'DateTimeValueFirstNoLock')).First(ValueKind);
+Result := TUNSNodeAoDateTime(AccessLeafNodeType(ValueName,vtAoDateTime,'DateTimeValueFirstNoLock')).First(ValueKind);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TUniSettings.DateTimeValueLastNoLock(const ValueName: String; ValueKind: TUNSValueKind = vkActual): TDateTime;
 begin
-Result := TUNSNodeAoDateTime(CheckedLeafNodeTypeAccess(ValueName,vtAoDateTime,'DateTimeValueLastNoLock')).Last(ValueKind);
+Result := TUNSNodeAoDateTime(AccessLeafNodeType(ValueName,vtAoDateTime,'DateTimeValueLastNoLock')).Last(ValueKind);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TUniSettings.DateTimeValueIndexOfNoLock(const ValueName: String; const Value: TDateTime; ValueKind: TUNSValueKind = vkActual): Integer;
 begin
-Result := TUNSNodeAoDateTime(CheckedLeafNodeTypeAccess(ValueName,vtAoDateTime,'DateTimeValueIndexOfNoLock')).IndexOf(Value,ValueKind);
+Result := TUNSNodeAoDateTime(AccessLeafNodeType(ValueName,vtAoDateTime,'DateTimeValueIndexOfNoLock')).IndexOf(Value,ValueKind);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TUniSettings.DateTimeValueAddNoLock(const ValueName: String; const Value: TDateTime; ValueKind: TUNSValueKind = vkActual): Integer;
 begin
-Result := TUNSNodeAoDateTime(CheckedLeafNodeTypeAccess(ValueName,vtAoDateTime,'DateTimeValueAddNoLock')).Add(Value,ValueKind);
+Result := TUNSNodeAoDateTime(AccessLeafNodeType(ValueName,vtAoDateTime,'DateTimeValueAddNoLock')).Add(Value,ValueKind);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TUniSettings.DateTimeValueAppendNoLock(const ValueName: String; const Values: array of TDateTime; ValueKind: TUNSValueKind = vkActual): Integer;
 begin
-Result := TUNSNodeAoDateTime(CheckedLeafNodeTypeAccess(ValueName,vtAoDateTime,'DateTimeValueAppendNoLock')).Append(Values,ValueKind);
+Result := TUNSNodeAoDateTime(AccessLeafNodeType(ValueName,vtAoDateTime,'DateTimeValueAppendNoLock')).Append(Values,ValueKind);
 end;
 
 //------------------------------------------------------------------------------
 
 procedure TUniSettings.DateTimeValueInsertNoLock(const ValueName: String; Index: Integer; const Value: TDateTime; ValueKind: TUNSValueKind = vkActual);
 begin
-TUNSNodeAoDateTime(CheckedLeafNodeTypeAccess(ValueName,vtAoDateTime,'DateTimeValueInsertNoLock')).Insert(Index,Value,ValueKind);
+TUNSNodeAoDateTime(AccessLeafNodeType(ValueName,vtAoDateTime,'DateTimeValueInsertNoLock')).Insert(Index,Value,ValueKind);
 end;
  
 //------------------------------------------------------------------------------
 
 Function TUniSettings.DateTimeValueRemoveNoLock(const ValueName: String; const Value: TDateTime; ValueKind: TUNSValueKind = vkActual): Integer;
 begin
-Result := TUNSNodeAoDateTime(CheckedLeafNodeTypeAccess(ValueName,vtAoDateTime,'DateTimeValueRemoveNoLock')).Remove(Value,ValueKind);
+Result := TUNSNodeAoDateTime(AccessLeafNodeType(ValueName,vtAoDateTime,'DateTimeValueRemoveNoLock')).Remove(Value,ValueKind);
 end;
 
 //------------------------------------------------------------------------------
@@ -267,7 +267,7 @@ end;
 
 Function TUniSettings.DateTimeValueItemGetNoLock(const ValueName: String; Index: Integer; ValueKind: TUNSValueKind = vkActual): TDateTime;
 begin
-with TUNSNodeAoDateTime(CheckedLeafNodeTypeAccess(ValueName,vtAoDateTime,'DateTimeValueItemGetNoLock')) do
+with TUNSNodeAoDateTime(AccessLeafNodeType(ValueName,vtAoDateTime,'DateTimeValueItemGetNoLock')) do
   case ValueKind of
     vkActual:   Result := Items[Index];
     vkSaved:    Result := SavedItems[Index];
@@ -281,7 +281,7 @@ end;
 
 procedure TUniSettings.DateTimeValueItemSetNoLock(const ValueName: String; Index: Integer; const NewValue: TDateTime; ValueKind: TUNSValueKind = vkActual);
 begin
-with TUNSNodeAoDateTime(CheckedLeafNodeTypeAccess(ValueName,vtAoDateTime,'DateTimeValueItemSetNoLock')) do
+with TUNSNodeAoDateTime(AccessLeafNodeType(ValueName,vtAoDateTime,'DateTimeValueItemSetNoLock')) do
   case ValueKind of
     vkActual:   Items[Index] := NewValue;
     vkSaved:    SavedItems[Index] := NewValue;

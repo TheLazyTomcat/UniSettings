@@ -127,49 +127,49 @@ end.
 
 Function TUniSettings.Int64ValueFirstNoLock(const ValueName: String; ValueKind: TUNSValueKind = vkActual): Int64;
 begin
-Result := TUNSNodeAoInt64(CheckedLeafNodeTypeAccess(ValueName,vtAoInt64,'Int64ValueFirstNoLock')).First(ValueKind);
+Result := TUNSNodeAoInt64(AccessLeafNodeType(ValueName,vtAoInt64,'Int64ValueFirstNoLock')).First(ValueKind);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TUniSettings.Int64ValueLastNoLock(const ValueName: String; ValueKind: TUNSValueKind = vkActual): Int64;
 begin
-Result := TUNSNodeAoInt64(CheckedLeafNodeTypeAccess(ValueName,vtAoInt64,'Int64ValueLastNoLock')).Last(ValueKind);
+Result := TUNSNodeAoInt64(AccessLeafNodeType(ValueName,vtAoInt64,'Int64ValueLastNoLock')).Last(ValueKind);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TUniSettings.Int64ValueIndexOfNoLock(const ValueName: String; const Value: Int64; ValueKind: TUNSValueKind = vkActual): Integer;
 begin
-Result := TUNSNodeAoInt64(CheckedLeafNodeTypeAccess(ValueName,vtAoInt64,'Int64ValueIndexOfNoLock')).IndexOf(Value,ValueKind);
+Result := TUNSNodeAoInt64(AccessLeafNodeType(ValueName,vtAoInt64,'Int64ValueIndexOfNoLock')).IndexOf(Value,ValueKind);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TUniSettings.Int64ValueAddNoLock(const ValueName: String; const Value: Int64; ValueKind: TUNSValueKind = vkActual): Integer;
 begin
-Result := TUNSNodeAoInt64(CheckedLeafNodeTypeAccess(ValueName,vtAoInt64,'Int64ValueAddNoLock')).Add(Value,ValueKind);
+Result := TUNSNodeAoInt64(AccessLeafNodeType(ValueName,vtAoInt64,'Int64ValueAddNoLock')).Add(Value,ValueKind);
 end;
 
 //------------------------------------------------------------------------------
 
 Function TUniSettings.Int64ValueAppendNoLock(const ValueName: String; const Values: array of Int64; ValueKind: TUNSValueKind = vkActual): Integer;
 begin
-Result := TUNSNodeAoInt64(CheckedLeafNodeTypeAccess(ValueName,vtAoInt64,'Int64ValueAppendNoLock')).Append(Values,ValueKind);
+Result := TUNSNodeAoInt64(AccessLeafNodeType(ValueName,vtAoInt64,'Int64ValueAppendNoLock')).Append(Values,ValueKind);
 end;
 
 //------------------------------------------------------------------------------
 
 procedure TUniSettings.Int64ValueInsertNoLock(const ValueName: String; Index: Integer; const Value: Int64; ValueKind: TUNSValueKind = vkActual);
 begin
-TUNSNodeAoInt64(CheckedLeafNodeTypeAccess(ValueName,vtAoInt64,'Int64ValueInsertNoLock')).Insert(Index,Value,ValueKind);
+TUNSNodeAoInt64(AccessLeafNodeType(ValueName,vtAoInt64,'Int64ValueInsertNoLock')).Insert(Index,Value,ValueKind);
 end;
  
 //------------------------------------------------------------------------------
 
 Function TUniSettings.Int64ValueRemoveNoLock(const ValueName: String; const Value: Int64; ValueKind: TUNSValueKind = vkActual): Integer;
 begin
-Result := TUNSNodeAoInt64(CheckedLeafNodeTypeAccess(ValueName,vtAoInt64,'Int64ValueRemoveNoLock')).Remove(Value,ValueKind);
+Result := TUNSNodeAoInt64(AccessLeafNodeType(ValueName,vtAoInt64,'Int64ValueRemoveNoLock')).Remove(Value,ValueKind);
 end;
 
 //------------------------------------------------------------------------------
@@ -260,7 +260,7 @@ end;
 
 Function TUniSettings.Int64ValueItemGetNoLock(const ValueName: String; Index: Integer; ValueKind: TUNSValueKind = vkActual): Int64;
 begin
-with TUNSNodeAoInt64(CheckedLeafNodeTypeAccess(ValueName,vtAoInt64,'Int64ValueItemGetNoLock')) do
+with TUNSNodeAoInt64(AccessLeafNodeType(ValueName,vtAoInt64,'Int64ValueItemGetNoLock')) do
   case ValueKind of
     vkActual:   Result := Items[Index];
     vkSaved:    Result := SavedItems[Index];
@@ -274,7 +274,7 @@ end;
 
 procedure TUniSettings.Int64ValueItemSetNoLock(const ValueName: String; Index: Integer; const NewValue: Int64; ValueKind: TUNSValueKind = vkActual);
 begin
-with TUNSNodeAoInt64(CheckedLeafNodeTypeAccess(ValueName,vtAoInt64,'Int64ValueItemSetNoLock')) do
+with TUNSNodeAoInt64(AccessLeafNodeType(ValueName,vtAoInt64,'Int64ValueItemSetNoLock')) do
   case ValueKind of
     vkActual:   Items[Index] := NewValue;
     vkSaved:    SavedItems[Index] := NewValue;
