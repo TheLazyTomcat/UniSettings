@@ -45,10 +45,7 @@ interface
 uses
   Classes,
   AuxTypes, MemoryBuffer,
-
-  UniSettings_Common,
-
-  UniSettings_Base;
+  UniSettings_Common, UniSettings_Base;
 
 type
   TUniSettings = class(TUniSettingsBase)

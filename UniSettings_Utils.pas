@@ -27,6 +27,9 @@ Function UNSNameParts(const Name: String; out NameParts: TUNSNameParts): Integer
 
 Function UNSIdentifyValueType(const Str: String): TUNSValueType;
 
+Function UNSIniSectionEncode(const Section: String): String;
+Function UNSIniSectionDecode(const Section: String): String;
+
 implementation
 
 uses
@@ -322,6 +325,38 @@ For i := Low(TUNSValueType) to High(TUNSValueType) do
       Result := i;
       Break{For i};
     end;
+end;
+
+//------------------------------------------------------------------------------
+
+Function UNSIniSectionEncode(const Section: String): String;
+var
+  i:  Integer;
+begin
+SetLength(Result,Length(Section));
+For i := 1 to Length(Result) do
+  If Section[i] = UNS_NAME_BRACKET_LEFT then
+    Result[i] := UNS_NAME_INISECTION_REPLACECHAR_START
+  else If Section[i] = UNS_NAME_BRACKET_RIGHT then
+    Result[i] := UNS_NAME_INISECTION_REPLACECHAR_END
+  else
+    Result[i] := Section[i];
+end;
+
+//------------------------------------------------------------------------------
+
+Function UNSIniSectionDecode(const Section: String): String;
+var
+  i:  Integer;
+begin
+SetLength(Result,Length(Section));
+For i := 1 to Length(Result) do
+  If Section[i] = UNS_NAME_INISECTION_REPLACECHAR_START then
+    Result[i] := UNS_NAME_BRACKET_LEFT
+  else If Section[i] = UNS_NAME_INISECTION_REPLACECHAR_END then
+    Result[i] := UNS_NAME_BRACKET_RIGHT
+  else
+    Result[i] := Section[i];
 end;
 
 end.

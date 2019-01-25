@@ -149,6 +149,14 @@ const
   UNS_NAME_VALIDCHARS = UNS_NAME_IDENTIFIER_VALIDCHARS + UNS_NAME_DELIMITERS +
                         UNS_NAME_BRACKETS + [UNS_NAME_ARRAYITEM_TAG];
 
+{
+  following replaces all occurences of square brackets (UNS_NAME_BRACKET_LEFT,
+  UNS_NAME_BRACKET_RIGHT) in section name (this assumes square brackets are
+  used as section name delimiters) 
+}
+  UNS_NAME_INISECTION_REPLACECHAR_START = '{';
+  UNS_NAME_INISECTION_REPLACECHAR_END   = '}';
+
   UNS_NAME_ARRAYITEM_NEW     = 0;
   UNS_NAME_ARRAYITEM_LOW     = 1;
   UNS_NAME_ARRAYITEM_HIGH    = 2;
