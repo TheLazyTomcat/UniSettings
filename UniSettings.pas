@@ -45,10 +45,12 @@ interface
 uses
   Classes,
   AuxTypes, MemoryBuffer,
-  UniSettings_Common, UniSettings_Base;
+  UniSettings_Common, UniSettings_IO, UniSettings_NodeBase;
 
 type
-  TUniSettings = class(TUniSettingsBase)
+  TUNSNode = TUNSNodeBase;
+
+  TUniSettings = class(TUniSettingsIO)
   public
     Function ValueFullNameNoLock(const ValueName: String): String; virtual;
     Function ValueTypeNoLock(const ValueName: String): TUNSValueType; virtual;
