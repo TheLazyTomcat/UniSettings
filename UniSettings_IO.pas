@@ -17,15 +17,19 @@ type
     procedure SaveToIniNoLock(Ini: TIniFile); overload; virtual;
     procedure LoadFromIniNoLock(Ini: TIniFileEx); overload; virtual;
     procedure LoadFromIniNoLock(Ini: TIniFile); overload; virtual;
-    //procedure SaveToRegistryNoLock
-    //procedure LoadFromRegistryNoLock
+    //procedure SaveToRegistryNoLock(Reg: TRegistryEx); overload; virtual;
+    //procedure SaveToRegistryNoLock(Reg: TRegistry); overload; virtual;
+    //procedure LoadFromRegistryNoLock(Reg: TRegistryEx); overload; virtual;
+    //procedure LoadFromRegistryNoLock(Reg: TRegistry); overload; virtual;
     //--- IO operations (lock) -------------------------------------------------
     procedure SaveToIni(Ini: TIniFileEx); overload; virtual;
     procedure SaveToIni(Ini: TIniFile); overload; virtual;
     procedure LoadFromIni(Ini: TIniFileEx); overload; virtual;
     procedure LoadFromIni(Ini: TIniFile); overload; virtual;
-    //SaveToRegistry
-    //LoadFromRegistry  
+    //SaveToRegistry(Reg: TRegistryEx); overload; virtual;
+    //SaveToRegistry(Reg: TRegistry); overload; virtual;
+    //LoadFromRegistry(Reg: TRegistryEx); overload; virtual;  
+    //LoadFromRegistry(Reg: TRegistry); overload; virtual;
   end;
 
 implementation
@@ -138,24 +142,24 @@ If (Ini.SectionStartChar = '[') and (Ini.SectionEndChar = ']') then
               Section := UNSIniSectionEncode(Copy(NodeList[i],1,Length(NodeList[i]) - Length(Key) - Length(UNS_NAME_DELIMITER)));
               If not UNSIsPrimitiveArrayNode(TUNSNodeBase(NodeList.Objects[i])) then
                 case TUNSNodeLeaf(NodeList.Objects[i]).ValueType of
-                  vtBlank:      Ini.WriteString(Section,Key,'');
-                  vtBool:       Ini.WriteBool(Section,Key,TUNSNodeBool(NodeList.Objects[i]).Value);
-                  vtInt8:       Ini.WriteInt8(Section,Key,TUNSNodeInt8(NodeList.Objects[i]).Value);
-                  vtUInt8:      Ini.WriteUInt8(Section,Key,TUNSNodeUInt8(NodeList.Objects[i]).Value);
-                  vtInt16:      Ini.WriteInt16(Section,Key,TUNSNodeInt16(NodeList.Objects[i]).Value);
-                  vtUInt16:     Ini.WriteUInt16(Section,Key,TUNSNodeUInt16(NodeList.Objects[i]).Value);
-                  vtInt32:      Ini.WriteInt32(Section,Key,TUNSNodeInt32(NodeList.Objects[i]).Value);
-                  vtUInt32:     Ini.WriteUInt32(Section,Key,TUNSNodeUInt32(NodeList.Objects[i]).Value);
-                  vtInt64:      Ini.WriteInt64(Section,Key,TUNSNodeInt64(NodeList.Objects[i]).Value);
-                  vtUInt64:     Ini.WriteUInt64(Section,Key,TUNSNodeUInt64(NodeList.Objects[i]).Value);
-                  vtFloat32:    Ini.WriteFloat32(Section,Key,TUNSNodeFloat32(NodeList.Objects[i]).Value);
-                  vtFloat64:    Ini.WriteFloat64(Section,Key,TUNSNodeFloat64(NodeList.Objects[i]).Value);
-                  vtDate:       Ini.WriteDate(Section,Key,TUNSNodeDate(NodeList.Objects[i]).Value);
-                  vtTime:       Ini.WriteTime(Section,Key,TUNSNodeTime(NodeList.Objects[i]).Value);
-                  vtDateTime:   Ini.WriteDateTime(Section,Key,TUNSNodeDateTime(NodeList.Objects[i]).Value);
-                  vtText:       Ini.WriteString(Section,Key,TUNSNodeText(NodeList.Objects[i]).Value);
-                  vtBuffer:     Ini.WriteBinaryMemory(Section,Key,TUNSNodeBuffer(NodeList.Objects[i]).Value.Memory,
-                                                      TUNSNodeBuffer(NodeList.Objects[i]).Value.Size,True);
+                  vtBlank:    Ini.WriteString(Section,Key,'');
+                  vtBool:     Ini.WriteBool(Section,Key,TUNSNodeBool(NodeList.Objects[i]).Value);
+                  vtInt8:     Ini.WriteInt8(Section,Key,TUNSNodeInt8(NodeList.Objects[i]).Value);
+                  vtUInt8:    Ini.WriteUInt8(Section,Key,TUNSNodeUInt8(NodeList.Objects[i]).Value);
+                  vtInt16:    Ini.WriteInt16(Section,Key,TUNSNodeInt16(NodeList.Objects[i]).Value);
+                  vtUInt16:   Ini.WriteUInt16(Section,Key,TUNSNodeUInt16(NodeList.Objects[i]).Value);
+                  vtInt32:    Ini.WriteInt32(Section,Key,TUNSNodeInt32(NodeList.Objects[i]).Value);
+                  vtUInt32:   Ini.WriteUInt32(Section,Key,TUNSNodeUInt32(NodeList.Objects[i]).Value);
+                  vtInt64:    Ini.WriteInt64(Section,Key,TUNSNodeInt64(NodeList.Objects[i]).Value);
+                  vtUInt64:   Ini.WriteUInt64(Section,Key,TUNSNodeUInt64(NodeList.Objects[i]).Value);
+                  vtFloat32:  Ini.WriteFloat32(Section,Key,TUNSNodeFloat32(NodeList.Objects[i]).Value);
+                  vtFloat64:  Ini.WriteFloat64(Section,Key,TUNSNodeFloat64(NodeList.Objects[i]).Value);
+                  vtDate:     Ini.WriteDate(Section,Key,TUNSNodeDate(NodeList.Objects[i]).Value);
+                  vtTime:     Ini.WriteTime(Section,Key,TUNSNodeTime(NodeList.Objects[i]).Value);
+                  vtDateTime: Ini.WriteDateTime(Section,Key,TUNSNodeDateTime(NodeList.Objects[i]).Value);
+                  vtText:     Ini.WriteString(Section,Key,TUNSNodeText(NodeList.Objects[i]).Value);
+                  vtBuffer:   Ini.WriteBinaryMemory(Section,Key,TUNSNodeBuffer(NodeList.Objects[i]).Value.Memory,
+                                                    TUNSNodeBuffer(NodeList.Objects[i]).Value.Size,True);
                 else
                  {vtUndefined}
                   raise EUNSException.CreateFmt('Invalid node value type (%d).',
@@ -237,23 +241,23 @@ try
             Section := '*'; // windows does not like empty section name
           If not UNSIsPrimitiveArrayNode(TUNSNodeBase(NodeList.Objects[i])) then
             case TUNSNodeLeaf(NodeList.Objects[i]).ValueType of
-              vtBlank:      Ini.WriteString(Section,Key,'');
-              vtBool:       Ini.WriteBool(Section,Key,TUNSNodeBool(NodeList.Objects[i]).Value);
-              vtInt8:       Ini.WriteInteger(Section,Key,Integer(TUNSNodeInt8(NodeList.Objects[i]).Value));
-              vtUInt8:      Ini.WriteInteger(Section,Key,Integer(TUNSNodeUInt8(NodeList.Objects[i]).Value));
-              vtInt16:      Ini.WriteInteger(Section,Key,Integer(TUNSNodeInt16(NodeList.Objects[i]).Value));
-              vtUInt16:     Ini.WriteInteger(Section,Key,Integer(TUNSNodeUInt16(NodeList.Objects[i]).Value));
-              vtInt32:      Ini.WriteInteger(Section,Key,Integer(TUNSNodeInt32(NodeList.Objects[i]).Value));
-              vtUInt32:     Ini.WriteInteger(Section,Key,Integer(TUNSNodeUInt32(NodeList.Objects[i]).Value));
-              vtInt64:      Ini.WriteString(Section,Key,TUNSNodeInt64(NodeList.Objects[i]).AsString(vkActual));
-              vtUInt64:     Ini.WriteString(Section,Key,TUNSNodeUInt64(NodeList.Objects[i]).AsString(vkActual));
-              vtFloat32:    Ini.WriteFloat(Section,Key,TUNSNodeFloat32(NodeList.Objects[i]).Value);
-              vtFloat64:    Ini.WriteFloat(Section,Key,TUNSNodeFloat64(NodeList.Objects[i]).Value);
-              vtDate:       Ini.WriteDate(Section,Key,TUNSNodeDate(NodeList.Objects[i]).Value);
-              vtTime:       Ini.WriteTime(Section,Key,TUNSNodeTime(NodeList.Objects[i]).Value);
-              vtDateTime:   Ini.WriteDateTime(Section,Key,TUNSNodeDateTime(NodeList.Objects[i]).Value);
-              vtText:       Ini.WriteString(Section,Key,TUNSNodeText(NodeList.Objects[i]).Value);
-              vtBuffer:     Ini.WriteString(Section,Key,TUNSNodeBuffer(NodeList.Objects[i]).AsString(vkActual));
+              vtBlank:    Ini.WriteString(Section,Key,'');
+              vtBool:     Ini.WriteBool(Section,Key,TUNSNodeBool(NodeList.Objects[i]).Value);
+              vtInt8:     Ini.WriteInteger(Section,Key,Integer(TUNSNodeInt8(NodeList.Objects[i]).Value));
+              vtUInt8:    Ini.WriteInteger(Section,Key,Integer(TUNSNodeUInt8(NodeList.Objects[i]).Value));
+              vtInt16:    Ini.WriteInteger(Section,Key,Integer(TUNSNodeInt16(NodeList.Objects[i]).Value));
+              vtUInt16:   Ini.WriteInteger(Section,Key,Integer(TUNSNodeUInt16(NodeList.Objects[i]).Value));
+              vtInt32:    Ini.WriteInteger(Section,Key,Integer(TUNSNodeInt32(NodeList.Objects[i]).Value));
+              vtUInt32:   Ini.WriteInteger(Section,Key,Integer(TUNSNodeUInt32(NodeList.Objects[i]).Value));
+              vtInt64:    Ini.WriteString(Section,Key,TUNSNodeInt64(NodeList.Objects[i]).AsString(vkActual));
+              vtUInt64:   Ini.WriteString(Section,Key,TUNSNodeUInt64(NodeList.Objects[i]).AsString(vkActual));
+              vtFloat32:  Ini.WriteFloat(Section,Key,TUNSNodeFloat32(NodeList.Objects[i]).Value);
+              vtFloat64:  Ini.WriteFloat(Section,Key,TUNSNodeFloat64(NodeList.Objects[i]).Value);
+              vtDate:     Ini.WriteDate(Section,Key,TUNSNodeDate(NodeList.Objects[i]).Value);
+              vtTime:     Ini.WriteTime(Section,Key,TUNSNodeTime(NodeList.Objects[i]).Value);
+              vtDateTime: Ini.WriteDateTime(Section,Key,TUNSNodeDateTime(NodeList.Objects[i]).Value);
+              vtText:     Ini.WriteString(Section,Key,TUNSNodeText(NodeList.Objects[i]).Value);
+              vtBuffer:   Ini.WriteString(Section,Key,TUNSNodeBuffer(NodeList.Objects[i]).AsString(vkActual));
             else
              {vtUndefined}
               raise EUNSException.CreateFmt('Invalid node value type (%d).',
@@ -344,30 +348,30 @@ If (Ini.SectionStartChar = '[') and (Ini.SectionEndChar = ']') then
               try
                 If not UNSIsPrimitiveArrayNode(TUNSNodeBase(NodeList.Objects[i])) then
                   case TUNSNodeLeaf(NodeList.Objects[i]).ValueType of
-                    vtBlank:      ; // do nothing
-                    vtBool:       TUNSNodeBool(NodeList.Objects[i]).Value := Ini.ReadBool(Section,Key);
-                    vtInt8:       TUNSNodeInt8(NodeList.Objects[i]).Value := Ini.ReadInt8(Section,Key);
-                    vtUInt8:      TUNSNodeUInt8(NodeList.Objects[i]).Value := Ini.ReadUInt8(Section,Key);
-                    vtInt16:      TUNSNodeInt16(NodeList.Objects[i]).Value := Ini.ReadInt16(Section,Key);
-                    vtUInt16:     TUNSNodeUInt16(NodeList.Objects[i]).Value := Ini.ReadUInt16(Section,Key);
-                    vtInt32:      TUNSNodeInt32(NodeList.Objects[i]).Value := Ini.ReadInt32(Section,Key);
-                    vtUInt32:     TUNSNodeUInt32(NodeList.Objects[i]).Value := Ini.ReadUInt32(Section,Key);
-                    vtInt64:      TUNSNodeInt64(NodeList.Objects[i]).Value := Ini.ReadInt64(Section,Key);
-                    vtUInt64:     TUNSNodeUInt64(NodeList.Objects[i]).Value := Ini.ReadUInt64(Section,Key);
-                    vtFloat32:    TUNSNodeFloat32(NodeList.Objects[i]).Value := Ini.ReadFloat32(Section,Key);
-                    vtFloat64:    TUNSNodeFloat64(NodeList.Objects[i]).Value := Ini.ReadFloat64(Section,Key);
-                    vtDate:       TUNSNodeDate(NodeList.Objects[i]).Value := Ini.ReadDate(Section,Key);
-                    vtTime:       TUNSNodeTime(NodeList.Objects[i]).Value := Ini.ReadTime(Section,Key);
-                    vtDateTime:   TUNSNodeDateTime(NodeList.Objects[i]).Value := Ini.ReadDateTime(Section,Key);
-                    vtText:       TUNSNodeText(NodeList.Objects[i]).Value := Ini.ReadString(Section,Key);
-                    vtBuffer:     begin
-                                    Buffer.Size := Ini.ReadBinaryMemory(Section,Key,Buffer.Memory,False);
-                                    try
-                                      TUNSNodeBuffer(NodeList.Objects[i]).Value := Buffer;
-                                    finally
-                                      FreeBuffer(Buffer);
-                                    end;
+                    vtBlank:    ; // do nothing
+                    vtBool:     TUNSNodeBool(NodeList.Objects[i]).Value := Ini.ReadBool(Section,Key);
+                    vtInt8:     TUNSNodeInt8(NodeList.Objects[i]).Value := Ini.ReadInt8(Section,Key);
+                    vtUInt8:    TUNSNodeUInt8(NodeList.Objects[i]).Value := Ini.ReadUInt8(Section,Key);
+                    vtInt16:    TUNSNodeInt16(NodeList.Objects[i]).Value := Ini.ReadInt16(Section,Key);
+                    vtUInt16:   TUNSNodeUInt16(NodeList.Objects[i]).Value := Ini.ReadUInt16(Section,Key);
+                    vtInt32:    TUNSNodeInt32(NodeList.Objects[i]).Value := Ini.ReadInt32(Section,Key);
+                    vtUInt32:   TUNSNodeUInt32(NodeList.Objects[i]).Value := Ini.ReadUInt32(Section,Key);
+                    vtInt64:    TUNSNodeInt64(NodeList.Objects[i]).Value := Ini.ReadInt64(Section,Key);
+                    vtUInt64:   TUNSNodeUInt64(NodeList.Objects[i]).Value := Ini.ReadUInt64(Section,Key);
+                    vtFloat32:  TUNSNodeFloat32(NodeList.Objects[i]).Value := Ini.ReadFloat32(Section,Key);
+                    vtFloat64:  TUNSNodeFloat64(NodeList.Objects[i]).Value := Ini.ReadFloat64(Section,Key);
+                    vtDate:     TUNSNodeDate(NodeList.Objects[i]).Value := Ini.ReadDate(Section,Key);
+                    vtTime:     TUNSNodeTime(NodeList.Objects[i]).Value := Ini.ReadTime(Section,Key);
+                    vtDateTime: TUNSNodeDateTime(NodeList.Objects[i]).Value := Ini.ReadDateTime(Section,Key);
+                    vtText:     TUNSNodeText(NodeList.Objects[i]).Value := Ini.ReadString(Section,Key);
+                    vtBuffer:   begin
+                                  Buffer.Size := Ini.ReadBinaryMemory(Section,Key,Buffer.Memory,False);
+                                  try
+                                    TUNSNodeBuffer(NodeList.Objects[i]).Value := Buffer;
+                                  finally
+                                    FreeBuffer(Buffer);
                                   end;
+                                end;
                   else
                    {vtUndefined}
                     raise EUNSException.CreateFmt('Invalid node value type (%d).',
@@ -452,23 +456,23 @@ try
           try
             If not UNSIsPrimitiveArrayNode(TUNSNodeBase(NodeList.Objects[i])) then
               case TUNSNodeLeaf(NodeList.Objects[i]).ValueType of
-                vtBlank:      ; // do nothing
-                vtBool:       TUNSNodeBool(NodeList.Objects[i]).Value := Ini.ReadBool(Section,Key,False);
-                vtInt8:       TUNSNodeInt8(NodeList.Objects[i]).Value := Int8(Ini.ReadInteger(Section,Key,0));
-                vtUInt8:      TUNSNodeUInt8(NodeList.Objects[i]).Value := UInt8(Ini.ReadInteger(Section,Key,0));
-                vtInt16:      TUNSNodeInt16(NodeList.Objects[i]).Value := Int16(Ini.ReadInteger(Section,Key,0));
-                vtUInt16:     TUNSNodeUInt16(NodeList.Objects[i]).Value := UInt16(Ini.ReadInteger(Section,Key,0));
-                vtInt32:      TUNSNodeInt32(NodeList.Objects[i]).Value := Int32(Ini.ReadInteger(Section,Key,0));
-                vtUInt32:     TUNSNodeUInt32(NodeList.Objects[i]).Value := UInt32(Ini.ReadInteger(Section,Key,0));
-                vtInt64:      TUNSNodeInt64(NodeList.Objects[i]).FromString(Ini.ReadString(Section,Key,'0'),vkActual);
-                vtUInt64:     TUNSNodeUInt64(NodeList.Objects[i]).FromString(Ini.ReadString(Section,Key,'0'),vkActual);
-                vtFloat32:    TUNSNodeFloat32(NodeList.Objects[i]).Value := Ini.ReadFloat(Section,Key,0.0);
-                vtFloat64:    TUNSNodeFloat64(NodeList.Objects[i]).Value := Ini.ReadFloat(Section,Key,0.0);
-                vtDate:       TUNSNodeDate(NodeList.Objects[i]).Value := Ini.ReadDate(Section,Key,0.0);
-                vtTime:       TUNSNodeTime(NodeList.Objects[i]).Value := Ini.ReadTime(Section,Key,0.0);
-                vtDateTime:   TUNSNodeDateTime(NodeList.Objects[i]).Value := Ini.ReadDateTime(Section,Key,0.0);
-                vtText:       TUNSNodeText(NodeList.Objects[i]).Value := Ini.ReadString(Section,Key,'');
-                vtBuffer:     TUNSNodeBuffer(NodeList.Objects[i]).FromString(Ini.ReadString(Section,Key,''),vkActual);
+                vtBlank:    ; // do nothing
+                vtBool:     TUNSNodeBool(NodeList.Objects[i]).Value := Ini.ReadBool(Section,Key,False);
+                vtInt8:     TUNSNodeInt8(NodeList.Objects[i]).Value := Int8(Ini.ReadInteger(Section,Key,0));
+                vtUInt8:    TUNSNodeUInt8(NodeList.Objects[i]).Value := UInt8(Ini.ReadInteger(Section,Key,0));
+                vtInt16:    TUNSNodeInt16(NodeList.Objects[i]).Value := Int16(Ini.ReadInteger(Section,Key,0));
+                vtUInt16:   TUNSNodeUInt16(NodeList.Objects[i]).Value := UInt16(Ini.ReadInteger(Section,Key,0));
+                vtInt32:    TUNSNodeInt32(NodeList.Objects[i]).Value := Int32(Ini.ReadInteger(Section,Key,0));
+                vtUInt32:   TUNSNodeUInt32(NodeList.Objects[i]).Value := UInt32(Ini.ReadInteger(Section,Key,0));
+                vtInt64:    TUNSNodeInt64(NodeList.Objects[i]).FromString(Ini.ReadString(Section,Key,'0'),vkActual);
+                vtUInt64:   TUNSNodeUInt64(NodeList.Objects[i]).FromString(Ini.ReadString(Section,Key,'0'),vkActual);
+                vtFloat32:  TUNSNodeFloat32(NodeList.Objects[i]).Value := Ini.ReadFloat(Section,Key,0.0);
+                vtFloat64:  TUNSNodeFloat64(NodeList.Objects[i]).Value := Ini.ReadFloat(Section,Key,0.0);
+                vtDate:     TUNSNodeDate(NodeList.Objects[i]).Value := Ini.ReadDate(Section,Key,0.0);
+                vtTime:     TUNSNodeTime(NodeList.Objects[i]).Value := Ini.ReadTime(Section,Key,0.0);
+                vtDateTime: TUNSNodeDateTime(NodeList.Objects[i]).Value := Ini.ReadDateTime(Section,Key,0.0);
+                vtText:     TUNSNodeText(NodeList.Objects[i]).Value := Ini.ReadString(Section,Key,'');
+                vtBuffer:   TUNSNodeBuffer(NodeList.Objects[i]).FromString(Ini.ReadString(Section,Key,''),vkActual);
               else
                {vtUndefined}
                 raise EUNSException.CreateFmt('Invalid node value type (%d).',
