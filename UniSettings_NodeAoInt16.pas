@@ -7,8 +7,8 @@ unit UniSettings_NodeAoInt16;
 interface
 
 uses
-  Classes,
-  AuxTypes, MemoryBuffer, CountedDynArrayInt16,
+  Classes, IniFiles, Registry,
+  AuxTypes, MemoryBuffer, CountedDynArrayInt16, IniFileEx,
   UniSettings_Common, UniSettings_NodeBase, UniSettings_NodeLeaf,
   UniSettings_NodePrimitiveArray;
 
@@ -82,6 +82,49 @@ end;
 Function TUNSNodeClassType.ConvItemFromStr(const Str: String): TUNSNodeValueItemType;
 begin
 Result := TUNSNodeValueItemType(StrToInt(Str));
+end;
+
+//==============================================================================
+
+procedure TUNSNodeClassType.SaveItemTo(Ini: TIniFile; Index: Integer; const Section,Key: String);
+begin
+Ini.WriteInteger(Section,Key,GetItem(Index));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+procedure TUNSNodeClassType.SaveItemTo(Ini: TIniFileEx; Index: Integer; const Section,Key: String);
+begin
+Ini.WriteInt16(Section,Key,GetItem(Index));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+procedure TUNSNodeClassType.SaveItemTo(Reg: TRegistry; Index: Integer; const Value: String);
+begin
+Reg.WriteInteger(Value,GetItem(Index));
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TUNSNodeClassType.LoadItemFrom(Ini: TIniFile; Index: Integer; const Section,Key: String);
+begin
+SetItem(Index,Int16(Ini.ReadInteger(Section,Key,GetItem(Index))));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+procedure TUNSNodeClassType.LoadItemFrom(Ini: TIniFileEx; Index: Integer; const Section,Key: String);
+begin
+SetItem(Index,Ini.ReadInt16(Section,Key,GetItem(Index)));
+end;
+
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+procedure TUNSNodeClassType.LoadItemFrom(Reg: TRegistry; Index: Integer; const Value: String);
+begin
+SetItem(Index,Int16(Reg.ReadInteger(Value)));
 end;
 
 //------------------------------------------------------------------------------

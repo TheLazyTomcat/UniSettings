@@ -7,8 +7,8 @@ unit UniSettings_NodeAoText;
 interface
 
 uses
-  Classes,
-  AuxTypes, MemoryBuffer, CountedDynArrayString,
+  Classes, IniFiles, Registry,
+  AuxTypes, MemoryBuffer, CountedDynArrayString, IniFileEx,
   UniSettings_Common, UniSettings_NodeBase, UniSettings_NodeLeaf,
   UniSettings_NodePrimitiveArray;
 
@@ -79,6 +79,49 @@ end;
 Function TUNSNodeClassType.ConvItemFromStr(const Str: String): TUNSNodeValueItemType;
 begin
 Result := UNSDecodeString(Str);
+end;
+
+//==============================================================================
+
+procedure TUNSNodeClassType.SaveItemTo(Ini: TIniFile; Index: Integer; const Section,Key: String);
+begin
+Ini.WriteString(Section,Key,GetItem(Index));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+procedure TUNSNodeClassType.SaveItemTo(Ini: TIniFileEx; Index: Integer; const Section,Key: String);
+begin
+Ini.WriteString(Section,Key,GetItem(Index));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+procedure TUNSNodeClassType.SaveItemTo(Reg: TRegistry; Index: Integer; const Value: String);
+begin
+Reg.WriteString(Value,GetItem(Index));
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TUNSNodeClassType.LoadItemFrom(Ini: TIniFile; Index: Integer; const Section,Key: String);
+begin
+SetItem(Index,Ini.ReadString(Section,Key,GetItem(Index)));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+procedure TUNSNodeClassType.LoadItemFrom(Ini: TIniFileEx; Index: Integer; const Section,Key: String);
+begin
+SetItem(Index,Ini.ReadString(Section,Key,GetItem(Index)));
+end;
+
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+procedure TUNSNodeClassType.LoadItemFrom(Reg: TRegistry; Index: Integer; const Value: String);
+begin
+SetItem(Index,Reg.ReadString(Value));
 end;
 
 //------------------------------------------------------------------------------

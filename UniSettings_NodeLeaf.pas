@@ -5,8 +5,8 @@ unit UniSettings_NodeLeaf;
 interface
 
 uses
-  SysUtils, Classes,
-  AuxTypes, MemoryBuffer,
+  SysUtils, Classes, IniFiles, Registry,
+  AuxTypes, MemoryBuffer, IniFileEx, //RegistryEx
   UniSettings_Common, UniSettings_NodeBase;
 
 type
@@ -31,6 +31,14 @@ type
     Function AsStream(ValueKind: TUNSValueKind = vkActual): TMemoryStream; overload; virtual;
     procedure ToBuffer(Buffer: TMemoryBuffer; ValueKind: TUNSValueKind = vkActual); overload; virtual; abstract;
     procedure FromBuffer(Buffer: TMemoryBuffer; ValueKind: TUNSValueKind = vkActual); overload; virtual; abstract;
+    procedure SaveTo(Ini: TIniFile; const Section,Key: String); overload; virtual; abstract;
+    procedure SaveTo(Ini: TIniFileEx; const Section,Key: String); overload; virtual; abstract;
+    procedure SaveTo(Reg: TRegistry; const Value: String); overload; virtual; abstract;
+    //procedure SaveTo(Reg: TRegistryEx; const Value: String); overload; virtual; abstract;
+    procedure LoadFrom(Ini: TIniFile; const Section,Key: String); overload; virtual; abstract;
+    procedure LoadFrom(Ini: TIniFileEx; const Section,Key: String); overload; virtual; abstract;
+    procedure LoadFrom(Reg: TRegistry; const Value: String); overload; virtual; abstract;
+    //procedure LoadFrom(Reg: TRegistryEx; const Value: String); overload; virtual; abstract;
     Function AsBuffer(ValueKind: TUNSValueKind = vkActual): TMemoryBuffer; overload; virtual;
     property ValueType: TUNSValueType read GetValueType;
     property ValueSize: TMemSize read GetValueSize;

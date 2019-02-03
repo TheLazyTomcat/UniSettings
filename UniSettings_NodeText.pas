@@ -7,8 +7,8 @@ unit UniSettings_NodeText;
 interface
 
 uses
-  Classes,
-  AuxTypes, MemoryBuffer,
+  Classes, IniFiles, Registry,
+  AuxTypes, MemoryBuffer, IniFileEx,
   UniSettings_Common, UniSettings_NodeBase, UniSettings_NodeLeaf;
 
 type
@@ -78,6 +78,48 @@ inherited Create(Name,ParentNode);
 fValue := '';
 fSavedValue := '';
 fDefaultValue := '';
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TUNSNodeClassType.SaveTo(Ini: TIniFile; const Section,Key: String);
+begin
+Ini.WriteString(Section,Key,fValue);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+procedure TUNSNodeClassType.SaveTo(Ini: TIniFileEx; const Section,Key: String);
+begin
+Ini.WriteString(Section,Key,fValue);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+procedure TUNSNodeClassType.SaveTo(Reg: TRegistry; const Value: String);
+begin
+Reg.WriteString(Value,fValue);
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TUNSNodeClassType.LoadFrom(Ini: TIniFile; const Section,Key: String);
+begin
+SetValue(Ini.ReadString(Section,Key,fValue));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+procedure TUNSNodeClassType.LoadFrom(Ini: TIniFileEx; const Section,Key: String);
+begin
+SetValue(Ini.ReadString(Section,Key,fValue));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+procedure TUNSNodeClassType.LoadFrom(Reg: TRegistry; const Value: String);
+begin
+SetValue(Reg.ReadString(Value));
 end;
 
 //------------------------------------------------------------------------------

@@ -7,8 +7,8 @@ unit UniSettings_NodeAoDate;
 interface
 
 uses
-  Classes,
-  AuxTypes, MemoryBuffer, CountedDynArrays,
+  Classes, IniFiles, Registry,
+  AuxTypes, MemoryBuffer, CountedDynArrays, IniFileEx,
   UniSettings_Common, UniSettings_NodeBase, UniSettings_NodeLeaf,
   UniSettings_NodePrimitiveArray;
 
@@ -126,6 +126,49 @@ If Length(Str) > 1 then
       Result := StrToDate(Str,fConvSettings);
   end
 else Result := StrToDate(Str,fConvSettings);
+end;
+
+//==============================================================================
+
+procedure TUNSNodeClassType.SaveItemTo(Ini: TIniFile; Index: Integer; const Section,Key: String);
+begin
+Ini.WriteDate(Section,Key,GetItem(Index));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+procedure TUNSNodeClassType.SaveItemTo(Ini: TIniFileEx; Index: Integer; const Section,Key: String);
+begin
+Ini.WriteDate(Section,Key,GetItem(Index));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+procedure TUNSNodeClassType.SaveItemTo(Reg: TRegistry; Index: Integer; const Value: String);
+begin
+Reg.WriteDate(Value,GetItem(Index));
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TUNSNodeClassType.LoadItemFrom(Ini: TIniFile; Index: Integer; const Section,Key: String);
+begin
+SetItem(Index,Ini.ReadDate(Section,Key,GetItem(Index)));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+procedure TUNSNodeClassType.LoadItemFrom(Ini: TIniFileEx; Index: Integer; const Section,Key: String);
+begin
+SetItem(Index,Ini.ReadDate(Section,Key,GetItem(Index)));
+end;
+
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+procedure TUNSNodeClassType.LoadItemFrom(Reg: TRegistry; Index: Integer; const Value: String);
+begin
+SetItem(Index,Reg.ReadDate(Value));
 end;
 
 //------------------------------------------------------------------------------

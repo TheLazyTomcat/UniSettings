@@ -7,8 +7,8 @@ unit UniSettings_NodeAoUInt64;
 interface
 
 uses
-  Classes,
-  AuxTypes, MemoryBuffer, CountedDynArrayUInt64,
+  Classes, IniFiles, Registry,
+  AuxTypes, MemoryBuffer, CountedDynArrayUInt64, InifileEx,
   UniSettings_Common, UniSettings_NodeBase, UniSettings_NodeLeaf,
   UniSettings_NodePrimitiveArray;
 
@@ -82,6 +82,52 @@ end;
 Function TUNSNodeClassType.ConvItemFromStr(const Str: String): TUNSNodeValueItemType;
 begin
 Result := TUNSNodeValueItemType(StrToUInt64(Str));
+end;
+
+//==============================================================================
+
+procedure TUNSNodeClassType.SaveItemTo(Ini: TIniFile; Index: Integer; const Section,Key: String);
+begin
+Ini.WriteString(Section,Key,AsString(Index,vkActual));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+procedure TUNSNodeClassType.SaveItemTo(Ini: TIniFileEx; Index: Integer; const Section,Key: String);
+begin
+Ini.WriteUInt64(Section,Key,GetItem(Index));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+procedure TUNSNodeClassType.SaveItemTo(Reg: TRegistry; Index: Integer; const Value: String);
+begin
+Reg.WriteBinaryData(Value,Address(Index)^,SizeOf(UInt64));
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TUNSNodeClassType.LoadItemFrom(Ini: TIniFile; Index: Integer; const Section,Key: String);
+begin
+FromString(Index,Ini.ReadString(Section,Key,'0'),vkActual);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+procedure TUNSNodeClassType.LoadItemFrom(Ini: TIniFileEx; Index: Integer; const Section,Key: String);
+begin
+SetItem(Index,Ini.ReadUInt64(Section,Key,GetItem(Index)));
+end;
+
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+procedure TUNSNodeClassType.LoadItemFrom(Reg: TRegistry; Index: Integer; const Value: String);
+var
+  Temp: UInt64;
+begin
+Reg.ReadBinaryData(Value,Temp,SizeOf(Int64));
+SetItem(Index,Temp);
 end;
 
 //------------------------------------------------------------------------------

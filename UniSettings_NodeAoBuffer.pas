@@ -7,8 +7,8 @@ unit UniSettings_NodeAoBuffer;
 interface
 
 uses
-  Classes,
-  AuxTypes, MemoryBuffer, CountedDynArrays,
+  Classes, IniFiles, Registry,
+  AuxTypes, MemoryBuffer, CountedDynArrays, IniFileEx,
   UniSettings_Common, UniSettings_NodeBase, UniSettings_NodeLeaf,
   UniSettings_NodePrimitiveArray;
 
@@ -200,6 +200,72 @@ If TempSize > 0 then
       TempPtr^ := Byte(StrToInt('$' + Copy(Str,Integer(i * 2) + StrOff,2)));
       Inc(TempPtr);
     end;
+end;
+
+//==============================================================================
+
+procedure TUNSNodeClassType.SaveItemTo(Ini: TIniFile; Index: Integer; const Section,Key: String);
+begin
+Ini.WriteString(Section,Key,AsString(Index,vkActual));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+procedure TUNSNodeClassType.SaveItemTo(Ini: TIniFileEx; Index: Integer; const Section,Key: String);
+var
+  Buffer: TMemoryBuffer;
+begin
+Buffer := GetItem(Index);
+Ini.WriteBinaryMemory(Section,Key,Buffer.Memory,Buffer.Size,True);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+procedure TUNSNodeClassType.SaveItemTo(Reg: TRegistry; Index: Integer; const Value: String);
+var
+  Buffer: TMemoryBuffer;
+begin
+Buffer := GetItem(Index);
+Reg.WriteBinaryData(Value,Buffer.Memory^,Buffer.Size);
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TUNSNodeClassType.LoadItemFrom(Ini: TIniFile; Index: Integer; const Section,Key: String);
+begin
+FromString(Index,Ini.ReadString(Section,Key,AsString(Index,vkActual)),vkActual);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+procedure TUNSNodeClassType.LoadItemFrom(Ini: TIniFileEx; Index: Integer; const Section,Key: String);
+var
+  Buffer: TMemoryBuffer;
+begin
+InitBuffer(Buffer);
+// following will also allocate the buffer memory
+Buffer.Size := Ini.ReadBinaryMemory(Section,Key,Buffer.Memory,False);
+try
+  SetItem(Index,Buffer);
+finally
+  FreeBuffer(Buffer);
+end;
+end;
+
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+procedure TUNSNodeClassType.LoadItemFrom(Reg: TRegistry; Index: Integer; const Value: String);
+var
+  Buffer: TMemoryBuffer;
+begin
+GetBuffer(Buffer,Reg.GetDataSize(Value));
+try
+  Reg.ReadBinaryData(Value,Buffer.Memory^,Buffer.Size);
+  SetItem(Index,Buffer);
+finally
+  FreeBuffer(Buffer);
+end;
 end;
 
 //------------------------------------------------------------------------------

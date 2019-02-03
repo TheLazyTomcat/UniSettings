@@ -7,8 +7,8 @@ unit UniSettings_NodeBuffer;
 interface
 
 uses
-  Classes,
-  AuxTypes, MemoryBuffer,
+  Classes, IniFiles, Registry,
+  AuxTypes, MemoryBuffer, IniFileEx,
   UniSettings_Common, UniSettings_NodeBase, UniSettings_NodeLeaf;
 
 type
@@ -99,6 +99,65 @@ FreeBuffer(fDefaultValue);
 FreeBuffer(fSavedValue);
 FreeBuffer(fValue);
 inherited;
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TUNSNodeClassType.SaveTo(Ini: TIniFile; const Section,Key: String);
+begin
+Ini.WriteString(Section,Key,AsString(vkActual));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+procedure TUNSNodeClassType.SaveTo(Ini: TIniFileEx; const Section,Key: String);
+begin
+Ini.WriteBinaryMemory(Section,Key,fValue.Memory,fValue.Size,True);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+procedure TUNSNodeClassType.SaveTo(Reg: TRegistry; const Value: String);
+begin
+Reg.WriteBinaryData(Value,fValue.Memory^,fValue.Size);
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TUNSNodeClassType.LoadFrom(Ini: TIniFile; const Section,Key: String);
+begin
+FromString(Ini.ReadString(Section,Key,AsString(vkActual)));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+procedure TUNSNodeClassType.LoadFrom(Ini: TIniFileEx; const Section,Key: String);
+var
+  Buffer: TMemoryBuffer;
+begin
+InitBuffer(Buffer);
+// following will also allocate the buffer memory
+Buffer.Size := Ini.ReadBinaryMemory(Section,Key,Buffer.Memory,False);
+try
+  SetValue(Buffer);
+finally
+  FreeBuffer(Buffer);
+end;
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+procedure TUNSNodeClassType.LoadFrom(Reg: TRegistry; const Value: String);
+var
+  Buffer: TMemoryBuffer;
+begin
+GetBuffer(Buffer,Reg.GetDataSize(Value));
+try
+  Reg.ReadBinaryData(Value,Buffer.Memory^,Buffer.Size);
+  SetValue(Buffer);
+finally
+  FreeBuffer(Buffer);
+end;
 end;
 
 //------------------------------------------------------------------------------

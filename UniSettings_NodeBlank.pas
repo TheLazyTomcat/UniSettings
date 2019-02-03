@@ -6,8 +6,8 @@ unit UniSettings_NodeBlank;
 interface
 
 uses
-  Classes,
-  AuxTypes, MemoryBuffer,
+  Classes, IniFiles, Registry,
+  AuxTypes, MemoryBuffer, IniFileEx,
   UniSettings_Common, UniSettings_NodeLeaf;
 
 type
@@ -30,6 +30,12 @@ type
     procedure FromStream(Stream: TStream; ValueKind: TUNSValueKind = vkActual); override;
     procedure ToBuffer(Buffer: TMemoryBuffer; ValueKind: TUNSValueKind = vkActual); override;
     procedure FromBuffer(Buffer: TMemoryBuffer; ValueKind: TUNSValueKind = vkActual); override;
+    procedure SaveTo(Ini: TIniFile; const Section,Key: String); override;
+    procedure SaveTo(Ini: TIniFileEx; const Section,Key: String); override;
+    procedure SaveTo(Reg: TRegistry; const Value: String); override;
+    procedure LoadFrom(Ini: TIniFile; const Section,Key: String); override;
+    procedure LoadFrom(Ini: TIniFileEx; const Section,Key: String); override;
+    procedure LoadFrom(Reg: TRegistry; const Value: String); override;
   end;
 
 implementation
@@ -140,6 +146,48 @@ end;
 //------------------------------------------------------------------------------
 
 procedure TUNSNodeBlank.FromBuffer(Buffer: TMemoryBuffer; ValueKind: TUNSValueKind = vkActual);
+begin
+// do nothing
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TUNSNodeBlank.SaveTo(Ini: TIniFile; const Section,Key: String);
+begin
+Ini.WriteString(Section,Key,'');
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+procedure TUNSNodeBlank.SaveTo(Ini: TIniFileEx; const Section,Key: String);
+begin
+Ini.WriteString(Section,Key,'');
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+procedure TUNSNodeBlank.SaveTo(Reg: TRegistry; const Value: String);
+begin
+Reg.WriteString(Value,'');
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TUNSNodeBlank.LoadFrom(Ini: TIniFile; const Section,Key: String);
+begin
+// do nothing
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+procedure TUNSNodeBlank.LoadFrom(Ini: TIniFileEx; const Section,Key: String);
+begin
+// do nothing
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+procedure TUNSNodeBlank.LoadFrom(Reg: TRegistry; const Value: String);
 begin
 // do nothing
 end;

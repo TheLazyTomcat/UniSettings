@@ -5,8 +5,8 @@ unit UniSettings_NodePrimitiveArray;
 interface
 
 uses
-  Classes,
-  AuxTypes, MemoryBuffer,
+  Classes, IniFiles, Registry,
+  AuxTypes, MemoryBuffer, IniFileEx,
   UniSettings_Common, UniSettings_NodeBase, UniSettings_NodeLeaf;
 
 type
@@ -61,6 +61,18 @@ type
     procedure Clear(ValueKind: TUNSValueKind = vkActual); virtual; abstract;
     // PrepareEmptyItems is only for internal purposes, do not publish it through UniSettings methods
     procedure PrepareEmptyItems(Count: Integer; ValueKind: TUNSValueKind = vkActual); virtual; abstract;
+    procedure SaveTo(Ini: TIniFile; const Section,Key: String); override;
+    procedure SaveTo(Ini: TIniFileEx; const Section,Key: String); override;
+    procedure SaveTo(Reg: TRegistry; const Value: String); override;
+    procedure LoadFrom(Ini: TIniFile; const Section,Key: String); override;
+    procedure LoadFrom(Ini: TIniFileEx; const Section,Key: String); override;
+    procedure LoadFrom(Reg: TRegistry; const Value: String); override;
+    procedure SaveItemTo(Ini: TIniFile; Index: Integer; const Section,Key: String); overload; virtual; abstract;
+    procedure SaveItemTo(Ini: TIniFileEx; Index: Integer; const Section,Key: String); overload; virtual; abstract;
+    procedure SaveItemTo(Reg: TRegistry; Index: Integer; const Value: String); overload; virtual; abstract;
+    procedure LoadItemFrom(Ini: TIniFile; Index: Integer; const Section,Key: String); overload; virtual; abstract;
+    procedure LoadItemFrom(Ini: TIniFileEx; Index: Integer; const Section,Key: String); overload; virtual; abstract;
+    procedure LoadItemFrom(Reg: TRegistry; Index: Integer; const Value: String); overload; virtual; abstract;
     property ItemValueType: TUNSValueType read GetItemValueType;
     property Count: Integer read GetCount;
     property SavedCount: Integer read GetSavedCount;
@@ -73,6 +85,7 @@ type
 implementation
 
 uses
+  SysUtils,
   UniSettings_Exceptions;
 
 class Function TUNSNodePrimitiveArray.GetNodeType: TUNSNodeType;
@@ -186,6 +199,87 @@ end;
 Function TUNSNodePrimitiveArray.CheckIndex(Index: Integer; ValueKind: TUNSValueKind = vkActual): Boolean;
 begin
 Result := (Index >= LowIndex(ValueKind)) and (Index <= HighIndex(ValueKind));
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TUNSNodePrimitiveArray.SaveTo(Ini: TIniFile; const Section,Key: String);
+var
+  i:  Integer;
+begin
+Ini.WriteInteger(Section,Key,Count);
+For i := LowIndex to HighIndex do
+  SaveItemTo(Ini,i,Section,Format('%s[%d]',[Key,i]));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+procedure TUNSNodePrimitiveArray.SaveTo(Ini: TIniFileEx; const Section,Key: String);
+var
+  i:  Integer;
+begin
+Ini.WriteInteger(Section,Key,Count);
+For i := LowIndex to HighIndex do
+  SaveItemTo(Ini,i,Section,Format('%s[%d]',[Key,i]));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+procedure TUNSNodePrimitiveArray.SaveTo(Reg: TRegistry; const Value: String);
+var
+  i:  Integer;
+begin
+Reg.WriteInteger(Value,Count);
+For i := LowIndex to HighIndex do
+  SaveItemTo(Reg,i,Format('%s[%d]',[Value,i]));
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TUNSNodePrimitiveArray.LoadFrom(Ini: TIniFile; const Section,Key: String);
+var
+  i:  Integer;
+begin
+BeginChanging;
+try
+  PrepareEmptyItems(Ini.ReadInteger(Section,Key,0),vkActual);
+  For i := LowIndex to HighIndex do
+    LoadItemFrom(Ini,i,Section,Format('%s[%d]',[Key,i]));
+finally
+  EndChanging;
+end;
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+procedure TUNSNodePrimitiveArray.LoadFrom(Ini: TIniFileEx; const Section,Key: String);
+var
+  i:  Integer;
+begin
+BeginChanging;
+try
+  PrepareEmptyItems(Ini.ReadInteger(Section,Key,0),vkActual);
+  For i := LowIndex to HighIndex do
+    LoadItemFrom(Ini,i,Section,Format('%s[%d]',[Key,i]));
+finally
+  EndChanging;
+end;
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+procedure TUNSNodePrimitiveArray.LoadFrom(Reg: TRegistry; const Value: String);
+var
+  i:  Integer;
+begin
+BeginChanging;
+try
+  PrepareEmptyItems(Reg.ReadInteger(Value),vkActual);
+  For i := LowIndex to HighIndex do
+    LoadItemFrom(Reg,i,Format('%s[%d]',[Value,i]));
+finally
+  EndChanging;
+end;
 end;
 
 end.

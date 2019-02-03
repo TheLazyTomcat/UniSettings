@@ -7,8 +7,8 @@ unit UniSettings_NodeAoInt64;
 interface
 
 uses
-  Classes,
-  AuxTypes, MemoryBuffer, CountedDynArrayInt64,
+  Classes, IniFiles, Registry,
+  AuxTypes, MemoryBuffer, CountedDynArrayInt64, IniFileEx,
   UniSettings_Common, UniSettings_NodeBase, UniSettings_NodeLeaf,
   UniSettings_NodePrimitiveArray;
 
@@ -82,6 +82,52 @@ end;
 Function TUNSNodeClassType.ConvItemFromStr(const Str: String): TUNSNodeValueItemType;
 begin
 Result := TUNSNodeValueItemType(StrToInt64(Str));
+end;
+
+//==============================================================================
+
+procedure TUNSNodeClassType.SaveItemTo(Ini: TIniFile; Index: Integer; const Section,Key: String);
+begin
+Ini.WriteString(Section,Key,AsString(Index,vkActual));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+procedure TUNSNodeClassType.SaveItemTo(Ini: TIniFileEx; Index: Integer; const Section,Key: String);
+begin
+Ini.WriteInt64(Section,Key,GetItem(Index));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+procedure TUNSNodeClassType.SaveItemTo(Reg: TRegistry; Index: Integer; const Value: String);
+begin
+Reg.WriteBinaryData(Value,Address(Index)^,SizeOf(Int64));
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TUNSNodeClassType.LoadItemFrom(Ini: TIniFile; Index: Integer; const Section,Key: String);
+begin
+FromString(Index,Ini.ReadString(Section,Key,'0'),vkActual);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+procedure TUNSNodeClassType.LoadItemFrom(Ini: TIniFileEx; Index: Integer; const Section,Key: String);
+begin
+SetItem(Index,Ini.ReadInt64(Section,Key,GetItem(Index)));
+end;
+
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+procedure TUNSNodeClassType.LoadItemFrom(Reg: TRegistry; Index: Integer; const Value: String);
+var
+  Temp: Int64;
+begin
+Reg.ReadBinaryData(Value,Temp,SizeOf(Int64));
+SetItem(Index,Temp);
 end;
 
 //------------------------------------------------------------------------------

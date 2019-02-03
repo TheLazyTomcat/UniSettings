@@ -72,6 +72,12 @@
     procedure Delete(Index: Integer; ValueKind: TUNSValueKind = vkActual); override;
     procedure Clear(ValueKind: TUNSValueKind = vkActual); override;
     procedure PrepareEmptyItems(Count: Integer; ValueKind: TUNSValueKind = vkActual); override;
+    procedure SaveItemTo(Ini: TIniFile; Index: Integer; const Section,Key: String); override;
+    procedure SaveItemTo(Ini: TIniFileEx; Index: Integer; const Section,Key: String); override;
+    procedure SaveItemTo(Reg: TRegistry; Index: Integer; const Value: String); override;
+    procedure LoadItemFrom(Ini: TIniFile; Index: Integer; const Section,Key: String); override;
+    procedure LoadItemFrom(Ini: TIniFileEx; Index: Integer; const Section,Key: String); override;
+    procedure LoadItemFrom(Reg: TRegistry; Index: Integer; const Value: String); override;
     property Value: TUNSNodeValueType read fValue write SetValue;
     property SavedValue: TUNSNodeValueType read fSavedValue write SetSavedValue;
     property DefaultValue: TUNSNodeValueType read fDefaultValue write SetDefaultValue;

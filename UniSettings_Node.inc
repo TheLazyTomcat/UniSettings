@@ -35,6 +35,12 @@
     procedure FromStream(Stream: TStream; ValueKind: TUNSValueKind = vkActual); override;
     procedure ToBuffer(Buffer: TMemoryBuffer; ValueKind: TUNSValueKind = vkActual); override;
     procedure FromBuffer(Buffer: TMemoryBuffer; ValueKind: TUNSValueKind = vkActual); override;
+    procedure SaveTo(Ini: TIniFile; const Section,Key: String); override;
+    procedure SaveTo(Ini: TIniFileEx; const Section,Key: String); override;
+    procedure SaveTo(Reg: TRegistry; const Value: String); override;
+    procedure LoadFrom(Ini: TIniFile; const Section,Key: String); override;
+    procedure LoadFrom(Ini: TIniFileEx; const Section,Key: String); override;
+    procedure LoadFrom(Reg: TRegistry; const Value: String); override;
     property Value: TUNSNodeValueType read fValue write SetValue;
     property SavedValue: TUNSNodeValueType read fSavedValue write SetSavedValue;
     property DefaultValue: TUNSNodeValueType read fDefaultValue write SetDefaultValue;
