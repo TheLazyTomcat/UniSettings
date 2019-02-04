@@ -15,20 +15,20 @@ type
     //--- IO operations (no lock) ----------------------------------------------
     procedure SaveToIniNoLock(Ini: TIniFile); overload; virtual;
     procedure SaveToIniNoLock(Ini: TIniFileEx); overload; virtual;
-    procedure LoadFromIniNoLock(Ini: TIniFile); overload; virtual;
-    procedure LoadFromIniNoLock(Ini: TIniFileEx); overload; virtual;
     procedure SaveToRegistryNoLock(Reg: TRegistry); overload; virtual;
     //procedure SaveToRegistryNoLock(Reg: TRegistryEx); overload; virtual;
-    //procedure LoadFromRegistryNoLock(Reg: TRegistry); overload; virtual;
+    procedure LoadFromIniNoLock(Ini: TIniFile); overload; virtual;
+    procedure LoadFromIniNoLock(Ini: TIniFileEx); overload; virtual;
+    procedure LoadFromRegistryNoLock(Reg: TRegistry); overload; virtual;
     //procedure LoadFromRegistryNoLock(Reg: TRegistryEx); overload; virtual;
     //--- IO operations (lock) -------------------------------------------------
     procedure SaveToIni(Ini: TIniFile); overload; virtual;
     procedure SaveToIni(Ini: TIniFileEx); overload; virtual;
+    procedure SaveToRegistry(Reg: TRegistry); overload; virtual;
+    //procedure SaveToRegistry(Reg: TRegistryEx); overload; virtual;    
     procedure LoadFromIni(Ini: TIniFile); overload; virtual;
     procedure LoadFromIni(Ini: TIniFileEx); overload; virtual;
-    procedure SaveToRegistry(Reg: TRegistry); overload; virtual;
-    //procedure SaveToRegistry(Reg: TRegistryEx); overload; virtual;
-    //procedure LoadFromRegistry(Reg: TRegistry); overload; virtual;
+    procedure LoadFromRegistry(Reg: TRegistry); overload; virtual;
     //procedure LoadFromRegistry(Reg: TRegistryEx); overload; virtual;
   end;
 
@@ -75,6 +75,9 @@ uses
   UniSettings_NodeAoTime,
   UniSettings_NodeAoText,
   UniSettings_NodeAoBuffer;
+
+const
+  UNS_REGISTRY_PATH_DELIM = '\';
 
 procedure TUniSettingsIO.SaveToIniNoLock(Ini: TIniFile);
 var
@@ -130,6 +133,46 @@ If (Ini.SectionStartChar = '[') and (Ini.SectionEndChar = ']') then
     end;
   end
 else EUNSException.Create('Invalid ini file.',Self,'SaveToIniNoLock');
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TUniSettingsIO.SaveToRegistryNoLock(Reg: TRegistry);
+var
+  NodeList:   TStringList;
+  InitialKey: String;
+  i:          Integer;
+  ValueName:  String;
+  RegKey:     String;
+begin
+NodeList := TStringList.Create;
+try
+  InitialKey := Reg.CurrentPath;
+  try
+    ListValuesWithNodes(NodeList,False);
+    NodeList.Sort;  // eliminates unnecessary registry key switches
+    For i := 0 to Pred(NodeList.Count) do
+      If NodeList.Objects[i] is TUNSNodeBase then
+        If UNSIsLeafNode(TUNSNodeBase(NodeList.Objects[i])) then
+          begin
+            ValueName := TUNSNodeBase(NodeList.Objects[i]).NameStr;
+            RegKey := AnsiReplaceStr(
+              Copy(NodeList[i],1,Length(NodeList[i]) - Length(ValueName) - 1),
+              UNS_NAME_DELIMITER,UNS_REGISTRY_PATH_DELIM);
+            If not AnsiSameText(Reg.CurrentPath,InitialKey + UNS_REGISTRY_PATH_DELIM + RegKey) then
+              begin
+                Reg.CloseKey;
+                Reg.OpenKey(InitialKey + UNS_REGISTRY_PATH_DELIM + RegKey,True)
+              end;
+            TUNSNodeLeaf(NodeList.Objects[i]).SaveTo(Reg,ValueName);
+          end;
+  finally
+    Reg.CloseKey;
+    Reg.OpenKey(InitialKey,False);
+  end;
+finally
+  NodeList.Free;
+end;
 end;
 
 //------------------------------------------------------------------------------
@@ -200,7 +243,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-procedure TUniSettingsIO.SaveToRegistryNoLock(Reg: TRegistry);
+procedure TUniSettingsIO.LoadFromRegistryNoLock(Reg: TRegistry);
 var
   NodeList:   TStringList;
   InitialKey: String;
@@ -213,22 +256,27 @@ try
   InitialKey := Reg.CurrentPath;
   try
     ListValuesWithNodes(NodeList,False);
-    NodeList.Sort;  // eliminates unnecessary registry key switches
-    For i := 0 to Pred(NodeList.Count) do
-      If NodeList.Objects[i] is TUNSNodeBase then
-        If UNSIsLeafNode(TUNSNodeBase(NodeList.Objects[i])) then
-          begin
-            ValueName := TUNSNodeBase(NodeList.Objects[i]).NameStr;
-            RegKey := AnsiReplaceStr(
-              Copy(NodeList[i],1,Length(NodeList[i]) - Length(ValueName) - 1),
-              UNS_NAME_DELIMITER,'\');
-            If not AnsiSameText(Reg.CurrentPath,InitialKey + '\' + RegKey) then
-              begin
-                Reg.CloseKey;
-                Reg.OpenKey(InitialKey + '\' + RegKey,True)
-              end;
-            TUNSNodeLeaf(NodeList.Objects[i]).SaveTo(Reg,ValueName);
-          end;
+    NodeList.Sort;
+    BeginChanging;
+    try
+      For i := 0 to Pred(NodeList.Count) do
+        If NodeList.Objects[i] is TUNSNodeBase then
+          If UNSIsLeafNode(TUNSNodeBase(NodeList.Objects[i])) then
+            begin
+              ValueName := TUNSNodeBase(NodeList.Objects[i]).NameStr;
+              RegKey := AnsiReplaceStr(
+                Copy(NodeList[i],1,Length(NodeList[i]) - Length(ValueName) - 1),
+                UNS_NAME_DELIMITER,UNS_REGISTRY_PATH_DELIM);
+              If not AnsiSameText(Reg.CurrentPath,InitialKey + UNS_REGISTRY_PATH_DELIM + RegKey) then
+                begin
+                  Reg.CloseKey;
+                  Reg.OpenKey(InitialKey + UNS_REGISTRY_PATH_DELIM + RegKey,True)
+                end;
+              TUNSNodeLeaf(NodeList.Objects[i]).LoadFrom(Reg,ValueName);
+            end;
+    finally
+      EndChanging;
+    end;
   finally
     Reg.CloseKey;
     Reg.OpenKey(InitialKey,False);
@@ -264,6 +312,18 @@ end;
 
 //------------------------------------------------------------------------------
 
+procedure TUniSettingsIO.SaveToRegistry(Reg: TRegistry);
+begin
+ReadLock;
+try
+  SaveToRegistryNoLock(Reg);
+finally
+  ReadUnlock;
+end;
+end;
+
+//------------------------------------------------------------------------------
+
 procedure TUniSettingsIO.LoadFromIni(Ini: TIniFile);
 begin
 WriteLock;
@@ -288,13 +348,13 @@ end;
 
 //------------------------------------------------------------------------------
 
-procedure TUniSettingsIO.SaveToRegistry(Reg: TRegistry);
+procedure TUniSettingsIO.LoadFromRegistry(Reg: TRegistry);
 begin
-ReadLock;
+WriteLock;
 try
-  SaveToRegistryNoLock(Reg);
+  LoadFromRegistryNoLock(Reg);
 finally
-  ReadUnlock;
+  WriteUnlock;
 end;
 end;
 
